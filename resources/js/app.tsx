@@ -51,6 +51,7 @@ createInertiaApp({
     layout: (name) => {
         switch (true) {
             case name === 'welcome':
+            case name.startsWith('public/'):
                 return PublicLayout;
             case name.startsWith('auth/'):
             case name.startsWith('tourist/'):
@@ -61,6 +62,7 @@ createInertiaApp({
                 return AppLayout;
             case name.startsWith('explore/'):
                 return TouristLayout;
+            // explore/* pages set TouristExploreLayout via page.layout
             case name.startsWith('settings/'):
                 return [AppLayout, SettingsLayout];
             default:

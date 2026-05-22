@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { Building2, CheckCircle2, Clock, Mail, Phone, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
@@ -188,12 +188,9 @@ export default function OwnerPending({ user, restaurant }: Props) {
 
                     <p className="mt-6 text-center text-xs text-gray-400">
                         {t('owner_pending.contact_note')}{' '}
-                        <a
-                            href="mailto:soporte@discoverlambo.pe"
-                            className="cursor-pointer text-brand-red hover:underline"
-                        >
-                            soporte@discoverlambo.pe
-                        </a>
+                        <Link href="/contacto" className="font-semibold text-brand-red hover:underline">
+                            {t('owner_pending.contact_form')}
+                        </Link>
                     </p>
                 </div>
             </div>

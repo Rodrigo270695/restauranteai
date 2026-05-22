@@ -1,95 +1,220 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminAnalyticsController;
+use App\Http\Controllers\Admin\AdminReviewController;
+use App\Http\Controllers\Admin\BusinessRequestController;
+use App\Http\Controllers\Admin\CatalogController;
 use App\Http\Controllers\Admin\GeographyController;
+use App\Http\Controllers\Admin\ReadOnlyDataController;
+use App\Http\Controllers\Admin\RestaurantController as AdminRestaurantController;
+use App\Http\Controllers\Admin\RestaurantHubController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\App\AnalyticsController;
+use App\Http\Controllers\App\RestaurantLanguagesController;
+use App\Http\Controllers\App\RestaurantServicesController;
+use App\Http\Controllers\App\RestaurantController as AppRestaurantController;
+use App\Http\Controllers\App\DishController;
+use App\Http\Controllers\App\GalleryController;
+use App\Http\Controllers\App\PromotionController;
+use App\Http\Controllers\App\ReviewController;
+use App\Http\Controllers\App\ScheduleController;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExploreController;
+use App\Http\Controllers\ExploreDiscoverController;
+use App\Http\Controllers\PublicRestaurantController;
+use App\Http\Controllers\AuthenticatedHomeController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\NearbyRestaurantsController;
+use App\Http\Controllers\WelcomeController;
+use App\Http\Controllers\ExploreRestaurantController;
+use App\Http\Controllers\TouristRouteController;
 use App\Http\Controllers\OwnerPendingController;
 use App\Http\Controllers\RucValidationController;
+use App\Http\Controllers\TamSurveyController;
 use App\Http\Controllers\TouristProfileController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
-Route::inertia('/', 'welcome', [
-    'canRegister' => Features::enabled(Features::registration()),
-])->name('home');
+Route::get('/', WelcomeController::class)->name('home');
+Route::middleware('auth')->get('/inicio', AuthenticatedHomeController::class)->name('authenticated.home');
+Route::get('/restaurantes-cercanos', NearbyRestaurantsController::class)->name('restaurants.nearby');
+Route::redirect('/restaurantes', '/restaurantes-cercanos');
+Route::get('/restaurantes/{restaurant:slug}', [PublicRestaurantController::class, 'show'])->name('restaurants.public.show');
+
+Route::get('/contacto', [ContactController::class, 'show'])->name('contact.show');
+Route::post('/contacto', [ContactController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('contact.store');
 
 // ── Portal Administrativo (super_admin y restaurant_owner aprobado) ───────────
 Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.owner.post_setup', 'role:super_admin|restaurant_owner'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::prefix('app')->name('app.')->group(function () {
-        Route::inertia('restaurants', 'app/restaurants')->name('restaurants');
-        Route::inertia('schedules', 'app/schedules')->name('schedules');
-        Route::inertia('gallery', 'app/gallery')->name('gallery');
-        Route::inertia('restaurant-services', 'app/restaurant-services')->name('restaurant-services');
-        Route::inertia('restaurant-languages', 'app/restaurant-languages')->name('restaurant-languages');
-        Route::inertia('dishes', 'app/dishes')->name('dishes');
-        Route::inertia('promotions', 'app/promotions')->name('promotions');
-        Route::inertia('reviews', 'app/reviews')->name('reviews');
-        Route::inertia('analytics', 'app/analytics')->name('analytics');
+        // Panel del dueño (super_admin solo con suplantación activa)
+        Route::middleware(['restaurant.owner.context', 'restaurant.owner.mutate'])->group(function () {
+            Route::get('restaurants', [AppRestaurantController::class, 'index'])->name('restaurants');
+            Route::put('restaurants', [AppRestaurantController::class, 'update'])->name('restaurants.update');
+
+            Route::get('schedules', [ScheduleController::class, 'index'])->name('schedules');
+            Route::put('schedules', [ScheduleController::class, 'sync'])->name('schedules.sync');
+
+            Route::get('gallery', [GalleryController::class, 'index'])->name('gallery');
+            Route::post('gallery', [GalleryController::class, 'store'])->name('gallery.store');
+            Route::match(['put', 'post'], 'gallery/{image}', [GalleryController::class, 'update'])->name('gallery.update');
+            Route::delete('gallery/{image}', [GalleryController::class, 'destroy'])->name('gallery.destroy');
+            Route::post('gallery/{image}/cover', [GalleryController::class, 'setCover'])->name('gallery.cover');
+
+            Route::get('restaurant-services', [RestaurantServicesController::class, 'index'])->name('restaurant-services');
+            Route::put('restaurant-services', [RestaurantServicesController::class, 'sync'])->name('restaurant-services.sync');
+
+            Route::get('restaurant-languages', [RestaurantLanguagesController::class, 'index'])->name('restaurant-languages');
+            Route::put('restaurant-languages', [RestaurantLanguagesController::class, 'sync'])->name('restaurant-languages.sync');
+
+            Route::get('dishes', [DishController::class, 'index'])->name('dishes');
+            Route::post('dishes', [DishController::class, 'store'])->name('dishes.store');
+            Route::match(['put', 'post'], 'dishes/{dish}', [DishController::class, 'update'])->name('dishes.update');
+            Route::delete('dishes/{dish}', [DishController::class, 'destroy'])->name('dishes.destroy');
+
+            Route::get('promotions', [PromotionController::class, 'index'])->name('promotions');
+            Route::post('promotions', [PromotionController::class, 'store'])->name('promotions.store');
+            Route::match(['put', 'post'], 'promotions/{promotion}', [PromotionController::class, 'update'])->name('promotions.update');
+            Route::delete('promotions/{promotion}', [PromotionController::class, 'destroy'])->name('promotions.destroy');
+
+            Route::get('reviews', [ReviewController::class, 'index'])->name('reviews');
+            Route::put('reviews/{review}/respond', [ReviewController::class, 'respond'])->name('reviews.respond');
+
+            Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics');
+        });
 
         Route::middleware('role:super_admin')->prefix('admin')->name('admin.')->group(function () {
-            // Roles — CRUD completo
-            Route::get('roles',             [RoleController::class, 'index'])->name('roles');
-            Route::post('roles',            [RoleController::class, 'store'])->name('roles.store');
-            Route::put('roles/{role}',      [RoleController::class, 'update'])->name('roles.update');
-            Route::delete('roles/{role}',   [RoleController::class, 'destroy'])->name('roles.destroy');
-            Route::get('users',             [UserController::class, 'index'])->name('users');
-            Route::post('users',            [UserController::class, 'store'])->name('users.store');
-            Route::put('users/{user}',      [UserController::class, 'update'])->name('users.update');
-            Route::delete('users/{user}',   [UserController::class, 'destroy'])->name('users.destroy');
+            Route::post('stop-impersonating', [RestaurantHubController::class, 'stopImpersonating'])->name('stop-impersonating');
+
+            Route::get('reviews', [AdminReviewController::class, 'index'])->name('reviews');
+            Route::put('reviews/{review}/respond', [AdminReviewController::class, 'respond'])->name('reviews.respond');
+
+            Route::get('analytics', [AdminAnalyticsController::class, 'index'])->name('analytics');
+
+            Route::get('roles', [RoleController::class, 'index'])->name('roles');
+            Route::post('roles', [RoleController::class, 'store'])->name('roles.store');
+            Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+            Route::delete('roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+
+            Route::get('users', [UserController::class, 'index'])->name('users');
+            Route::post('users', [UserController::class, 'store'])->name('users.store');
+            Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
+            Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
             Route::post('users/{user}/approve-restaurant', [UserController::class, 'approveRestaurant'])->name('users.approve-restaurant');
-            Route::inertia('restaurants', 'app/admin/restaurants')->name('restaurants');
-            Route::inertia('business-requests', 'app/admin/business-requests')->name('business-requests');
-            // Geografía — CRUD departamentos, provincias, distritos
+
+            Route::get('restaurants', [AdminRestaurantController::class, 'index'])->name('restaurants');
+            Route::post('restaurants', [AdminRestaurantController::class, 'store'])->name('restaurants.store');
+            Route::put('restaurants/{restaurant}', [AdminRestaurantController::class, 'update'])->name('restaurants.update');
+            Route::delete('restaurants/{restaurant}', [AdminRestaurantController::class, 'destroy'])->name('restaurants.destroy');
+
+            Route::prefix('restaurants/{restaurant}')->name('restaurants.manage.')->group(function () {
+                Route::get('/', [RestaurantHubController::class, 'show'])->name('show');
+                Route::post('impersonate', [RestaurantHubController::class, 'impersonate'])->name('impersonate');
+
+                Route::get('profile', [AppRestaurantController::class, 'indexForRestaurant'])->name('profile');
+                Route::put('profile', [AppRestaurantController::class, 'update'])->name('profile.update');
+
+                Route::get('schedules', [ScheduleController::class, 'indexForRestaurant'])->name('schedules');
+                Route::put('schedules', [ScheduleController::class, 'sync'])->name('schedules.sync');
+
+                Route::get('gallery', [GalleryController::class, 'indexForRestaurant'])->name('gallery');
+                Route::post('gallery', [GalleryController::class, 'store'])->name('gallery.store');
+                Route::match(['put', 'post'], 'gallery/{image}', [GalleryController::class, 'update'])->name('gallery.update');
+                Route::delete('gallery/{image}', [GalleryController::class, 'destroy'])->name('gallery.destroy');
+                Route::post('gallery/{image}/cover', [GalleryController::class, 'setCover'])->name('gallery.cover');
+
+                Route::get('services', [RestaurantServicesController::class, 'indexForRestaurant'])->name('services');
+                Route::put('services', [RestaurantServicesController::class, 'sync'])->name('services.sync');
+
+                Route::get('languages', [RestaurantLanguagesController::class, 'indexForRestaurant'])->name('languages');
+                Route::put('languages', [RestaurantLanguagesController::class, 'sync'])->name('languages.sync');
+
+                Route::get('dishes', [DishController::class, 'indexForRestaurant'])->name('dishes');
+                Route::post('dishes', [DishController::class, 'store'])->name('dishes.store');
+                Route::match(['put', 'post'], 'dishes/{dish}', [DishController::class, 'update'])->name('dishes.update');
+                Route::delete('dishes/{dish}', [DishController::class, 'destroy'])->name('dishes.destroy');
+
+                Route::get('promotions', [PromotionController::class, 'indexForRestaurant'])->name('promotions');
+                Route::post('promotions', [PromotionController::class, 'store'])->name('promotions.store');
+                Route::match(['put', 'post'], 'promotions/{promotion}', [PromotionController::class, 'update'])->name('promotions.update');
+                Route::delete('promotions/{promotion}', [PromotionController::class, 'destroy'])->name('promotions.destroy');
+
+                Route::get('analytics', [AnalyticsController::class, 'indexForRestaurant'])->name('analytics');
+            });
+
+            Route::get('business-requests', [BusinessRequestController::class, 'index'])->name('business-requests');
+            Route::patch('business-requests/{profile}', [BusinessRequestController::class, 'updateStatus'])->name('business-requests.update');
+
             Route::get('geography', [GeographyController::class, 'index'])->name('geography');
-            Route::post('geography/departments',              [GeographyController::class, 'storeDepartment'])->name('geography.departments.store');
-            Route::put('geography/departments/{department}',  [GeographyController::class, 'updateDepartment'])->name('geography.departments.update');
-            Route::delete('geography/departments/{department}',[GeographyController::class, 'destroyDepartment'])->name('geography.departments.destroy');
-            Route::post('geography/provinces',                [GeographyController::class, 'storeProvince'])->name('geography.provinces.store');
-            Route::put('geography/provinces/{province}',      [GeographyController::class, 'updateProvince'])->name('geography.provinces.update');
-            Route::delete('geography/provinces/{province}',   [GeographyController::class, 'destroyProvince'])->name('geography.provinces.destroy');
-            Route::post('geography/districts',                [GeographyController::class, 'storeDistrict'])->name('geography.districts.store');
-            Route::put('geography/districts/{district}',      [GeographyController::class, 'updateDistrict'])->name('geography.districts.update');
-            Route::delete('geography/districts/{district}',   [GeographyController::class, 'destroyDistrict'])->name('geography.districts.destroy');
-            Route::inertia('cuisine-types', 'app/admin/cuisine-types')->name('cuisine-types');
-            Route::inertia('ambiances', 'app/admin/ambiances')->name('ambiances');
-            Route::inertia('services', 'app/admin/services')->name('services');
-            Route::inertia('dish-categories', 'app/admin/dish-categories')->name('dish-categories');
-            Route::inertia('support-languages', 'app/admin/support-languages')->name('support-languages');
-            Route::inertia('user-interactions', 'app/admin/user-interactions')->name('user-interactions');
-            Route::inertia('recommendation-requests', 'app/admin/recommendation-requests')->name('recommendation-requests');
-            Route::inertia('recommendations', 'app/admin/recommendations')->name('recommendations');
-            Route::inertia('tam-surveys', 'app/admin/tam-surveys')->name('tam-surveys');
+            Route::post('geography/departments', [GeographyController::class, 'storeDepartment'])->name('geography.departments.store');
+            Route::put('geography/departments/{department}', [GeographyController::class, 'updateDepartment'])->name('geography.departments.update');
+            Route::delete('geography/departments/{department}', [GeographyController::class, 'destroyDepartment'])->name('geography.departments.destroy');
+            Route::post('geography/provinces', [GeographyController::class, 'storeProvince'])->name('geography.provinces.store');
+            Route::put('geography/provinces/{province}', [GeographyController::class, 'updateProvince'])->name('geography.provinces.update');
+            Route::delete('geography/provinces/{province}', [GeographyController::class, 'destroyProvince'])->name('geography.provinces.destroy');
+            Route::post('geography/districts', [GeographyController::class, 'storeDistrict'])->name('geography.districts.store');
+            Route::put('geography/districts/{district}', [GeographyController::class, 'updateDistrict'])->name('geography.districts.update');
+            Route::delete('geography/districts/{district}', [GeographyController::class, 'destroyDistrict'])->name('geography.districts.destroy');
+
+            $catalogs = [
+                'cuisine-types' => 'cuisine_types',
+                'ambiances' => 'ambiances',
+                'services' => 'services',
+                'dish-categories' => 'dish_categories',
+                'support-languages' => 'languages',
+            ];
+            foreach ($catalogs as $path => $key) {
+                Route::get($path, [CatalogController::class, 'index'])->defaults('catalog', $key)->name(str_replace('-', '_', $path));
+                Route::post($path, [CatalogController::class, 'store'])->defaults('catalog', $key)->name(str_replace('-', '_', $path).'.store');
+                Route::put("{$path}/{item}", [CatalogController::class, 'update'])->defaults('catalog', $key)->name(str_replace('-', '_', $path).'.update');
+                Route::delete("{$path}/{item}", [CatalogController::class, 'destroy'])->defaults('catalog', $key)->name(str_replace('-', '_', $path).'.destroy');
+            }
+
+            Route::get('user-interactions', [ReadOnlyDataController::class, 'userInteractions'])->name('user-interactions');
+            Route::get('recommendation-requests', [ReadOnlyDataController::class, 'recommendationRequests'])->name('recommendation-requests');
+            Route::get('recommendations', [ReadOnlyDataController::class, 'recommendations'])->name('recommendations');
+            Route::get('tam-surveys', [ReadOnlyDataController::class, 'tamSurveys'])->name('tam-surveys');
         });
     });
 });
 
 // ── Portal Turista ────────────────────────────────────────────────────────────
 Route::middleware(['auth', 'verified'])->prefix('explore')->name('explore.')->group(function () {
-    Route::get('/',        [ExploreController::class, 'index'])->name('index');
+    Route::get('/', ExploreDiscoverController::class)->name('index');
+    Route::get('/discover', ExploreDiscoverController::class)->name('discover');
+    Route::get('/restaurants/{restaurant:slug}', [ExploreRestaurantController::class, 'show'])->name('restaurants.show');
     Route::get('/profile', [ExploreController::class, 'profile'])->name('profile');
     Route::post('/profile', [ExploreController::class, 'updateProfile'])->name('profile.update');
+    Route::get('/tam-survey', [TamSurveyController::class, 'show'])->name('tam-survey');
+    Route::post('/tam-survey', [TamSurveyController::class, 'store'])->name('tam-survey.store');
+
+    Route::prefix('routes')->name('routes.')->group(function () {
+        Route::get('/', [TouristRouteController::class, 'index'])->name('index');
+        Route::post('/publish', [TouristRouteController::class, 'publish'])->name('publish');
+        Route::post('/{route:slug}/complete', [TouristRouteController::class, 'complete'])->name('complete');
+        Route::post('/stops/{restaurant}', [TouristRouteController::class, 'addStop'])->name('stops.add');
+        Route::delete('/stops/{restaurant}', [TouristRouteController::class, 'removeStop'])->name('stops.remove');
+        Route::get('/{route:slug}', [TouristRouteController::class, 'show'])->name('show');
+        Route::delete('/{route}', [TouristRouteController::class, 'destroy'])->name('destroy');
+    });
 });
 
-// ── Setup de perfil turista + owner pending (requieren email verificado) ──────
+// ── Setup de perfil turista + owner pending ─────────────────────────────────────
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('profile/setup',  [TouristProfileController::class, 'show'])->name('profile.setup');
+    Route::get('profile/setup', [TouristProfileController::class, 'show'])->name('profile.setup');
     Route::post('profile/setup', [TouristProfileController::class, 'store'])->name('profile.setup.store');
-
     Route::get('owner/pending', [OwnerPendingController::class, 'show'])->name('owner.pending');
-
-    // URL antigua del wizard: ahora el perfil del restaurante se completa en Configuración → Perfil
     Route::redirect('owner/profile/setup', '/settings/profile')->name('owner.profile.setup');
 });
 
-// ── Validación de RUC via SUNAT (pública — se usa durante el registro) ────────
-Route::get('api/ruc/{ruc}', [RucValidationController::class, 'validate'])
-    ->name('ruc.validate');
+Route::get('api/ruc/{ruc}', [RucValidationController::class, 'validate'])->name('ruc.validate');
 
-// ── OAuth Social Login ────────────────────────────────────────────────────────
 Route::prefix('auth')->name('auth.social.')->group(function () {
     Route::get('{provider}/redirect', [SocialAuthController::class, 'redirect'])->name('redirect');
     Route::get('{provider}/callback', [SocialAuthController::class, 'callback'])->name('callback');

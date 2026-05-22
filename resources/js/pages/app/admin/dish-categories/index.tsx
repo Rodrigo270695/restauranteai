@@ -1,17 +1,12 @@
-﻿import { AppPlaceholderShell } from '@/components/layout/app-placeholder-shell';
+﻿import CatalogCrudPage from '@/components/crud/catalog-crud-page';
 import { APP_HREF } from '@/config/app-sidebar-nav';
 import { appBreadcrumbs } from '@/lib/app-breadcrumbs';
 
-const title = 'Categorías de platos';
-const description =
-    'Catálogo dish_categories: entradas, fondos, postres y orden de visualización en la carta.';
+type Props = Parameters<typeof CatalogCrudPage>[0];
 
-function AppAdminDishCategories() {
-    return <AppPlaceholderShell title={title} description={description} />;
+function Page(props: Props) {
+    return <CatalogCrudPage {...props} />;
 }
 
-export default AppAdminDishCategories;
-
-AppAdminDishCategories.layout = {
-    breadcrumbs: appBreadcrumbs(title, APP_HREF.adminDishCategories),
-};
+export default Page;
+Page.layout = { breadcrumbs: appBreadcrumbs('Categorías de platos', APP_HREF.adminDishCategories) };

@@ -48,6 +48,26 @@ class User extends Authenticatable implements \Illuminate\Contracts\Auth\MustVer
         return $this->hasOne(TouristProfile::class);
     }
 
+    public function userPreferences(): HasMany
+    {
+        return $this->hasMany(UserPreference::class);
+    }
+
+    public function tamSurvey(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(TamSurvey::class);
+    }
+
+    public function touristRoutes(): HasMany
+    {
+        return $this->hasMany(TouristRoute::class);
+    }
+
+    public function restaurants(): HasMany
+    {
+        return $this->hasMany(Restaurant::class, 'owner_id');
+    }
+
     /**
      * Turistas y dueños no usan verificación de correo; el acceso de dueños lo controla la aprobación del negocio.
      */

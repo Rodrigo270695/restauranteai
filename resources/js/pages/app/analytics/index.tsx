@@ -1,17 +1,12 @@
-﻿import { AppPlaceholderShell } from '@/components/layout/app-placeholder-shell';
+﻿import RestaurantAnalyticsPage from '@/components/app/owner/restaurant-analytics-page';
 import { APP_HREF } from '@/config/app-sidebar-nav';
 import { appBreadcrumbs } from '@/lib/app-breadcrumbs';
 
-const title = 'Estadísticas';
-const description =
-    'Métricas de tu negocio (permiso view_analytics): vistas, reservas de contexto y rendimiento de promociones.';
+type Props = Parameters<typeof RestaurantAnalyticsPage>[0];
 
-function AppAnalytics() {
-    return <AppPlaceholderShell title={title} description={description} />;
+function Page(props: Props) {
+    return <RestaurantAnalyticsPage {...props} />;
 }
 
-export default AppAnalytics;
-
-AppAnalytics.layout = {
-    breadcrumbs: appBreadcrumbs(title, APP_HREF.analytics),
-};
+export default Page;
+Page.layout = { breadcrumbs: appBreadcrumbs('Estadísticas', APP_HREF.analytics) };

@@ -1,6 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
     ArrowRight,
+    ClipboardList,
     Beef,
     ChefHat,
     Coffee,
@@ -17,7 +18,7 @@ import {
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { profile as exploreProfile } from '@/routes/explore';
+import { profile as exploreProfile, tamSurvey } from '@/routes/explore';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 interface AuthUser { id: number; name: string; email: string }
@@ -30,8 +31,19 @@ interface TouristProfile {
     completed: boolean;
 }
 
+interface MlPreference {
+    cuisine: string | null;
+    ambiance: string | null;
+    price_range: string | null;
+    party_type: string | null;
+    dietary_restriction: string | null;
+    max_distance_km: number | null;
+}
+
 interface Props {
     profile: TouristProfile | null;
+    mlPreference: MlPreference | null;
+    tamCompleted: boolean;
 }
 
 // ─── Categorías de cocina con íconos ─────────────────────────────────────────
@@ -81,7 +93,7 @@ function RecommendationSkeleton() {
     );
 }
 
-export default function ExploreIndex({ profile }: Props) {
+export default function ExploreIndex({ profile, mlPreference, tamCompleted }: Props) {
     const { t } = useTranslation();
     const { auth } = usePage().props as { auth: { user: AuthUser } };
     const user = auth.user;
@@ -252,6 +264,37 @@ export default function ExploreIndex({ profile }: Props) {
                                 </div>
                             )}
                         </div>
+
+                        {/* Encuesta TAM */}
+                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                            <div className="mb-3 flex items-center justify-between">
+                                <h3 className="text-sm font-bold text-gray-900">{t('explore.tam_card_title')}</h3>
+                                {tamCompleted && (
+                                    <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700">
+                                        {t('explore.tam_card_done')}
+                                    </span>
+                                )}
+                            </div>
+                            <p className="mb-4 text-xs text-gray-500">{t('explore.tam_card_desc')}</p>
+                            <Link
+                                href={tamSurvey.url()}
+                                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-xs font-semibold text-brand-red transition hover:bg-red-100"
+                            >
+                                <ClipboardList className="h-4 w-4" />
+                                {tamCompleted ? t('explore.tam_card_view') : t('explore.tam_card_cta')}
+                            </Link>
+                        </div>
+
+                        {mlPreference && (
+                            <div className="rounded-2xl border border-dashed border-red-100 bg-white p-5 text-xs text-gray-600">
+                                <p className="font-semibold text-gray-800">{t('explore.ml_active_title')}</p>
+                                <ul className="mt-2 space-y-1">
+                                    {mlPreference.cuisine && <li>• {mlPreference.cuisine}</li>}
+                                    {mlPreference.ambiance && <li>• {mlPreference.ambiance}</li>}
+                                    {mlPreference.price_range && <li>• {mlPreference.price_range}</li>}
+                                </ul>
+                            </div>
+                        )}
 
                         {/* Estadísticas (placeholder) */}
                         <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">

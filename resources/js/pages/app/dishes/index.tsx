@@ -1,17 +1,12 @@
-﻿import { AppPlaceholderShell } from '@/components/layout/app-placeholder-shell';
+﻿import RestaurantDishesPage from '@/components/app/owner/restaurant-dishes-page';
 import { APP_HREF } from '@/config/app-sidebar-nav';
 import { appBreadcrumbs } from '@/lib/app-breadcrumbs';
 
-const title = 'Platos';
-const description =
-    'Carta digital (dishes): categoría, precio, disponibilidad, foto y etiquetas dietéticas.';
+type Props = Parameters<typeof RestaurantDishesPage>[0];
 
-function AppDishes() {
-    return <AppPlaceholderShell title={title} description={description} />;
+function Page(props: Props) {
+    return <RestaurantDishesPage {...props} />;
 }
 
-export default AppDishes;
-
-AppDishes.layout = {
-    breadcrumbs: appBreadcrumbs(title, APP_HREF.dishes),
-};
+export default Page;
+Page.layout = { breadcrumbs: appBreadcrumbs('Platos', APP_HREF.dishes) };

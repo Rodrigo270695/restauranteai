@@ -1,17 +1,12 @@
-﻿import { AppPlaceholderShell } from '@/components/layout/app-placeholder-shell';
+﻿import RestaurantFormPage from '@/components/crud/restaurant-form-page';
 import { APP_HREF } from '@/config/app-sidebar-nav';
 import { appBreadcrumbs } from '@/lib/app-breadcrumbs';
 
-const title = 'Datos del local';
-const description =
-    'Ficha del restaurante (tabla restaurants): nombre, ubicación, cocina principal, precios, contacto y visibilidad en la plataforma.';
+type Props = Parameters<typeof RestaurantFormPage>[0];
 
-function AppRestaurants() {
-    return <AppPlaceholderShell title={title} description={description} />;
+function Page(props: Props) {
+    return <RestaurantFormPage {...props} />;
 }
 
-export default AppRestaurants;
-
-AppRestaurants.layout = {
-    breadcrumbs: appBreadcrumbs(title, APP_HREF.restaurants),
-};
+export default Page;
+Page.layout = { breadcrumbs: appBreadcrumbs('Datos del local', APP_HREF.restaurants) };

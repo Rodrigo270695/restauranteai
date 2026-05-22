@@ -1,17 +1,12 @@
-﻿import { AppPlaceholderShell } from '@/components/layout/app-placeholder-shell';
+﻿import RestaurantSchedulesPage from '@/components/app/owner/restaurant-schedules-page';
 import { APP_HREF } from '@/config/app-sidebar-nav';
 import { appBreadcrumbs } from '@/lib/app-breadcrumbs';
 
-const title = 'Horarios';
-const description =
-    'Horarios de atención por día (restaurant_schedules): apertura, cierre y días cerrados.';
+type Props = Parameters<typeof RestaurantSchedulesPage>[0];
 
-function AppSchedules() {
-    return <AppPlaceholderShell title={title} description={description} />;
+function Page(props: Props) {
+    return <RestaurantSchedulesPage {...props} />;
 }
 
-export default AppSchedules;
-
-AppSchedules.layout = {
-    breadcrumbs: appBreadcrumbs(title, APP_HREF.schedules),
-};
+export default Page;
+Page.layout = { breadcrumbs: appBreadcrumbs('Horarios', APP_HREF.schedules) };

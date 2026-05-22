@@ -1,17 +1,12 @@
-﻿import { AppPlaceholderShell } from '@/components/layout/app-placeholder-shell';
+﻿import CatalogCrudPage, { type FieldDef } from '@/components/crud/catalog-crud-page';
 import { APP_HREF } from '@/config/app-sidebar-nav';
 import { appBreadcrumbs } from '@/lib/app-breadcrumbs';
 
-const title = 'Tipos de cocina';
-const description =
-    'Catálogo cuisine_types: nombres, slugs e iconos para filtros y el modelo de recomendación.';
+type Props = Parameters<typeof CatalogCrudPage>[0];
 
-function AppAdminCuisineTypes() {
-    return <AppPlaceholderShell title={title} description={description} />;
+function Page(props: Props) {
+    return <CatalogCrudPage {...props} />;
 }
 
-export default AppAdminCuisineTypes;
-
-AppAdminCuisineTypes.layout = {
-    breadcrumbs: appBreadcrumbs(title, APP_HREF.adminCuisineTypes),
-};
+export default Page;
+Page.layout = { breadcrumbs: appBreadcrumbs('Tipos de cocina', APP_HREF.adminCuisineTypes) };

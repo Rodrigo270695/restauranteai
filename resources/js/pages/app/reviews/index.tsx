@@ -1,17 +1,12 @@
-﻿import { AppPlaceholderShell } from '@/components/layout/app-placeholder-shell';
+﻿import RestaurantReviewsPage from '@/components/app/owner/restaurant-reviews-page';
 import { APP_HREF } from '@/config/app-sidebar-nav';
 import { appBreadcrumbs } from '@/lib/app-breadcrumbs';
 
-const title = 'Reseñas';
-const description =
-    'Valoraciones de turistas (reviews): puntuación global y por dimensiones, comentarios y respuesta del local.';
+type Props = Parameters<typeof RestaurantReviewsPage>[0];
 
-function AppReviews() {
-    return <AppPlaceholderShell title={title} description={description} />;
+function Page(props: Props) {
+    return <RestaurantReviewsPage {...props} />;
 }
 
-export default AppReviews;
-
-AppReviews.layout = {
-    breadcrumbs: appBreadcrumbs(title, APP_HREF.reviews),
-};
+export default Page;
+Page.layout = { breadcrumbs: appBreadcrumbs('Reseñas', APP_HREF.reviews) };

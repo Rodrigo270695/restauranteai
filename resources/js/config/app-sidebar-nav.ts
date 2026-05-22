@@ -3,7 +3,6 @@ import {
     BarChart3,
     BookOpen,
     ChefHat,
-    ClipboardList,
     Globe2,
     ImageIcon,
     Languages,
@@ -29,7 +28,6 @@ export type SidebarNavLeaf = {
     title: string;
     href: string;
     icon: LucideIcon;
-    /** Permiso Spatie requerido para ver este item (undefined = visible siempre) */
     permission?: string;
 };
 
@@ -37,7 +35,6 @@ export type SidebarNavModule = {
     id: string;
     title: string;
     icon: LucideIcon;
-    /** Si incluye `super_admin`, el módulo también se muestra a admins. */
     roles: AppRole[];
     items: SidebarNavLeaf[];
 };
@@ -56,7 +53,8 @@ export const APP_HREF = {
     adminRoles: '/app/admin/roles',
     adminUsers: '/app/admin/users',
     adminRestaurants: '/app/admin/restaurants',
-    adminBusinessRequests: '/app/admin/business-requests',
+    adminReviews: '/app/admin/reviews',
+    adminAnalytics: '/app/admin/analytics',
     adminGeography: '/app/admin/geography',
     adminCuisineTypes: '/app/admin/cuisine-types',
     adminAmbiances: '/app/admin/ambiances',
@@ -69,44 +67,55 @@ export const APP_HREF = {
     adminTam: '/app/admin/tam-surveys',
 } as const;
 
+/** Solo dueños del local (no super_admin sin suplantar). */
 export const sidebarNavModules: SidebarNavModule[] = [
     {
         id: 'business',
         title: 'Mi restaurante',
         icon: Store,
-        roles: ['restaurant_owner', 'super_admin'],
+        roles: ['restaurant_owner'],
         items: [
-            { title: 'Datos del local',    href: APP_HREF.restaurants,        icon: Store,    permission: 'manage_own_restaurant' },
-            { title: 'Horarios',           href: APP_HREF.schedules,          icon: Timer,    permission: 'manage_schedules' },
-            { title: 'Galería',            href: APP_HREF.gallery,            icon: ImageIcon, permission: 'manage_own_restaurant' },
-            { title: 'Servicios del local',href: APP_HREF.restaurantServices, icon: Settings2, permission: 'manage_own_restaurant' },
-            { title: 'Idiomas de atención',href: APP_HREF.restaurantLanguages,icon: Languages, permission: 'manage_own_restaurant' },
+            { title: 'Datos del local', href: APP_HREF.restaurants, icon: Store, permission: 'manage_own_restaurant' },
+            { title: 'Horarios', href: APP_HREF.schedules, icon: Timer, permission: 'manage_schedules' },
+            { title: 'Galería', href: APP_HREF.gallery, icon: ImageIcon, permission: 'manage_gallery' },
+            {
+                title: 'Servicios del local',
+                href: APP_HREF.restaurantServices,
+                icon: Settings2,
+                permission: 'manage_restaurant_services',
+            },
+            {
+                title: 'Idiomas de atención',
+                href: APP_HREF.restaurantLanguages,
+                icon: Languages,
+                permission: 'manage_restaurant_languages',
+            },
         ],
     },
     {
         id: 'menu',
         title: 'Carta y ofertas',
         icon: UtensilsCrossed,
-        roles: ['restaurant_owner', 'super_admin'],
+        roles: ['restaurant_owner'],
         items: [
-            { title: 'Platos',      href: APP_HREF.dishes,     icon: ChefHat, permission: 'manage_dishes' },
-            { title: 'Promociones', href: APP_HREF.promotions,  icon: Tag,     permission: 'manage_promotions' },
+            { title: 'Platos', href: APP_HREF.dishes, icon: ChefHat, permission: 'manage_dishes' },
+            { title: 'Promociones', href: APP_HREF.promotions, icon: Tag, permission: 'manage_promotions' },
         ],
     },
     {
         id: 'community',
         title: 'Comunidad',
         icon: MessageSquareText,
-        roles: ['restaurant_owner', 'super_admin'],
+        roles: ['restaurant_owner'],
         items: [
-            { title: 'Reseñas', href: APP_HREF.reviews, icon: MessageSquareText, permission: 'write_reviews' },
+            { title: 'Reseñas', href: APP_HREF.reviews, icon: MessageSquareText, permission: 'reviews.view' },
         ],
     },
     {
         id: 'insights',
         title: 'Rendimiento',
         icon: BarChart3,
-        roles: ['restaurant_owner', 'super_admin'],
+        roles: ['restaurant_owner'],
         items: [
             { title: 'Estadísticas', href: APP_HREF.analytics, icon: BarChart3, permission: 'view_analytics' },
         ],
@@ -117,10 +126,11 @@ export const sidebarNavModules: SidebarNavModule[] = [
         icon: Users,
         roles: ['super_admin'],
         items: [
-            { title: 'Roles',                href: APP_HREF.adminRoles,            icon: Shield,       permission: 'roles.view' },
-            { title: 'Usuarios',             href: APP_HREF.adminUsers,            icon: Users,        permission: 'users.view' },
-            { title: 'Restaurantes',         href: APP_HREF.adminRestaurants,      icon: Wine,         permission: 'restaurants.view' },
-            { title: 'Solicitudes de negocio', href: APP_HREF.adminBusinessRequests, icon: ClipboardList, permission: 'business_requests.view' },
+            { title: 'Roles', href: APP_HREF.adminRoles, icon: Shield, permission: 'roles.view' },
+            { title: 'Usuarios', href: APP_HREF.adminUsers, icon: Users, permission: 'users.view' },
+            { title: 'Restaurantes', href: APP_HREF.adminRestaurants, icon: Wine, permission: 'restaurants.view' },
+            { title: 'Reseñas (plataforma)', href: APP_HREF.adminReviews, icon: MessageSquareText, permission: 'reviews.view' },
+            { title: 'Estadísticas global', href: APP_HREF.adminAnalytics, icon: BarChart3, permission: 'view_analytics' },
         ],
     },
     {
@@ -129,12 +139,12 @@ export const sidebarNavModules: SidebarNavModule[] = [
         icon: Tags,
         roles: ['super_admin'],
         items: [
-            { title: 'Geografía',            href: APP_HREF.adminGeography,     icon: MapPinned,      permission: 'geography.view' },
-            { title: 'Tipos de cocina',      href: APP_HREF.adminCuisineTypes,  icon: UtensilsCrossed,permission: 'cuisine_types.view' },
-            { title: 'Ambientes',            href: APP_HREF.adminAmbiances,     icon: Sparkles,       permission: 'ambiances.view' },
-            { title: 'Servicios (catálogo)', href: APP_HREF.adminServices,      icon: Settings2,      permission: 'services.view' },
-            { title: 'Categorías de platos', href: APP_HREF.adminDishCategories,icon: BookOpen,       permission: 'dish_categories.view' },
-            { title: 'Idiomas soportados',   href: APP_HREF.adminLanguages,     icon: Globe2,         permission: 'languages.view' },
+            { title: 'Geografía', href: APP_HREF.adminGeography, icon: MapPinned, permission: 'geography.view' },
+            { title: 'Tipos de cocina', href: APP_HREF.adminCuisineTypes, icon: UtensilsCrossed, permission: 'cuisine_types.view' },
+            { title: 'Ambientes', href: APP_HREF.adminAmbiances, icon: Sparkles, permission: 'ambiances.view' },
+            { title: 'Servicios (catálogo)', href: APP_HREF.adminServices, icon: Settings2, permission: 'services.view' },
+            { title: 'Categorías de platos', href: APP_HREF.adminDishCategories, icon: BookOpen, permission: 'dish_categories.view' },
+            { title: 'Idiomas soportados', href: APP_HREF.adminLanguages, icon: Globe2, permission: 'languages.view' },
         ],
     },
     {
@@ -143,9 +153,14 @@ export const sidebarNavModules: SidebarNavModule[] = [
         icon: Network,
         roles: ['super_admin'],
         items: [
-            { title: 'Interacciones',   href: APP_HREF.adminInteractions,   icon: Network,      permission: 'interactions.view' },
-            { title: 'Solicitudes ML',  href: APP_HREF.adminRecRequests,    icon: ClipboardList,permission: 'recommendations.view' },
-            { title: 'Recomendaciones', href: APP_HREF.adminRecommendations,icon: Sparkles,     permission: 'recommendations.view' },
+            { title: 'Interacciones', href: APP_HREF.adminInteractions, icon: Network, permission: 'interactions.view' },
+            {
+                title: 'Solicitudes ML',
+                href: APP_HREF.adminRecRequests,
+                icon: Network,
+                permission: 'recommendation_requests.view',
+            },
+            { title: 'Recomendaciones', href: APP_HREF.adminRecommendations, icon: Sparkles, permission: 'recommendations.view' },
         ],
     },
     {

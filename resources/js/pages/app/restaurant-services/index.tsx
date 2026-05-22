@@ -1,17 +1,21 @@
-﻿import { AppPlaceholderShell } from '@/components/layout/app-placeholder-shell';
+﻿import RestaurantPivotPage from '@/components/app/owner/restaurant-pivot-page';
 import { APP_HREF } from '@/config/app-sidebar-nav';
 import { appBreadcrumbs } from '@/lib/app-breadcrumbs';
 
-const title = 'Servicios del local';
-const description =
-    'Servicios que ofrece tu restaurante (pivot restaurant_service hacia el catálogo services: WiFi, estacionamiento, delivery, etc.).';
+type Props = Omit<Parameters<typeof RestaurantPivotPage>[0], 'variant' | 'permission'> & {
+    saveUrl?: string;
+};
 
-function AppRestaurantServices() {
-    return <AppPlaceholderShell title={title} description={description} />;
+function Page(props: Props) {
+    return (
+        <RestaurantPivotPage
+            {...props}
+            variant="services"
+            saveUrl={props.saveUrl ?? '/app/restaurant-services'}
+            permission="manage_restaurant_services"
+        />
+    );
 }
 
-export default AppRestaurantServices;
-
-AppRestaurantServices.layout = {
-    breadcrumbs: appBreadcrumbs(title, APP_HREF.restaurantServices),
-};
+export default Page;
+Page.layout = { breadcrumbs: appBreadcrumbs('Servicios del local', APP_HREF.restaurantServices) };

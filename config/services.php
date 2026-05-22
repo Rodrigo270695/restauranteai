@@ -46,4 +46,9 @@ return [
         'token'    => env('APIPERU_TOKEN'),
     ],
 
+    'osrm' => [
+        'url' => env('OSRM_URL', 'https://router.project-osrm.org'),
+        'profile' => env('OSRM_PROFILE', 'foot'),
+    ],
+
 ];

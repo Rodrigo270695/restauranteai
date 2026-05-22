@@ -15,6 +15,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             SuperAdminSeeder::class,
+            CatalogSeeder::class,
+            LambayequeGeographySeeder::class,
+            CleanupPhantomDataSeeder::class,
+            DemoRestaurantSeeder::class,
         ]);
     }
 }

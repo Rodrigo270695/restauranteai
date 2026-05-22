@@ -1,17 +1,12 @@
-﻿import { AppPlaceholderShell } from '@/components/layout/app-placeholder-shell';
+﻿import CatalogCrudPage from '@/components/crud/catalog-crud-page';
 import { APP_HREF } from '@/config/app-sidebar-nav';
 import { appBreadcrumbs } from '@/lib/app-breadcrumbs';
 
-const title = 'Ambientes';
-const description =
-    'Catálogo ambiances: familiar, romántico, casual — variable contextual para ML y búsqueda.';
+type Props = Parameters<typeof CatalogCrudPage>[0];
 
-function AppAdminAmbiances() {
-    return <AppPlaceholderShell title={title} description={description} />;
+function Page(props: Props) {
+    return <CatalogCrudPage {...props} />;
 }
 
-export default AppAdminAmbiances;
-
-AppAdminAmbiances.layout = {
-    breadcrumbs: appBreadcrumbs(title, APP_HREF.adminAmbiances),
-};
+export default Page;
+Page.layout = { breadcrumbs: appBreadcrumbs('Ambientes', APP_HREF.adminAmbiances) };

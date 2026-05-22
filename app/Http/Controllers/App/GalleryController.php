@@ -1,0 +1,175 @@
+<?php
+
+namespace App\Http\Controllers\App;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\App\GalleryImageRequest;
+use App\Models\Restaurant;
+use App\Models\RestaurantImage;
+use App\Services\RestaurantScopeService;
+use App\Support\OwnerPanel;
+use App\Support\PublicStorage;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class GalleryController extends Controller
+{
+    public function index(Request $request, RestaurantScopeService $scope): Response
+    {
+        return $this->indexForRestaurant($request, $scope->forOwnerPanel($request), false);
+    }
+
+    public function indexForRestaurant(Request $request, Restaurant $restaurant, bool $admin = true): Response
+    {
+        if ($admin) {
+            abort_unless(app(RestaurantScopeService::class)->canManageAsAdmin($request->user(), $restaurant), 403);
+        }
+
+        abort_unless($request->user()?->can('manage_gallery'), 403);
+
+        $images = $restaurant->images()
+            ->orderByDesc('is_cover')
+            ->orderBy('display_order')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (RestaurantImage $img) => $this->formatImage($img));
+
+        $cover = $images->firstWhere('is_cover', true);
+
+        return Inertia::render('app/gallery', [
+            ...OwnerPanel::props($restaurant, $admin),
+            'images' => $images->values(),
+            'stats' => [
+                'total' => $images->count(),
+                'has_cover' => $cover !== null,
+            ],
+        ]);
+    }
+
+    public function store(GalleryImageRequest $request, RestaurantScopeService $scope, ?Restaurant $restaurant = null): RedirectResponse
+    {
+        $restaurant = $this->resolveRestaurant($request, $scope, $restaurant);
+        $data = $request->validated();
+
+        $path = $request->file('image')->store("restaurants/{$restaurant->id}", 'public');
+
+        $isCover = (bool) ($data['is_cover'] ?? false) || ! $restaurant->images()->exists();
+
+        $image = $restaurant->images()->create([
+            'path' => $path,
+            'alt_text' => $data['alt_text'] ?? null,
+            'type' => $data['type'],
+            'display_order' => $data['display_order'] ?? 0,
+            'is_cover' => $isCover,
+        ]);
+
+        if ($isCover) {
+            $this->setAsCover($restaurant, $image);
+        }
+
+        return back()->with('success', 'Foto agregada a la galería.');
+    }
+
+    public function update(
+        GalleryImageRequest $request,
+        RestaurantImage $image,
+        RestaurantScopeService $scope,
+        ?Restaurant $restaurant = null,
+    ): RedirectResponse {
+        $restaurant = $this->resolveRestaurant($request, $scope, $restaurant);
+        abort_unless($image->restaurant_id === $restaurant->id, 403);
+
+        $data = $request->validated();
+        $updates = [
+            'alt_text' => $data['alt_text'] ?? $image->alt_text,
+            'type' => $data['type'] ?? $image->type,
+            'display_order' => $data['display_order'] ?? $image->display_order,
+        ];
+
+        if ($request->hasFile('image')) {
+            Storage::disk('public')->delete($image->path);
+            $updates['path'] = $request->file('image')->store("restaurants/{$restaurant->id}", 'public');
+        }
+
+        $image->update($updates);
+
+        if ($request->boolean('is_cover')) {
+            $this->setAsCover($restaurant, $image->fresh());
+        }
+
+        return back()->with('success', 'Foto actualizada.');
+    }
+
+    public function destroy(
+        RestaurantImage $image,
+        RestaurantScopeService $scope,
+        ?Restaurant $restaurant = null,
+    ): RedirectResponse {
+        abort_unless(request()->user()?->can('manage_gallery'), 403);
+
+        $restaurant = $this->resolveRestaurant(request(), $scope, $restaurant);
+        abort_unless($image->restaurant_id === $restaurant->id, 403);
+
+        $wasCover = $image->is_cover;
+        Storage::disk('public')->delete($image->path);
+        $image->delete();
+
+        if ($wasCover) {
+            $next = $restaurant->images()->orderBy('display_order')->first();
+            if ($next) {
+                $this->setAsCover($restaurant, $next);
+            } else {
+                $restaurant->update(['cover_image' => null]);
+            }
+        }
+
+        return back()->with('success', 'Foto eliminada.');
+    }
+
+    public function setCover(
+        RestaurantImage $image,
+        RestaurantScopeService $scope,
+        ?Restaurant $restaurant = null,
+    ): RedirectResponse {
+        abort_unless(request()->user()?->can('manage_gallery'), 403);
+
+        $restaurant = $this->resolveRestaurant(request(), $scope, $restaurant);
+        abort_unless($image->restaurant_id === $restaurant->id, 403);
+
+        $this->setAsCover($restaurant, $image);
+
+        return back()->with('success', 'Portada actualizada.');
+    }
+
+    private function resolveRestaurant(Request $request, RestaurantScopeService $scope, ?Restaurant $bound): Restaurant
+    {
+        if ($bound) {
+            return $scope->forAdminManage($request->user(), $bound);
+        }
+
+        return $scope->forOwnerPanel($request);
+    }
+
+    private function setAsCover($restaurant, RestaurantImage $image): void
+    {
+        $restaurant->images()->where('id', '!=', $image->id)->update(['is_cover' => false]);
+        $image->update(['is_cover' => true]);
+        $restaurant->update(['cover_image' => $image->path]);
+    }
+
+    /** @return array<string, mixed> */
+    private function formatImage(RestaurantImage $img): array
+    {
+        return [
+            'id' => $img->id,
+            'url' => PublicStorage::url($img->path),
+            'alt_text' => $img->alt_text,
+            'type' => $img->type,
+            'display_order' => $img->display_order,
+            'is_cover' => (bool) $img->is_cover,
+        ];
+    }
+}

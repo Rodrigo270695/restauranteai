@@ -12,9 +12,9 @@ interface NavItem {
 
 // ─── Base pública (sin sesión) ────────────────────────────────────────────────
 const BASE_NAV: NavItem[] = [
-    { labelKey: 'nav.restaurants', href: '#', exact: false, soon: true },
+    { labelKey: 'nav.restaurants', href: '/restaurantes-cercanos', exact: false },
     { labelKey: 'nav.favorites',   href: '#', exact: false, soon: true },
-    { labelKey: 'nav.contact',     href: '#', exact: true,  soon: true },
+    { labelKey: 'nav.contact',     href: '/contacto', exact: true },
 ];
 
 // ─── Items según rol ──────────────────────────────────────────────────────────

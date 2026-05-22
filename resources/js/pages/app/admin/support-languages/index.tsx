@@ -1,17 +1,12 @@
-﻿import { AppPlaceholderShell } from '@/components/layout/app-placeholder-shell';
+﻿import CatalogCrudPage from '@/components/crud/catalog-crud-page';
 import { APP_HREF } from '@/config/app-sidebar-nav';
 import { appBreadcrumbs } from '@/lib/app-breadcrumbs';
 
-const title = 'Idiomas soportados';
-const description =
-    'Catálogo support_languages (es, en, …) para multiidioma y pivot con restaurantes.';
+type Props = Parameters<typeof CatalogCrudPage>[0];
 
-function AppAdminSupportLanguages() {
-    return <AppPlaceholderShell title={title} description={description} />;
+function Page(props: Props) {
+    return <CatalogCrudPage {...props} />;
 }
 
-export default AppAdminSupportLanguages;
-
-AppAdminSupportLanguages.layout = {
-    breadcrumbs: appBreadcrumbs(title, APP_HREF.adminLanguages),
-};
+export default Page;
+Page.layout = { breadcrumbs: appBreadcrumbs('Idiomas soportados', APP_HREF.adminLanguages) };

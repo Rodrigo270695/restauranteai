@@ -1,17 +1,12 @@
-﻿import { AppPlaceholderShell } from '@/components/layout/app-placeholder-shell';
+﻿import ReadonlyListPage from '@/components/crud/readonly-list-page';
 import { APP_HREF } from '@/config/app-sidebar-nav';
 import { appBreadcrumbs } from '@/lib/app-breadcrumbs';
 
-const title = 'Encuestas TAM';
-const description =
-    'Aceptación tecnológica (tam_surveys): utilidad percibida, facilidad de uso e intención de uso.';
+type Props = Parameters<typeof ReadonlyListPage>[0];
 
-function AppAdminTamSurveys() {
-    return <AppPlaceholderShell title={title} description={description} />;
+function Page(props: Props) {
+    return <ReadonlyListPage {...props} />;
 }
 
-export default AppAdminTamSurveys;
-
-AppAdminTamSurveys.layout = {
-    breadcrumbs: appBreadcrumbs(title, APP_HREF.adminTam),
-};
+export default Page;
+Page.layout = { breadcrumbs: appBreadcrumbs('Encuestas TAM', APP_HREF.adminTam) };

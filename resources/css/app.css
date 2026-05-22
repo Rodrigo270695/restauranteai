@@ -184,4 +184,39 @@
             0 4px 18px rgba(200, 0, 10, 0.28),
             0 0 0 3px rgba(217, 28, 28, 0.35);
     }
+
+    /* Leaflet: mantener mapa bajo navbar y barras fijas del portal turista */
+    .explore-map-shell .leaflet-container,
+    .explore-map-canvas {
+        z-index: 0 !important;
+    }
+
+    .explore-map-shell .leaflet-pane,
+    .explore-map-shell .leaflet-top,
+    .explore-map-shell .leaflet-bottom {
+        z-index: 1 !important;
+    }
+
+    .explore-map-shell .leaflet-control {
+        z-index: 2 !important;
+    }
+
+    .scrollbar-thin {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(232, 0, 26, 0.35) transparent;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+        border-radius: 999px;
+        background: rgba(232, 0, 26, 0.35);
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-track {
+        background: transparent;
+    }
 }

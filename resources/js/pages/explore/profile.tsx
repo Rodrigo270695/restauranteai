@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
+import TouristExploreLayout from '@/layouts/tourist-explore-layout';
 import { index as exploreIndex } from '@/routes/explore';
 import { update as updateProfile } from '@/routes/explore/profile';
 
@@ -18,7 +19,20 @@ interface ProfileData {
     preferred_cuisines: string[];
     budget_preference: 'low' | 'medium' | 'high' | null;
 }
-interface Props { profile: ProfileData | null }
+type MlPreference = {
+    cuisine_type_id: number | null;
+    ambiance_id: number | null;
+    price_range: 'economico' | 'moderado' | 'premium' | null;
+    max_distance_km: number | null;
+    party_type: string | null;
+    dietary_restriction: string | null;
+};
+type CatalogItem = { id: number; name: string };
+interface Props {
+    profile: ProfileData | null;
+    mlPreference: MlPreference | null;
+    catalogs: { cuisineTypes: CatalogItem[]; ambiances: CatalogItem[] };
+}
 
 // ─── Constantes de marca ──────────────────────────────────────────────────────
 const BTN_STYLE: React.CSSProperties = {
@@ -40,7 +54,11 @@ const CUISINES = [
 
 type Budget = 'low' | 'medium' | 'high';
 
-export default function ExploreProfile({ profile }: Props) {
+const PARTY_TYPES = ['solo', 'pareja', 'familia', 'amigos', 'negocios'] as const;
+const DIETARY = ['ninguna', 'vegetariano', 'vegano', 'sin_gluten', 'halal'] as const;
+const PRICE_RANGES = ['economico', 'moderado', 'premium'] as const;
+
+function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
     const { t } = useTranslation();
     const { auth, flash } = usePage().props as { auth: { user: AuthUser }; flash?: { success?: boolean } };
     const user = auth.user;
@@ -49,6 +67,12 @@ export default function ExploreProfile({ profile }: Props) {
     const [bio, setBio]       = useState(profile?.bio ?? '');
     const [budget, setBudget] = useState<Budget | null>(profile?.budget_preference ?? null);
     const [cuisines, setCuisines] = useState<string[]>(profile?.preferred_cuisines ?? []);
+    const [cuisineTypeId, setCuisineTypeId] = useState<number | ''>(mlPreference?.cuisine_type_id ?? '');
+    const [ambianceId, setAmbianceId] = useState<number | ''>(mlPreference?.ambiance_id ?? '');
+    const [priceRange, setPriceRange] = useState<(typeof PRICE_RANGES)[number] | ''>(mlPreference?.price_range ?? '');
+    const [maxDistance, setMaxDistance] = useState(mlPreference?.max_distance_km?.toString() ?? '');
+    const [partyType, setPartyType] = useState<string>(mlPreference?.party_type ?? '');
+    const [dietary, setDietary] = useState<string>(mlPreference?.dietary_restriction ?? '');
     const [saving, setSaving] = useState(false);
     const [saved, setSaved]   = useState(false);
 
@@ -67,7 +91,18 @@ export default function ExploreProfile({ profile }: Props) {
         setSaving(true);
         router.post(
             updateProfile.url(),
-            { city, bio, budget_preference: budget, preferred_cuisines: cuisines },
+            {
+                city,
+                bio,
+                budget_preference: budget,
+                preferred_cuisines: cuisines,
+                cuisine_type_id: cuisineTypeId || null,
+                ambiance_id: ambianceId || null,
+                price_range: priceRange || null,
+                max_distance_km: maxDistance ? Number(maxDistance) : null,
+                party_type: partyType || null,
+                dietary_restriction: dietary || null,
+            },
             { onFinish: () => setSaving(false) },
         );
     };
@@ -202,6 +237,99 @@ export default function ExploreProfile({ profile }: Props) {
                         </div>
                     </div>
 
+                    {/* Preferencias ML */}
+                    <div className="rounded-2xl border border-red-100 bg-red-50/30 p-6 shadow-sm">
+                        <h2 className="mb-1 text-sm font-bold text-gray-900">{t('explore.ml_prefs_title')}</h2>
+                        <p className="mb-4 text-xs text-gray-500">{t('explore.ml_prefs_desc')}</p>
+                        <div className="space-y-4">
+                            <div>
+                                <Label className="text-xs text-gray-600">{t('explore.ml_cuisine_primary')}</Label>
+                                <select
+                                    value={cuisineTypeId}
+                                    onChange={e => setCuisineTypeId(e.target.value ? Number(e.target.value) : '')}
+                                    className="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm"
+                                >
+                                    <option value="">{t('explore.ml_select_empty')}</option>
+                                    {catalogs.cuisineTypes.map(c => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <Label className="text-xs text-gray-600">{t('explore.ml_ambiance')}</Label>
+                                <select
+                                    value={ambianceId}
+                                    onChange={e => setAmbianceId(e.target.value ? Number(e.target.value) : '')}
+                                    className="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm"
+                                >
+                                    <option value="">{t('explore.ml_select_empty')}</option>
+                                    {catalogs.ambiances.map(a => (
+                                        <option key={a.id} value={a.id}>{a.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <Label className="text-xs text-gray-600">{t('explore.ml_price_range')}</Label>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {PRICE_RANGES.map(p => (
+                                        <button
+                                            key={p}
+                                            type="button"
+                                            onClick={() => setPriceRange(p)}
+                                            className={cn(
+                                                'rounded-full border px-3 py-1 text-xs font-medium capitalize',
+                                                priceRange === p ? 'border-brand-red bg-brand-red text-white' : 'border-gray-200 bg-white',
+                                            )}
+                                        >
+                                            {p}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <Label className="text-xs text-gray-600">{t('explore.ml_max_distance')}</Label>
+                                <Input
+                                    type="number"
+                                    min={0.5}
+                                    max={200}
+                                    step={0.5}
+                                    value={maxDistance}
+                                    onChange={e => setMaxDistance(e.target.value)}
+                                    placeholder="10"
+                                    className="mt-1 h-11"
+                                />
+                            </div>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <Label className="text-xs text-gray-600">{t('explore.ml_party_type')}</Label>
+                                    <select
+                                        value={partyType}
+                                        onChange={e => setPartyType(e.target.value)}
+                                        className="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm"
+                                    >
+                                        <option value="">{t('explore.ml_select_empty')}</option>
+                                        {PARTY_TYPES.map(p => (
+                                            <option key={p} value={p}>{t(`explore.party_${p}`)}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <Label className="text-xs text-gray-600">{t('explore.ml_dietary')}</Label>
+                                    <select
+                                        value={dietary}
+                                        onChange={e => setDietary(e.target.value)}
+                                        className="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm"
+                                    >
+                                        <option value="">{t('explore.ml_select_empty')}</option>
+                                        {DIETARY.map(d => (
+                                            <option key={d} value={d}>{t(`explore.dietary_${d}`)}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Bio */}
                     <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                         <h2 className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-900">
@@ -242,3 +370,7 @@ export default function ExploreProfile({ profile }: Props) {
         </>
     );
 }
+
+ExploreProfile.layout = (page: React.ReactNode) => <TouristExploreLayout>{page}</TouristExploreLayout>;
+
+export default ExploreProfile;

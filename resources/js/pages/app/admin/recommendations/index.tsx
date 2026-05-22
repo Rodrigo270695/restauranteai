@@ -1,17 +1,12 @@
-﻿import { AppPlaceholderShell } from '@/components/layout/app-placeholder-shell';
+﻿import ReadonlyListPage from '@/components/crud/readonly-list-page';
 import { APP_HREF } from '@/config/app-sidebar-nav';
 import { appBreadcrumbs } from '@/lib/app-breadcrumbs';
 
-const title = 'Recomendaciones';
-const description =
-    'Resultados por solicitud (recommendations): ranking, scores híbridos y señales de aceptación.';
+type Props = Parameters<typeof ReadonlyListPage>[0];
 
-function AppAdminRecommendations() {
-    return <AppPlaceholderShell title={title} description={description} />;
+function Page(props: Props) {
+    return <ReadonlyListPage {...props} />;
 }
 
-export default AppAdminRecommendations;
-
-AppAdminRecommendations.layout = {
-    breadcrumbs: appBreadcrumbs(title, APP_HREF.adminRecommendations),
-};
+export default Page;
+Page.layout = { breadcrumbs: appBreadcrumbs('Recomendaciones', APP_HREF.adminRecommendations) };

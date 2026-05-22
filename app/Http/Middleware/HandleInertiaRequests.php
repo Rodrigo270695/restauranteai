@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\RestaurantScopeService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -43,6 +44,8 @@ class HandleInertiaRequests extends Middleware
                 'roles'       => $request->user()?->getRoleNames()->toArray() ?? [],
                 'permissions' => $request->user()?->getAllPermissions()->pluck('name')->toArray() ?? [],
             ],
+            'actingRestaurant' => $this->resolveActingRestaurant($request),
+            'ownerPanelReadOnly' => app(RestaurantScopeService::class)->isOwnerPanelReadOnly($request),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'flash' => $this->resolveFlash($request),
         ];
@@ -79,5 +82,21 @@ class HandleInertiaRequests extends Middleware
         }
 
         return [];
+    }
+
+    /** @return array<string, mixed>|null */
+    private function resolveActingRestaurant(Request $request): ?array
+    {
+        $scope = app(RestaurantScopeService::class);
+        $restaurant = $scope->actingRestaurant($request);
+
+        if (! $restaurant) {
+            return null;
+        }
+
+        return [
+            'id' => $restaurant->id,
+            'name' => $restaurant->name,
+        ];
     }
 }

@@ -14,6 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->redirectUsersTo(fn () => route('authenticated.home'));
+
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->web(append: [
@@ -28,6 +30,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission'        => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'restaurant.owner.approved'   => \App\Http\Middleware\EnsureRestaurantOwnerApproved::class,
             'restaurant.owner.post_setup' => \App\Http\Middleware\EnsureRestaurantOwnerPostApprovalOnboarding::class,
+            'restaurant.owner.context'    => \App\Http\Middleware\EnsureRestaurantOwnerContext::class,
+            'restaurant.owner.mutate'     => \App\Http\Middleware\EnsureOwnerPanelCanMutate::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

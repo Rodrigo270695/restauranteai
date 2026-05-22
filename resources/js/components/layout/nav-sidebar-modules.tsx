@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 
 type PagePropsWithAuth = {
     auth: { roles: string[]; permissions: string[] };
+    actingRestaurant?: { id: number; name: string } | null;
     [key: string]: unknown;
 };
 
@@ -44,38 +45,84 @@ function itemMatchesPath(itemHref: string, pathname: string): boolean {
     return pathname === itemHref || pathname.startsWith(`${itemHref}/`);
 }
 
+function isSuperAdminOnlyModule(m: SidebarNavModule): boolean {
+    return m.roles.length === 1 && m.roles[0] === 'super_admin';
+}
+
+function isOwnerOnlyModule(m: SidebarNavModule): boolean {
+    return m.roles.length === 1 && m.roles[0] === 'restaurant_owner';
+}
+
 /**
- * El módulo se muestra si el rol encaja con la lista del sidebar **o** si el usuario
- * tiene al menos un permiso que corresponda a algún ítem del módulo (p. ej. turista
- * con `roles.view` debe ver Administración aunque no sea `super_admin`).
+ * Módulos solo super_admin: exigen rol (no basta compartir permiso con el dueño).
+ * Módulos solo dueño: exigen restaurant_owner o suplantación activa.
  */
 function moduleIsReachable(
     m: SidebarNavModule,
     roleSet: Set<string>,
     permSet: Set<string>,
+    isActing: boolean,
 ): boolean {
+    if (isSuperAdminOnlyModule(m)) {
+        return roleSet.has('super_admin');
+    }
+
+    if (isOwnerOnlyModule(m)) {
+        return roleSet.has('restaurant_owner') || (roleSet.has('super_admin') && isActing);
+    }
+
     const byRole = m.roles.some((r) => roleSet.has(r));
     const byPermission = m.items.some(
         (item) => item.permission != null && permSet.has(item.permission),
     );
+
     return byRole || byPermission;
+}
+
+function itemVisible(
+    item: SidebarNavLeaf,
+    m: SidebarNavModule,
+    roleSet: Set<string>,
+    permSet: Set<string>,
+    isActing: boolean,
+): boolean {
+    if (item.permission && !permSet.has(item.permission)) {
+        return false;
+    }
+
+    if (isSuperAdminOnlyModule(m)) {
+        return roleSet.has('super_admin');
+    }
+
+    if (isOwnerOnlyModule(m)) {
+        return roleSet.has('restaurant_owner') || (roleSet.has('super_admin') && isActing);
+    }
+
+    return true;
 }
 
 /** Filtra módulos por rol/permisos y elimina ítems cuyo permiso no tiene el usuario */
 function filterModules(
     roles: string[],
     permissions: string[],
+    isActing: boolean,
 ): (SidebarNavModule & { visibleItems: SidebarNavLeaf[] })[] {
     const roleSet = new Set(roles as AppRole[]);
     const permSet = new Set(permissions);
     const isSuperAdmin = roleSet.has('super_admin');
+    const isOwner = roleSet.has('restaurant_owner');
 
     return sidebarNavModules
-        .filter((m) => moduleIsReachable(m, roleSet, permSet))
+        .filter((m) => {
+            if (isOwnerOnlyModule(m) && isSuperAdmin && !isActing && !isOwner) {
+                return false;
+            }
+            return moduleIsReachable(m, roleSet, permSet, isActing);
+        })
         .map((m) => ({
             ...m,
-            visibleItems: m.items.filter(
-                (item) => !item.permission || isSuperAdmin || permSet.has(item.permission),
+            visibleItems: m.items.filter((item) =>
+                itemVisible(item, m, roleSet, permSet, isActing),
             ),
         }))
         // Ocultar módulo si no tiene ningún ítem visible
@@ -84,9 +131,11 @@ function filterModules(
 
 export function NavSidebarModules({ roles }: { roles: string[] }) {
     const { currentUrl, isCurrentUrl } = useCurrentUrl();
-    const permissions = usePage<PagePropsWithAuth>().props.auth?.permissions ?? [];
+    const page = usePage<PagePropsWithAuth>();
+    const permissions = page.props.auth?.permissions ?? [];
+    const isActing = !!page.props.actingRestaurant;
     const permSet = useMemo(() => new Set(permissions), [permissions]);
-    const modules = useMemo(() => filterModules(roles, permissions), [roles, permissions]);
+    const modules = useMemo(() => filterModules(roles, permissions, isActing), [roles, permissions, isActing]);
 
     const showDashboard =
         !dashboardNavItem.permission || permSet.has(dashboardNavItem.permission);

@@ -180,22 +180,52 @@ const PERMISSION_TREE: Record<string, PermTreeModule> = {
                     'manage_own_restaurant': 'Gestionar mi restaurante',
                 },
             },
-            dishes: {
-                label: 'Platos',
-                permissions: {
-                    'manage_dishes': 'Gestionar platos',
-                },
-            },
             schedules: {
                 label: 'Horarios',
                 permissions: {
                     'manage_schedules': 'Gestionar horarios',
                 },
             },
+            gallery: {
+                label: 'Galería',
+                permissions: {
+                    'manage_gallery': 'Gestionar galería',
+                },
+            },
+            restaurant_services: {
+                label: 'Servicios del local',
+                permissions: {
+                    'manage_restaurant_services': 'Gestionar servicios del local',
+                },
+            },
+            restaurant_languages: {
+                label: 'Idiomas de atención',
+                permissions: {
+                    'manage_restaurant_languages': 'Gestionar idiomas del local',
+                },
+            },
+            dishes: {
+                label: 'Platos',
+                permissions: {
+                    'manage_dishes': 'Gestionar platos',
+                },
+            },
             promotions: {
                 label: 'Promociones',
                 permissions: {
                     'manage_promotions': 'Gestionar promociones',
+                },
+            },
+            reviews: {
+                label: 'Reseñas',
+                permissions: {
+                    'reviews.view': 'Ver reseñas de mi local',
+                },
+            },
+            analytics: {
+                label: 'Estadísticas',
+                permissions: {
+                    'view_analytics': 'Ver estadísticas',
                 },
             },
         },
@@ -213,8 +243,14 @@ const PERMISSION_TREE: Record<string, PermTreeModule> = {
             recommendations: {
                 label: 'Recomendaciones',
                 permissions: {
-                    'recommendations.view':   'Ver recomendaciones',
+                    'recommendations.view': 'Ver recomendaciones',
                     'recommendations.manage': 'Gestionar recomendaciones',
+                },
+            },
+            rec_requests: {
+                label: 'Solicitudes ML',
+                permissions: {
+                    'recommendation_requests.view': 'Ver solicitudes ML',
                 },
             },
         },
