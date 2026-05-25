@@ -19,6 +19,7 @@ class Recommendation extends Model
             'was_viewed' => 'boolean',
             'was_accepted' => 'boolean',
             'score' => 'decimal:6',
+            'created_at' => 'datetime',
         ];
     }
 

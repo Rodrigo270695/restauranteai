@@ -2,7 +2,9 @@
 
 use App\Models\Ambiance;
 use App\Models\CuisineType;
+use App\Models\DietaryOption;
 use App\Models\DishCategory;
+use App\Models\PartyType;
 use App\Models\Service;
 use App\Models\SupportLanguage;
 use App\Models\User;
@@ -67,4 +69,6 @@ test('all admin catalog resources accept update with string route id', function 
     ['services', 'services', Service::class],
     ['dish-categories', 'dish_categories', DishCategory::class],
     ['support-languages', 'languages', SupportLanguage::class],
+    ['party-types', 'party_types', PartyType::class],
+    ['dietary-options', 'dietary_options', DietaryOption::class],
 ]);

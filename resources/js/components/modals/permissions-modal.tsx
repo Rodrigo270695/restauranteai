@@ -168,6 +168,42 @@ const PERMISSION_TREE: Record<string, PermTreeModule> = {
                     'languages.delete': 'Eliminar idioma',
                 },
             },
+            party_types: {
+                label: 'Tipos de salida',
+                permissions: {
+                    'party_types.view':   'Ver tipos de salida',
+                    'party_types.create': 'Crear tipo de salida',
+                    'party_types.edit':   'Editar tipo de salida',
+                    'party_types.delete': 'Eliminar tipo de salida',
+                },
+            },
+            dietary_options: {
+                label: 'Opciones dietéticas',
+                permissions: {
+                    'dietary_options.view':   'Ver opciones dietéticas',
+                    'dietary_options.create': 'Crear opción dietética',
+                    'dietary_options.edit':   'Editar opción dietética',
+                    'dietary_options.delete': 'Eliminar opción dietética',
+                },
+            },
+            restaurant_environments: {
+                label: 'Entornos del restaurante',
+                permissions: {
+                    'restaurant_environments.view':   'Ver entornos',
+                    'restaurant_environments.create': 'Crear entorno',
+                    'restaurant_environments.edit':   'Editar entorno',
+                    'restaurant_environments.delete': 'Eliminar entorno',
+                },
+            },
+            recommended_moments: {
+                label: 'Momentos recomendados',
+                permissions: {
+                    'recommended_moments.view':   'Ver momentos',
+                    'recommended_moments.create': 'Crear momento',
+                    'recommended_moments.edit':   'Editar momento',
+                    'recommended_moments.delete': 'Eliminar momento',
+                },
+            },
         },
     },
     business: {
@@ -238,6 +274,13 @@ const PERMISSION_TREE: Record<string, PermTreeModule> = {
                 label: 'Interacciones',
                 permissions: {
                     'interactions.view': 'Ver interacciones',
+                },
+            },
+            ml_training: {
+                label: 'Entrenamiento ML',
+                permissions: {
+                    'ml_training.view': 'Ver historial de entrenamiento ML',
+                    'ml_training.run': 'Ejecutar entrenamiento ML',
                 },
             },
             recommendations: {

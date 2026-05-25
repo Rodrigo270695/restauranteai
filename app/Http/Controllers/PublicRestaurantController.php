@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Restaurant;
 use App\Support\PublicStorage;
+use App\Support\RestaurantMenuPresenter;
 use Inertia\Inertia;
 
 class PublicRestaurantController extends Controller
@@ -17,7 +18,6 @@ class PublicRestaurantController extends Controller
             'cuisineType:id,name',
             'district:id,name',
             'images' => fn ($q) => $q->orderByDesc('is_cover')->orderBy('display_order'),
-            'dishes' => fn ($q) => $q->where('is_available', true)->with('category:id,name')->limit(8),
         ]);
 
         $cuisines = $restaurant->cuisineTypes->isNotEmpty()
@@ -55,11 +55,7 @@ class PublicRestaurantController extends Controller
                     'url' => PublicStorage::url($img->path),
                     'alt' => $img->alt_text,
                 ])->values()->all(),
-                'dishes' => $restaurant->dishes->map(fn ($d) => [
-                    'name' => $d->name,
-                    'price' => (float) $d->price,
-                    'category' => $d->category?->name,
-                ])->values()->all(),
+                'menu' => RestaurantMenuPresenter::forRestaurant($restaurant),
             ],
         ]);
     }

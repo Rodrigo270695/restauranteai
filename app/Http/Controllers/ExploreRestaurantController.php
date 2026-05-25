@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Restaurant;
 use App\Services\RestaurantExploreService;
 use App\Services\TouristRouteService;
+use App\Services\UserInteractionService;
 use App\Support\PublicStorage;
+use App\Support\RestaurantMenuPresenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
@@ -17,6 +19,7 @@ class ExploreRestaurantController extends Controller
         Restaurant $restaurant,
         RestaurantExploreService $explore,
         TouristRouteService $routes,
+        UserInteractionService $interactions,
     ): mixed {
         if (! $request->user()?->hasRole('tourist')) {
             return Redirect::route('dashboard');
@@ -30,11 +33,18 @@ class ExploreRestaurantController extends Controller
             'district:id,name',
             'images' => fn ($q) => $q->orderByDesc('is_cover')->orderBy('display_order'),
             'schedules',
-            'dishes' => fn ($q) => $q->where('is_available', true)->with('category:id,name')->limit(8),
         ]);
 
-        $draft = $routes->draftFor($request->user());
+        $user = $request->user();
+        $draft = $routes->draftFor($user);
         $inRoute = $draft->stops()->where('restaurant_id', $restaurant->id)->exists();
+
+        $interactions->recordViewOnce($user, $restaurant);
+
+        if ($request->boolean('from_recommendation')) {
+            $requestId = $request->integer('request_id') ?: null;
+            $interactions->markRecommendationEngagement($user, $restaurant, $requestId);
+        }
 
         $cuisines = $restaurant->cuisineTypes->isNotEmpty()
             ? $restaurant->cuisineTypes
@@ -64,14 +74,11 @@ class ExploreRestaurantController extends Controller
                     'url' => PublicStorage::url($img->path),
                     'alt' => $img->alt_text,
                 ])->values()->all(),
-                'dishes' => $restaurant->dishes->map(fn ($d) => [
-                    'name' => $d->name,
-                    'price' => (float) $d->price,
-                    'category' => $d->category?->name,
-                ])->values()->all(),
+                'menu' => RestaurantMenuPresenter::forRestaurant($restaurant),
             ],
             'inRoute' => $inRoute,
             'draftStopsCount' => $draft->stops_count,
+            'isFavorited' => $interactions->isFavorited($user, $restaurant),
         ]);
     }
 }

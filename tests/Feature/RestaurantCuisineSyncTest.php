@@ -5,6 +5,7 @@ use App\Models\Restaurant;
 use App\Models\RestaurantProfile;
 use App\Models\User;
 use App\Services\RestaurantCuisineService;
+use Database\Seeders\CatalogSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -12,6 +13,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
+    $this->seed(CatalogSeeder::class);
 });
 
 test('restaurant can sync multiple cuisine types with one primary', function () {

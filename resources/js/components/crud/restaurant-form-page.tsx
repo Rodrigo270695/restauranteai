@@ -12,6 +12,7 @@ import {
 import { useEffect, useState } from 'react';
 import { FormField } from '@/components/modals/resource-modal';
 import { PageHeader, STAT_COLORS, type StatBadge } from '@/components/shared/page-header';
+import { CatalogChipMultiSelect } from '@/components/shared/catalog-chip-multi-select';
 import { CuisineTypeMultiSelect } from '@/components/shared/cuisine-type-multi-select';
 import {
     GeoCascadeSelect,
@@ -46,6 +47,16 @@ type Props = {
     cuisineTypes: Option[];
     cuisineSelection: { ids: number[]; primary_id: number | null };
     ambiances: Option[];
+    partyTypes: Option[];
+    dietaryOptions: Option[];
+    restaurantEnvironments: Option[];
+    recommendedMoments: Option[];
+    audienceSelection: {
+        party_type_ids: number[];
+        dietary_option_ids: number[];
+        restaurant_environment_ids: number[];
+        recommended_moment_ids: number[];
+    };
     stats: {
         is_active: boolean;
         is_verified: boolean;
@@ -130,6 +141,11 @@ export function RestaurantFormPage({
     cuisineTypes,
     cuisineSelection,
     ambiances,
+    partyTypes,
+    dietaryOptions,
+    restaurantEnvironments,
+    recommendedMoments,
+    audienceSelection,
     stats,
     panel,
 }: Props) {
@@ -148,6 +164,8 @@ export function RestaurantFormPage({
         cuisine_type_ids: cuisineSelection.ids ?? [],
         primary_cuisine_type_id: cuisineSelection.primary_id,
         ambiance_id: restaurant.ambiance_id ?? ('' as number | ''),
+        party_type_ids: audienceSelection.party_type_ids ?? [],
+        dietary_option_ids: audienceSelection.dietary_option_ids ?? [],
         phone: restaurant.phone ?? '',
         whatsapp: restaurant.whatsapp ?? '',
         email: restaurant.email ?? '',
@@ -340,7 +358,7 @@ export function RestaurantFormPage({
 
                     <FormSection
                         title="Experiencia gastronómica"
-                        description="Tipos de cocina (puedes elegir varios), ambiente y rango de precios."
+                        description="Cocinas, ambiente, tipos de salida y opciones dietéticas que ofrece el local (para recomendaciones IA)."
                         icon={<UtensilsCrossed className="size-4" />}
                         palette={SECTION.experience}
                     >
@@ -385,6 +403,74 @@ export function RestaurantFormPage({
                                         </option>
                                     ))}
                                 </select>
+                            </FormField>
+                        </FieldSpan>
+                        <FieldSpan full>
+                            <FormField
+                                label="Tipos de salida adecuados"
+                                htmlFor="r-party-types"
+                                error={(form.errors as Record<string, string | undefined>)['party_type_ids']}
+                            >
+                                <p className="mb-2 text-xs text-muted-foreground">
+                                    Indica para qué visitas es ideal tu local (puedes marcar varias).
+                                </p>
+                                <CatalogChipMultiSelect
+                                    options={partyTypes}
+                                    selectedIds={form.data.party_type_ids as number[]}
+                                    onChange={(ids) => form.setData('party_type_ids', ids)}
+                                    disabled={form.processing || readOnly}
+                                />
+                            </FormField>
+                        </FieldSpan>
+                        <FieldSpan full>
+                            <FormField
+                                label="Opciones dietéticas que atiendes"
+                                htmlFor="r-dietary"
+                                error={(form.errors as Record<string, string | undefined>)['dietary_option_ids']}
+                            >
+                                <p className="mb-2 text-xs text-muted-foreground">
+                                    Marca las restricciones o estilos que tu carta puede cubrir.
+                                </p>
+                                <CatalogChipMultiSelect
+                                    options={dietaryOptions}
+                                    selectedIds={form.data.dietary_option_ids as number[]}
+                                    onChange={(ids) => form.setData('dietary_option_ids', ids)}
+                                    disabled={form.processing || readOnly}
+                                />
+                            </FormField>
+                        </FieldSpan>
+                        <FieldSpan full>
+                            <FormField
+                                label="Entorno del restaurante"
+                                htmlFor="r-environments"
+                                error={(form.errors as Record<string, string | undefined>)['restaurant_environment_ids']}
+                            >
+                                <p className="mb-2 text-xs text-muted-foreground">
+                                    Describe el entorno físico de tu local (puedes marcar varios).
+                                </p>
+                                <CatalogChipMultiSelect
+                                    options={restaurantEnvironments}
+                                    selectedIds={form.data.restaurant_environment_ids as number[]}
+                                    onChange={(ids) => form.setData('restaurant_environment_ids', ids)}
+                                    disabled={form.processing || readOnly}
+                                />
+                            </FormField>
+                        </FieldSpan>
+                        <FieldSpan full>
+                            <FormField
+                                label="Momento recomendado"
+                                htmlFor="r-moments"
+                                error={(form.errors as Record<string, string | undefined>)['recommended_moment_ids']}
+                            >
+                                <p className="mb-2 text-xs text-muted-foreground">
+                                    Indica en qué momentos del día recomiendas visitar tu local.
+                                </p>
+                                <CatalogChipMultiSelect
+                                    options={recommendedMoments}
+                                    selectedIds={form.data.recommended_moment_ids as number[]}
+                                    onChange={(ids) => form.setData('recommended_moment_ids', ids)}
+                                    disabled={form.processing || readOnly}
+                                />
                             </FormField>
                         </FieldSpan>
                         <FieldSpan>

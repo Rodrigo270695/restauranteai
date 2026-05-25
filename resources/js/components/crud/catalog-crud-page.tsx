@@ -42,6 +42,10 @@ const CATALOG_PATH: Record<string, string> = {
     services: APP_HREF.adminServices,
     dish_categories: APP_HREF.adminDishCategories,
     languages: APP_HREF.adminLanguages,
+    party_types: APP_HREF.adminPartyTypes,
+    dietary_options: APP_HREF.adminDietaryOptions,
+    restaurant_environments: APP_HREF.adminRestaurantEnvironments,
+    recommended_moments: APP_HREF.adminRecommendedMoments,
 };
 
 const ONLY = ['items', 'stats', 'filters'] as const;

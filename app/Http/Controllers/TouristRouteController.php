@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Restaurant;
 use App\Models\TouristRoute;
 use App\Services\TouristRouteService;
+use App\Services\UserInteractionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 
 class TouristRouteController extends Controller
@@ -60,10 +60,16 @@ class TouristRouteController extends Controller
         ]);
     }
 
-    public function addStop(Request $request, Restaurant $restaurant, TouristRouteService $service): RedirectResponse
-    {
+    public function addStop(
+        Request $request,
+        Restaurant $restaurant,
+        TouristRouteService $service,
+        UserInteractionService $interactions,
+    ): RedirectResponse {
         $this->ensureTourist($request);
-        $service->addStop($request->user(), $restaurant);
+        $user = $request->user();
+        $service->addStop($user, $restaurant);
+        $interactions->markRecommendationAccepted($user, $restaurant);
 
         return back()->with('success', 'Lugar agregado a tu ruta.');
     }

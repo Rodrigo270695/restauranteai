@@ -30,6 +30,28 @@ class TouristRouteService
         );
     }
 
+    /**
+     * Reemplaza todas las paradas del borrador por la lista ordenada (p. ej. ruta IA).
+     *
+     * @param  list<Restaurant>  $restaurants
+     */
+    public function replaceDraftStops(User $user, array $restaurants): TouristRoute
+    {
+        $route = $this->draftFor($user);
+        $route->stops()->delete();
+
+        foreach (array_slice($restaurants, 0, 8) as $restaurant) {
+            abort_unless($restaurant->is_active && $restaurant->is_verified, 404);
+            TouristRouteStop::create([
+                'tourist_route_id' => $route->id,
+                'restaurant_id' => $restaurant->id,
+                'position' => (int) $route->stops()->max('position') + 1,
+            ]);
+        }
+
+        return $this->refreshMetrics($route);
+    }
+
     public function addStop(User $user, Restaurant $restaurant): TouristRoute
     {
         abort_unless($restaurant->is_active && $restaurant->is_verified, 404);

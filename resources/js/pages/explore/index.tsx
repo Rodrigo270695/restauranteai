@@ -1,24 +1,24 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowRight,
     ClipboardList,
-    Beef,
     ChefHat,
-    Coffee,
     Fish,
     Flame,
-    IceCream,
     MapPin,
-    Pizza,
     Search,
     Sparkles,
     Star,
     UtensilsCrossed,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { profile as exploreProfile, tamSurvey } from '@/routes/explore';
+import { AiRouteGenerateButton } from '@/components/explore/ai-route-generate-button';
+import { RestaurantCard, type RestaurantCardData } from '@/components/explore/restaurant-card';
+import { exploreDiscoverUrl } from '@/lib/explore-discover-url';
+import { profile as exploreProfile, recommend as exploreRecommend, tamSurvey } from '@/routes/explore';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 interface AuthUser { id: number; name: string; email: string }
@@ -35,30 +35,47 @@ interface MlPreference {
     cuisine: string | null;
     ambiance: string | null;
     price_range: string | null;
-    party_type: string | null;
-    dietary_restriction: string | null;
+    party_types: string[];
+    dietary_options: string[];
+    restaurant_environments: string[];
+    recommended_moments: string[];
     max_distance_km: number | null;
+}
+
+interface RecommendationMeta {
+    algorithm: string;
+    cold_start: boolean;
+    ml_available: boolean;
+    request_id: number;
+}
+
+interface CuisineTypeItem {
+    id: number;
+    name: string;
+    slug: string;
 }
 
 interface Props {
     profile: TouristProfile | null;
     mlPreference: MlPreference | null;
     tamCompleted: boolean;
+    recommendations: (RestaurantCardData & { rank: number; recommendation_score: number })[];
+    recommendationMeta?: RecommendationMeta;
+    cuisineTypes: CuisineTypeItem[];
 }
 
-// ─── Categorías de cocina con íconos ─────────────────────────────────────────
-const CUISINE_CATEGORIES = [
-    { name: 'Criolla',       icon: ChefHat,       color: 'bg-orange-50  text-orange-600  border-orange-100' },
-    { name: 'Mariscos',      icon: Fish,           color: 'bg-blue-50    text-blue-600    border-blue-100' },
-    { name: 'Ceviche',       icon: Fish,           color: 'bg-cyan-50    text-cyan-600    border-cyan-100' },
-    { name: 'Parrilla',      icon: Flame,          color: 'bg-red-50     text-red-600     border-red-100' },
-    { name: 'Pollo a la brasa', icon: Beef,        color: 'bg-amber-50   text-amber-600   border-amber-100' },
-    { name: 'Vegetariana',   icon: UtensilsCrossed,color: 'bg-green-50   text-green-600   border-green-100' },
-    { name: 'Pizza',         icon: Pizza,          color: 'bg-yellow-50  text-yellow-600  border-yellow-100' },
-    { name: 'Postres',       icon: IceCream,       color: 'bg-pink-50    text-pink-600    border-pink-100' },
-    { name: 'Desayunos',     icon: Coffee,         color: 'bg-lime-50    text-lime-600    border-lime-100' },
-    { name: 'Chifa',         icon: UtensilsCrossed,color: 'bg-red-50     text-red-700     border-red-100' },
-];
+const CUISINE_STYLES: Record<string, { icon: LucideIcon; color: string }> = {
+    criolla: { icon: ChefHat, color: 'bg-orange-50 text-orange-600 border-orange-100' },
+    marina: { icon: Fish, color: 'bg-blue-50 text-blue-600 border-blue-100' },
+    ceviche: { icon: Fish, color: 'bg-cyan-50 text-cyan-600 border-cyan-100' },
+    chifa: { icon: UtensilsCrossed, color: 'bg-red-50 text-red-700 border-red-100' },
+    lambayecana: { icon: Flame, color: 'bg-amber-50 text-amber-700 border-amber-100' },
+};
+
+const DEFAULT_CUISINE_STYLE = {
+    icon: UtensilsCrossed,
+    color: 'bg-gray-50 text-gray-600 border-gray-100',
+};
 
 // ─── Presupuesto legible ──────────────────────────────────────────────────────
 function BudgetBadge({ budget, t }: { budget: string; t: (k: string) => string }) {
@@ -75,25 +92,14 @@ function BudgetBadge({ budget, t }: { budget: string; t: (k: string) => string }
     );
 }
 
-// ─── Placeholder de recomendación ─────────────────────────────────────────────
-function RecommendationSkeleton() {
-    return (
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-                <div className="h-36 animate-pulse bg-linear-to-br from-gray-100 to-gray-200" />
-            <div className="p-4 space-y-2">
-                <div className="h-4 w-3/4 animate-pulse rounded bg-gray-100" />
-                <div className="h-3 w-1/2 animate-pulse rounded bg-gray-100" />
-                <div className="flex items-center gap-1 pt-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                        <Star key={i} className="h-3 w-3 fill-gray-200 text-gray-200" />
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-export default function ExploreIndex({ profile, mlPreference, tamCompleted }: Props) {
+export default function ExploreIndex({
+    profile,
+    mlPreference,
+    tamCompleted,
+    recommendations = [],
+    recommendationMeta,
+    cuisineTypes = [],
+}: Props) {
     const { t } = useTranslation();
     const { auth } = usePage().props as { auth: { user: AuthUser } };
     const user = auth.user;
@@ -151,47 +157,102 @@ export default function ExploreIndex({ profile, mlPreference, tamCompleted }: Pr
                         {/* Categorías de cocina */}
                         <section>
                             <h2 className="mb-4 text-lg font-bold text-gray-900">{t('explore.categories_title')}</h2>
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
-                                {CUISINE_CATEGORIES.map(({ name, icon: Icon, color }) => (
-                                    <button
-                                        key={name}
-                                        type="button"
-                                        className={cn(
-                                            'flex cursor-pointer flex-col items-center gap-2 rounded-2xl border p-4 text-center transition-all duration-150 hover:shadow-md hover:-translate-y-0.5',
-                                            color,
-                                        )}
-                                    >
-                                        <Icon className="h-6 w-6" />
-                                        <span className="text-xs font-semibold leading-tight">{name}</span>
-                                    </button>
-                                ))}
-                            </div>
+                            {cuisineTypes.length > 0 ? (
+                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
+                                    {cuisineTypes.map((cuisine) => {
+                                        const style = CUISINE_STYLES[cuisine.slug] ?? DEFAULT_CUISINE_STYLE;
+                                        const Icon = style.icon;
+                                        return (
+                                            <button
+                                                key={cuisine.id}
+                                                type="button"
+                                                onClick={() =>
+                                                    router.get(
+                                                        exploreDiscoverUrl({
+                                                            search: search || undefined,
+                                                            cuisine_type_id: cuisine.id,
+                                                        }),
+                                                    )
+                                                }
+                                                className={cn(
+                                                    'flex cursor-pointer flex-col items-center gap-2 rounded-2xl border p-4 text-center transition-all duration-150 hover:shadow-md hover:-translate-y-0.5',
+                                                    style.color,
+                                                )}
+                                            >
+                                                <Icon className="h-6 w-6" />
+                                                <span className="text-xs font-semibold leading-tight">{cuisine.name}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <p className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">
+                                    {t('explore.no_cuisine_types')}
+                                </p>
+                            )}
                         </section>
 
-                        {/* Recomendaciones — Próximamente */}
+                        {/* Recomendaciones IA */}
                         <section>
-                            <div className="mb-4 flex items-center justify-between">
+                            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                                 <div>
                                     <h2 className="text-lg font-bold text-gray-900">{t('explore.recommendations_title')}</h2>
                                     <p className="text-xs text-gray-400">{t('explore.recommendations_desc')}</p>
                                 </div>
-                                <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-brand-red">
-                                    <Sparkles className="h-3 w-3" />
-                                    {t('explore.coming_soon')}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    {recommendationMeta && (
+                                        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-medium text-gray-600">
+                                            {recommendationMeta.ml_available
+                                                ? t('explore.ml_engine_active')
+                                                : t('explore.ml_engine_fallback')}
+                                        </span>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => router.post(exploreRecommend.url())}
+                                        className="flex cursor-pointer items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-brand-red transition hover:bg-red-100"
+                                    >
+                                        <Sparkles className="h-3 w-3" />
+                                        {t('explore.refresh_recommendations')}
+                                    </button>
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                {Array.from({ length: 4 }).map((_, i) => (
-                                    <RecommendationSkeleton key={i} />
-                                ))}
-                            </div>
+                            {recommendations.length > 0 ? (
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    {recommendations.map(r => (
+                                        <RestaurantCard
+                                            key={r.id}
+                                            restaurant={r}
+                                            fromRecommendation
+                                            recommendationRequestId={recommendationMeta?.request_id}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="rounded-2xl border border-dashed border-red-200 bg-red-50/60 p-5 text-center">
+                                    <Sparkles className="mx-auto mb-2 h-6 w-6 text-brand-red opacity-60" />
+                                    <p className="text-sm font-medium text-gray-700">{t('explore.no_recommendations')}</p>
+                                    <Link
+                                        href={exploreProfile.url()}
+                                        className="mt-3 inline-flex text-xs font-semibold text-brand-red hover:underline"
+                                    >
+                                        {t('explore.complete_profile_btn')}
+                                    </Link>
+                                </div>
+                            )}
 
-                            <div className="mt-4 rounded-2xl border border-dashed border-red-200 bg-red-50/60 p-5 text-center">
-                                <Sparkles className="mx-auto mb-2 h-6 w-6 text-brand-red opacity-60" />
-                                <p className="text-sm font-medium text-gray-700">{t('explore.coming_soon_desc')}</p>
+                            <div className="mt-4 text-center">
+                                <Link
+                                    href={exploreDiscoverUrl({ search: search || undefined })}
+                                    className="inline-flex items-center gap-1 text-sm font-semibold text-brand-red hover:underline"
+                                >
+                                    {t('explore.browse_all')} <ArrowRight className="h-4 w-4" />
+                                </Link>
                             </div>
                         </section>
+
+                        <AiRouteGenerateButton />
                     </div>
 
                     {/* ── Panel lateral ──────────────────────────────────── */}
@@ -292,6 +353,18 @@ export default function ExploreIndex({ profile, mlPreference, tamCompleted }: Pr
                                     {mlPreference.cuisine && <li>• {mlPreference.cuisine}</li>}
                                     {mlPreference.ambiance && <li>• {mlPreference.ambiance}</li>}
                                     {mlPreference.price_range && <li>• {mlPreference.price_range}</li>}
+                                    {mlPreference.party_types?.map(p => (
+                                        <li key={p}>• {p}</li>
+                                    ))}
+                                    {mlPreference.dietary_options?.map(d => (
+                                        <li key={d}>• {d}</li>
+                                    ))}
+                                    {mlPreference.restaurant_environments?.map(e => (
+                                        <li key={e}>• {e}</li>
+                                    ))}
+                                    {mlPreference.recommended_moments?.map(m => (
+                                        <li key={m}>• {m}</li>
+                                    ))}
                                 </ul>
                             </div>
                         )}

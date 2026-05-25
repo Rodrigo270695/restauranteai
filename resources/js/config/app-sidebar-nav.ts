@@ -17,9 +17,11 @@ import {
     Tag,
     Tags,
     Timer,
+    UserRound,
     Users,
     UtensilsCrossed,
     Wine,
+    Salad,
 } from 'lucide-react';
 
 export type AppRole = 'super_admin' | 'restaurant_owner';
@@ -61,6 +63,11 @@ export const APP_HREF = {
     adminServices: '/app/admin/services',
     adminDishCategories: '/app/admin/dish-categories',
     adminLanguages: '/app/admin/support-languages',
+    adminPartyTypes: '/app/admin/party-types',
+    adminDietaryOptions: '/app/admin/dietary-options',
+    adminRestaurantEnvironments: '/app/admin/restaurant-environments',
+    adminRecommendedMoments: '/app/admin/recommended-moments',
+    adminMlTraining: '/app/admin/ml-training',
     adminInteractions: '/app/admin/user-interactions',
     adminRecRequests: '/app/admin/recommendation-requests',
     adminRecommendations: '/app/admin/recommendations',
@@ -140,11 +147,15 @@ export const sidebarNavModules: SidebarNavModule[] = [
         roles: ['super_admin'],
         items: [
             { title: 'Geografía', href: APP_HREF.adminGeography, icon: MapPinned, permission: 'geography.view' },
-            { title: 'Tipos de cocina', href: APP_HREF.adminCuisineTypes, icon: UtensilsCrossed, permission: 'cuisine_types.view' },
+            { title: 'Especialidad Gastronómica', href: APP_HREF.adminCuisineTypes, icon: UtensilsCrossed, permission: 'cuisine_types.view' },
             { title: 'Ambientes', href: APP_HREF.adminAmbiances, icon: Sparkles, permission: 'ambiances.view' },
             { title: 'Servicios (catálogo)', href: APP_HREF.adminServices, icon: Settings2, permission: 'services.view' },
             { title: 'Categorías de platos', href: APP_HREF.adminDishCategories, icon: BookOpen, permission: 'dish_categories.view' },
             { title: 'Idiomas soportados', href: APP_HREF.adminLanguages, icon: Globe2, permission: 'languages.view' },
+            { title: 'Tipos de salida', href: APP_HREF.adminPartyTypes, icon: UserRound, permission: 'party_types.view' },
+            { title: 'Opciones dietéticas', href: APP_HREF.adminDietaryOptions, icon: Salad, permission: 'dietary_options.view' },
+            { title: 'Entornos del restaurante', href: APP_HREF.adminRestaurantEnvironments, icon: MapPinned, permission: 'restaurant_environments.view' },
+            { title: 'Momentos recomendados', href: APP_HREF.adminRecommendedMoments, icon: Timer, permission: 'recommended_moments.view' },
         ],
     },
     {
@@ -153,6 +164,11 @@ export const sidebarNavModules: SidebarNavModule[] = [
         icon: Network,
         roles: ['super_admin'],
         items: [
+            {
+                title: 'Entrenamiento ML',
+                href: APP_HREF.adminMlTraining,
+                icon: Sparkles,
+            },
             { title: 'Interacciones', href: APP_HREF.adminInteractions, icon: Network, permission: 'interactions.view' },
             {
                 title: 'Solicitudes ML',

@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { logout } from '@/routes';
+import { profile as exploreProfile } from '@/routes/explore';
 import type { User as UserType } from '@/types';
 
 interface NavUserMenuProps {
@@ -86,7 +87,7 @@ export function NavUserMenu({ user, scrolled = false }: NavUserMenuProps) {
                 {/* Turista → Portal turista */}
                 {isTourist && (
                     <DropdownMenuItem asChild>
-                        <Link href="/explore" className="flex cursor-pointer items-center gap-2">
+                        <Link href={exploreProfile.url()} className="flex cursor-pointer items-center gap-2">
                             <User className="h-4 w-4" />
                             {t('explore.my_profile')}
                         </Link>

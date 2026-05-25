@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { Map, Route, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '@/components/common/language-switcher';
+import { useFlashToast } from '@/hooks/use-flash-toast';
 import { useLanguageSync } from '@/hooks/use-language-sync';
 import { cn } from '@/lib/utils';
 import { exploreDiscoverUrl } from '@/lib/explore-discover-url';
@@ -19,6 +20,7 @@ const NAV = [
 
 export default function TouristExploreLayout({ children, wide = false }: Props) {
     useLanguageSync();
+    useFlashToast();
     const { t } = useTranslation();
     const { url } = usePage();
 

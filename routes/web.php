@@ -5,37 +5,40 @@ use App\Http\Controllers\Admin\AdminReviewController;
 use App\Http\Controllers\Admin\BusinessRequestController;
 use App\Http\Controllers\Admin\CatalogController;
 use App\Http\Controllers\Admin\GeographyController;
+use App\Http\Controllers\Admin\MlTrainingController;
 use App\Http\Controllers\Admin\ReadOnlyDataController;
 use App\Http\Controllers\Admin\RestaurantController as AdminRestaurantController;
 use App\Http\Controllers\Admin\RestaurantHubController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\App\AnalyticsController;
-use App\Http\Controllers\App\RestaurantLanguagesController;
-use App\Http\Controllers\App\RestaurantServicesController;
-use App\Http\Controllers\App\RestaurantController as AppRestaurantController;
 use App\Http\Controllers\App\DishController;
 use App\Http\Controllers\App\GalleryController;
 use App\Http\Controllers\App\PromotionController;
+use App\Http\Controllers\App\RestaurantController as AppRestaurantController;
+use App\Http\Controllers\App\RestaurantLanguagesController;
+use App\Http\Controllers\App\RestaurantServicesController;
 use App\Http\Controllers\App\ReviewController;
 use App\Http\Controllers\App\ScheduleController;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Controllers\AuthenticatedHomeController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExploreController;
 use App\Http\Controllers\ExploreDiscoverController;
-use App\Http\Controllers\PublicRestaurantController;
-use App\Http\Controllers\AuthenticatedHomeController;
-use App\Http\Controllers\ContactController;
-use App\Http\Controllers\NearbyRestaurantsController;
-use App\Http\Controllers\WelcomeController;
+use App\Http\Controllers\ExploreRecommendationController;
 use App\Http\Controllers\ExploreRestaurantController;
-use App\Http\Controllers\TouristRouteController;
+use App\Http\Controllers\ExploreRestaurantInteractionController;
+use App\Http\Controllers\ExploreRouteRecommendationController;
+use App\Http\Controllers\NearbyRestaurantsController;
 use App\Http\Controllers\OwnerPendingController;
+use App\Http\Controllers\PublicRestaurantController;
 use App\Http\Controllers\RucValidationController;
 use App\Http\Controllers\TamSurveyController;
 use App\Http\Controllers\TouristProfileController;
+use App\Http\Controllers\TouristRouteController;
+use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Features;
 
 Route::get('/', WelcomeController::class)->name('home');
 Route::middleware('auth')->get('/inicio', AuthenticatedHomeController::class)->name('authenticated.home');
@@ -168,6 +171,10 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
                 'services' => 'services',
                 'dish-categories' => 'dish_categories',
                 'support-languages' => 'languages',
+                'party-types' => 'party_types',
+                'dietary-options' => 'dietary_options',
+                'restaurant-environments' => 'restaurant_environments',
+                'recommended-moments' => 'recommended_moments',
             ];
             foreach ($catalogs as $path => $key) {
                 Route::get($path, [CatalogController::class, 'index'])->defaults('catalog', $key)->name(str_replace('-', '_', $path));
@@ -175,6 +182,9 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
                 Route::put("{$path}/{item}", [CatalogController::class, 'update'])->defaults('catalog', $key)->name(str_replace('-', '_', $path).'.update');
                 Route::delete("{$path}/{item}", [CatalogController::class, 'destroy'])->defaults('catalog', $key)->name(str_replace('-', '_', $path).'.destroy');
             }
+
+            Route::get('ml-training', [MlTrainingController::class, 'index'])->name('ml-training.index');
+            Route::post('ml-training', [MlTrainingController::class, 'store'])->name('ml-training.store');
 
             Route::get('user-interactions', [ReadOnlyDataController::class, 'userInteractions'])->name('user-interactions');
             Route::get('recommendation-requests', [ReadOnlyDataController::class, 'recommendationRequests'])->name('recommendation-requests');
@@ -186,9 +196,13 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
 
 // ── Portal Turista ────────────────────────────────────────────────────────────
 Route::middleware(['auth', 'verified'])->prefix('explore')->name('explore.')->group(function () {
-    Route::get('/', ExploreDiscoverController::class)->name('index');
+    Route::get('/', [ExploreController::class, 'index'])->name('index');
     Route::get('/discover', ExploreDiscoverController::class)->name('discover');
+    Route::post('/recommend', ExploreRecommendationController::class)->name('recommend');
+    Route::post('/routes/recommend', ExploreRouteRecommendationController::class)->name('routes.recommend');
     Route::get('/restaurants/{restaurant:slug}', [ExploreRestaurantController::class, 'show'])->name('restaurants.show');
+    Route::post('/restaurants/{restaurant:slug}/interactions', [ExploreRestaurantInteractionController::class, 'store'])
+        ->name('restaurants.interactions');
     Route::get('/profile', [ExploreController::class, 'profile'])->name('profile');
     Route::post('/profile', [ExploreController::class, 'updateProfile'])->name('profile.update');
     Route::get('/tam-survey', [TamSurveyController::class, 'show'])->name('tam-survey');

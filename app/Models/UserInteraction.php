@@ -11,6 +11,13 @@ class UserInteraction extends Model
 
     protected $fillable = ['user_id', 'restaurant_id', 'interaction_type', 'search_query'];
 
+    protected function casts(): array
+    {
+        return [
+            'created_at' => 'datetime',
+        ];
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

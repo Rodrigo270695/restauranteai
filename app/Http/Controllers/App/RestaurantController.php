@@ -7,7 +7,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Ambiance;
 use App\Models\CuisineType;
 use App\Models\Department;
+use App\Models\DietaryOption;
+use App\Models\PartyType;
+use App\Models\RecommendedMoment;
 use App\Models\Restaurant;
+use App\Models\RestaurantEnvironment;
 use App\Services\RestaurantCuisineService;
 use App\Services\RestaurantScopeService;
 use App\Support\OwnerPanel;
@@ -37,6 +41,10 @@ class RestaurantController extends Controller
             'cuisineType:id,name',
             'cuisineTypes:id,name',
             'ambiance:id,name',
+            'partyTypes:id,name',
+            'dietaryOptions:id,name',
+            'restaurantEnvironments:id,name',
+            'recommendedMoments:id,name',
             'district:id,name,province_id',
             'district.province:id,name,department_id',
             'district.province.department:id,name',
@@ -65,6 +73,20 @@ class RestaurantController extends Controller
                     ?? $restaurant->cuisine_type_id,
             ],
             'ambiances' => Ambiance::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'partyTypes' => PartyType::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'dietaryOptions' => DietaryOption::query()
+                ->where('is_active', true)
+                ->where('for_restaurant', true)
+                ->orderBy('name')
+                ->get(['id', 'name']),
+            'restaurantEnvironments' => RestaurantEnvironment::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'recommendedMoments' => RecommendedMoment::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'audienceSelection' => [
+                'party_type_ids' => $restaurant->partyTypes->pluck('id')->all(),
+                'dietary_option_ids' => $restaurant->dietaryOptions->pluck('id')->all(),
+                'restaurant_environment_ids' => $restaurant->restaurantEnvironments->pluck('id')->all(),
+                'recommended_moment_ids' => $restaurant->recommendedMoments->pluck('id')->all(),
+            ],
             'stats' => [
                 'is_active' => (bool) $restaurant->is_active,
                 'is_verified' => (bool) $restaurant->is_verified,
@@ -92,6 +114,14 @@ class RestaurantController extends Controller
             'cuisine_type_ids.*' => ['integer', 'exists:cuisine_types,id'],
             'primary_cuisine_type_id' => ['nullable', 'integer', 'exists:cuisine_types,id'],
             'ambiance_id' => ['nullable', 'exists:ambiances,id'],
+            'party_type_ids' => ['nullable', 'array'],
+            'party_type_ids.*' => ['integer', 'exists:party_types,id'],
+            'dietary_option_ids' => ['nullable', 'array'],
+            'dietary_option_ids.*' => ['integer', 'exists:dietary_options,id'],
+            'restaurant_environment_ids' => ['nullable', 'array'],
+            'restaurant_environment_ids.*' => ['integer', 'exists:restaurant_environments,id'],
+            'recommended_moment_ids' => ['nullable', 'array'],
+            'recommended_moment_ids.*' => ['integer', 'exists:recommended_moments,id'],
             'phone' => ['nullable', 'string', 'max:20'],
             'whatsapp' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:100'],
@@ -106,10 +136,49 @@ class RestaurantController extends Controller
 
         $cuisineIds = $data['cuisine_type_ids'] ?? [];
         $primaryCuisineId = $data['primary_cuisine_type_id'] ?? null;
-        unset($data['cuisine_type_ids'], $data['primary_cuisine_type_id']);
+        $partyTypeIds = $data['party_type_ids'] ?? [];
+        $dietaryOptionIds = $data['dietary_option_ids'] ?? [];
+        $environmentIds = $data['restaurant_environment_ids'] ?? [];
+        $momentIds = $data['recommended_moment_ids'] ?? [];
+        unset(
+            $data['cuisine_type_ids'],
+            $data['primary_cuisine_type_id'],
+            $data['party_type_ids'],
+            $data['dietary_option_ids'],
+            $data['restaurant_environment_ids'],
+            $data['recommended_moment_ids'],
+        );
 
         $restaurant->update($data);
         $cuisineService->sync($restaurant, $cuisineIds, $primaryCuisineId);
+
+        $validPartyIds = PartyType::query()
+            ->where('is_active', true)
+            ->whereIn('id', $partyTypeIds)
+            ->pluck('id')
+            ->all();
+        $validDietaryIds = DietaryOption::query()
+            ->where('is_active', true)
+            ->where('for_restaurant', true)
+            ->whereIn('id', $dietaryOptionIds)
+            ->pluck('id')
+            ->all();
+
+        $validEnvironmentIds = RestaurantEnvironment::query()
+            ->where('is_active', true)
+            ->whereIn('id', $environmentIds)
+            ->pluck('id')
+            ->all();
+        $validMomentIds = RecommendedMoment::query()
+            ->where('is_active', true)
+            ->whereIn('id', $momentIds)
+            ->pluck('id')
+            ->all();
+
+        $restaurant->partyTypes()->sync($validPartyIds);
+        $restaurant->dietaryOptions()->sync($validDietaryIds);
+        $restaurant->restaurantEnvironments()->sync($validEnvironmentIds);
+        $restaurant->recommendedMoments()->sync($validMomentIds);
 
         return back()->with('success', 'Datos del local actualizados.');
     }

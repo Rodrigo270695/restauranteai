@@ -17,6 +17,7 @@ export type RestaurantCardData = {
     district?: string | null;
     distance_km?: number | null;
     cuisines: CuisineBadge[];
+    recommendation_score?: number;
 };
 
 const PRICE: Record<string, string> = {
@@ -25,10 +26,32 @@ const PRICE: Record<string, string> = {
     premium: '$$$',
 };
 
-export function RestaurantCard({ restaurant }: { restaurant: RestaurantCardData }) {
+type RestaurantCardProps = {
+    restaurant: RestaurantCardData;
+    fromRecommendation?: boolean;
+    recommendationRequestId?: number;
+};
+
+export function RestaurantCard({
+    restaurant,
+    fromRecommendation = false,
+    recommendationRequestId,
+}: RestaurantCardProps) {
+    const href =
+        fromRecommendation && recommendationRequestId
+            ? restaurantShow.url(restaurant.slug, {
+                  query: {
+                      from_recommendation: '1',
+                      request_id: recommendationRequestId,
+                  },
+              })
+            : fromRecommendation
+              ? restaurantShow.url(restaurant.slug, { query: { from_recommendation: '1' } })
+              : restaurantShow.url(restaurant.slug);
+
     return (
         <Link
-            href={restaurantShow.url(restaurant.slug)}
+            href={href}
             className="block overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
         >
             <div className="relative aspect-[4/3] bg-gray-100">
@@ -40,6 +63,11 @@ export function RestaurantCard({ restaurant }: { restaurant: RestaurantCardData 
                 <span className="absolute left-2 top-2 rounded-full bg-green-600 px-2 py-0.5 text-[10px] font-bold text-white">
                     Abierto
                 </span>
+                {restaurant.recommendation_score != null && restaurant.recommendation_score > 0 && (
+                    <span className="absolute right-2 top-2 rounded-full bg-[#E8001A] px-2 py-0.5 text-[10px] font-bold text-white shadow">
+                        {restaurant.recommendation_score}%
+                    </span>
+                )}
                 <span className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-xs font-bold text-white">
                     <Star className="size-3 fill-amber-400 text-amber-400" />
                     {restaurant.avg_rating}

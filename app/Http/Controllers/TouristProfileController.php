@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\LoadsTouristProfileCatalogs;
 use App\Http\Requests\TouristProfileSetupRequest;
-use App\Models\CuisineType;
-use App\Models\District;
 use App\Services\UserPreferenceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -12,6 +11,8 @@ use Inertia\Inertia;
 
 class TouristProfileController extends Controller
 {
+    use LoadsTouristProfileCatalogs;
+
     public function __construct(
         private UserPreferenceService $preferences,
     ) {}
@@ -78,75 +79,5 @@ class TouristProfileController extends Controller
         $this->preferences->syncFromTouristProfile($user, $profile);
 
         return Redirect::route('explore.discover');
-    }
-
-    /** @return list<array{id: int, name: string, slug: string}> */
-    private function activeCuisineTypes(): array
-    {
-        return CuisineType::query()
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get(['id', 'name', 'slug'])
-            ->map(fn (CuisineType $c) => [
-                'id' => $c->id,
-                'name' => $c->name,
-                'slug' => $c->slug,
-            ])
-            ->values()
-            ->all();
-    }
-
-    /** @return list<array{id: int, name: string, province: string}> */
-    private function lambayequeDistricts(): array
-    {
-        return District::query()
-            ->with('province:id,name')
-            ->whereHas('province.department', fn ($q) => $q->where('code', '14'))
-            ->orderBy('name')
-            ->get(['id', 'name', 'province_id'])
-            ->map(fn (District $d) => [
-                'id' => $d->id,
-                'name' => $d->name,
-                'province' => $d->province->name,
-            ])
-            ->values()
-            ->all();
-    }
-
-    /** @return list<array{key: string, price_range: string}> */
-    private function budgetOptions(): array
-    {
-        return [
-            ['key' => 'low', 'price_range' => 'economico'],
-            ['key' => 'medium', 'price_range' => 'moderado'],
-            ['key' => 'high', 'price_range' => 'premium'],
-        ];
-    }
-
-    /**
-     * Convierte valores legacy (nombre) a slugs del catálogo activo.
-     *
-     * @param  list<string>  $values
-     * @return list<string>
-     */
-    private function normalizePreferredCuisineSlugs(array $values): array
-    {
-        if ($values === []) {
-            return [];
-        }
-
-        $bySlug = CuisineType::query()
-            ->where('is_active', true)
-            ->whereIn('slug', $values)
-            ->pluck('slug')
-            ->all();
-
-        $byName = CuisineType::query()
-            ->where('is_active', true)
-            ->whereIn('name', $values)
-            ->pluck('slug')
-            ->all();
-
-        return array_values(array_unique([...$bySlug, ...$byName]));
     }
 }

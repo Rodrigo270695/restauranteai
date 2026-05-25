@@ -111,4 +111,24 @@ class Restaurant extends Model
     {
         return $this->belongsToMany(SupportLanguage::class, 'restaurant_language');
     }
+
+    public function partyTypes(): BelongsToMany
+    {
+        return $this->belongsToMany(PartyType::class, 'restaurant_party_type');
+    }
+
+    public function dietaryOptions(): BelongsToMany
+    {
+        return $this->belongsToMany(DietaryOption::class, 'restaurant_dietary_option');
+    }
+
+    public function restaurantEnvironments(): BelongsToMany
+    {
+        return $this->belongsToMany(RestaurantEnvironment::class, 'restaurant_environment');
+    }
+
+    public function recommendedMoments(): BelongsToMany
+    {
+        return $this->belongsToMany(RecommendedMoment::class, 'restaurant_recommended_moment');
+    }
 }

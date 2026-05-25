@@ -7,6 +7,7 @@ use App\Models\Recommendation;
 use App\Models\RecommendationRequest;
 use App\Models\TamSurvey;
 use App\Models\UserInteraction;
+use App\Support\AdminReadOnlyPresenter;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -22,6 +23,7 @@ class ReadOnlyDataController extends Controller
             'Interacciones',
             UserInteraction::with(['user:id,name', 'restaurant:id,name'])->latest('created_at'),
             $request,
+            'user_interactions',
         );
     }
 
@@ -32,8 +34,9 @@ class ReadOnlyDataController extends Controller
         return $this->renderList(
             'app/admin/recommendation-requests',
             'Solicitudes ML',
-            RecommendationRequest::with('user:id,name')->latest('created_at'),
+            RecommendationRequest::with(['user:id,name', 'recommendations'])->latest('created_at'),
             $request,
+            'recommendation_requests',
         );
     }
 
@@ -44,8 +47,9 @@ class ReadOnlyDataController extends Controller
         return $this->renderList(
             'app/admin/recommendations',
             'Recomendaciones',
-            Recommendation::with(['restaurant:id,name', 'request.user:id,name'])->latest('created_at'),
+            Recommendation::with(['restaurant:id,name,slug', 'request.user:id,name'])->latest('created_at'),
             $request,
+            'recommendations',
         );
     }
 
@@ -56,19 +60,38 @@ class ReadOnlyDataController extends Controller
         return $this->renderList(
             'app/admin/tam-surveys',
             'Encuestas TAM',
-            TamSurvey::with('user:id,name')->latest('created_at'),
+            TamSurvey::with('user:id,name,email')->latest('created_at'),
             $request,
+            'tam_surveys',
         );
     }
 
-    private function renderList(string $page, string $title, $query, Request $request): Response
+    private function renderList(string $page, string $title, $query, Request $request, string $listType): Response
     {
         $perPage = in_array((int) $request->input('per_page'), [10, 15, 25, 50]) ? (int) $request->input('per_page') : 15;
 
+        $paginator = $query->paginate($perPage)->withQueryString();
+
+        $items = match ($listType) {
+            'tam_surveys' => $paginator->through(
+                fn (TamSurvey $row) => AdminReadOnlyPresenter::tamSurvey($row),
+            ),
+            'recommendations' => $paginator->through(
+                fn (Recommendation $row) => AdminReadOnlyPresenter::recommendation($row),
+            ),
+            'recommendation_requests' => $paginator->through(
+                fn (RecommendationRequest $row) => AdminReadOnlyPresenter::recommendationRequest($row),
+            ),
+            'user_interactions' => $paginator->through(
+                fn (UserInteraction $row) => AdminReadOnlyPresenter::userInteraction($row),
+            ),
+            default => $paginator,
+        };
+
         return Inertia::render($page, [
             'title' => $title,
-            'items' => $query->paginate($perPage)->withQueryString(),
-            'readonly' => true,
+            'items' => $items,
+            'listType' => $listType,
         ]);
     }
 }

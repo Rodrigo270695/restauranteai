@@ -12,6 +12,13 @@ class RecommendationRequest extends Model
 
     protected $fillable = ['user_id', 'budget', 'party_type'];
 
+    protected function casts(): array
+    {
+        return [
+            'created_at' => 'datetime',
+        ];
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

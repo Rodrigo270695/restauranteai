@@ -4,10 +4,14 @@ namespace Database\Seeders;
 
 use App\Models\Ambiance;
 use App\Models\CuisineType;
+use App\Models\DietaryOption;
 use App\Models\Dish;
 use App\Models\DishCategory;
 use App\Models\District;
+use App\Models\PartyType;
+use App\Models\RecommendedMoment;
 use App\Models\Restaurant;
+use App\Models\RestaurantEnvironment;
 use App\Models\RestaurantProfile;
 use App\Models\RestaurantSchedule;
 use App\Models\User;
@@ -59,9 +63,17 @@ class DemoRestaurantSeeder extends Seeder
         $marina = CuisineType::query()->where('slug', 'marina')->first();
         $ceviche = CuisineType::query()->where('slug', 'ceviche')->first();
         $familiar = Ambiance::query()->where('slug', 'familiar')->first();
-        $category = DishCategory::query()->where('slug', 'platos-de-fondo')->first()
-            ?? DishCategory::query()->first();
-
+        $familia = PartyType::query()->where('slug', 'familia')->first();
+        $pareja = PartyType::query()->where('slug', 'pareja')->first();
+        $vegetariano = DietaryOption::query()->where('slug', 'vegetariano')->first();
+        $sinGluten = DietaryOption::query()->where('slug', 'sin_gluten')->first();
+        $vistaMar = RestaurantEnvironment::query()->where('slug', 'vista_al_mar')->first();
+        $urbano = RestaurantEnvironment::query()->where('slug', 'urbano')->first();
+        $centroHistorico = RestaurantEnvironment::query()->where('slug', 'centro_historico')->first();
+        $almuerzo = RecommendedMoment::query()->where('slug', 'almuerzo')->first();
+        $cena = RecommendedMoment::query()->where('slug', 'cena')->first();
+        $desayuno = RecommendedMoment::query()->where('slug', 'desayuno')->first();
+        $bar = RecommendedMoment::query()->where('slug', 'bar')->first();
         $demos = [
             [
                 'name' => 'La Casona Criolla',
@@ -153,22 +165,40 @@ class DemoRestaurantSeeder extends Seeder
                 $cuisineService->sync($restaurant, $cuisineIds, $cuisineIds[0]);
             }
 
-            if ($category && $restaurant->dishes()->count() === 0) {
-                Dish::create([
-                    'restaurant_id' => $restaurant->id,
-                    'dish_category_id' => $category->id,
-                    'name' => 'Plato bandera — '.$restaurant->name,
-                    'description' => 'Especialidad de la casa para demostración.',
-                    'price' => match ($restaurant->price_range) {
-                        'economico' => 18.50,
-                        'premium' => 68.00,
-                        default => 32.00,
-                    },
-                    'is_available' => true,
-                    'is_signature' => true,
-                    'display_order' => 1,
-                ]);
+            $partyIds = array_filter([$familia?->id, $pareja?->id]);
+            if ($partyIds !== []) {
+                $restaurant->partyTypes()->sync($partyIds);
             }
+
+            $dietaryIds = array_filter([$vegetariano?->id, $sinGluten?->id]);
+            if ($data['slug'] === 'cevicheria-el-pescador') {
+                $dietaryIds = array_filter([$sinGluten?->id]);
+            }
+            if ($dietaryIds !== []) {
+                $restaurant->dietaryOptions()->sync($dietaryIds);
+            }
+
+            $environmentIds = match ($data['slug']) {
+                'mar-y-tierra-chiclayo' => array_filter([$vistaMar?->id, $urbano?->id]),
+                'la-casona-criolla' => array_filter([$urbano?->id, $centroHistorico?->id]),
+                'cevicheria-el-pescador' => array_filter([$urbano?->id]),
+                default => array_filter([$urbano?->id]),
+            };
+            if ($environmentIds !== []) {
+                $restaurant->restaurantEnvironments()->sync($environmentIds);
+            }
+
+            $momentIds = match ($data['slug']) {
+                'mar-y-tierra-chiclayo' => array_filter([$almuerzo?->id, $cena?->id]),
+                'la-casona-criolla' => array_filter([$desayuno?->id, $almuerzo?->id, $cena?->id]),
+                'cevicheria-el-pescador' => array_filter([$almuerzo?->id, $bar?->id]),
+                default => array_filter([$almuerzo?->id]),
+            };
+            if ($momentIds !== []) {
+                $restaurant->recommendedMoments()->sync($momentIds);
+            }
+
+            $this->seedDemoMenu($restaurant, $data['slug']);
         }
 
         $tourist = User::firstOrCreate(
@@ -197,5 +227,60 @@ class DemoRestaurantSeeder extends Seeder
         $this->command?->info('✔ Restaurantes demo activos/verificados y usuarios demo listos.');
         $this->command?->info('   Dueño: dueno@restauranteai.com / Demo1234!');
         $this->command?->info('   Turista: turista@restauranteai.com / Tourist1234!');
+    }
+
+    private function seedDemoMenu(Restaurant $restaurant, string $slug): void
+    {
+        $entradas = DishCategory::query()->where('slug', 'entradas')->first();
+        $fondos = DishCategory::query()->where('slug', 'platos-de-fondo')->first();
+        $bebidas = DishCategory::query()->where('slug', 'bebidas')->first();
+        $postres = DishCategory::query()->where('slug', 'postres')->first();
+
+        $menus = [
+            'cevicheria-el-pescador' => [
+                ['cat' => $entradas, 'name' => 'Ceviche de pescado', 'description' => 'Pescado fresco del día en leche de tigre, cebolla morada y camote.', 'price' => 28.00, 'signature' => true, 'order' => 1],
+                ['cat' => $entradas, 'name' => 'Chicharrón de conchas', 'description' => 'Conchas negras crocantes con salsa criolla y yuca.', 'price' => 32.00, 'signature' => false, 'order' => 2],
+                ['cat' => $fondos, 'name' => 'Arroz con mariscos', 'description' => 'Arroz verde con pulpo, calamar y almejas al estilo norteño.', 'price' => 38.00, 'signature' => false, 'order' => 3],
+                ['cat' => $bebidas, 'name' => 'Chicha morada', 'description' => 'Jarra refrescante de maíz morado y especias.', 'price' => 12.00, 'signature' => false, 'order' => 4],
+                ['cat' => $bebidas, 'name' => 'Limonada frozen', 'description' => 'Limonada helada con hierbabuena.', 'price' => 10.00, 'signature' => false, 'order' => 5],
+                ['cat' => $postres, 'name' => 'Suspiro a la limeña', 'description' => 'Postre clásico de manjar blanco y merengue.', 'price' => 14.00, 'signature' => false, 'order' => 6],
+            ],
+            'la-casona-criolla' => [
+                ['cat' => $entradas, 'name' => 'Tamal norteño', 'description' => 'Tamal envuelto en hoja de plátano con aceituna y huevo.', 'price' => 18.00, 'signature' => false, 'order' => 1],
+                ['cat' => $fondos, 'name' => 'Seco de cabrito', 'description' => 'Cabrito estofado con frejoles y arroz.', 'price' => 42.00, 'signature' => true, 'order' => 2],
+                ['cat' => $fondos, 'name' => 'Arroz con pato', 'description' => 'Pato confitado con arroz verde y cilantro.', 'price' => 45.00, 'signature' => false, 'order' => 3],
+                ['cat' => $bebidas, 'name' => 'Refresco de chicha', 'description' => 'Vaso de chicha de jora artesanal.', 'price' => 8.00, 'signature' => false, 'order' => 4],
+                ['cat' => $postres, 'name' => 'Mazamorra morada', 'description' => 'Postre de maíz morado con frutas y canela.', 'price' => 12.00, 'signature' => false, 'order' => 5],
+            ],
+            'mar-y-tierra-chiclayo' => [
+                ['cat' => $entradas, 'name' => 'Pulpo al olivo', 'description' => 'Pulpo tierno con salsa de aceitunas y papas.', 'price' => 48.00, 'signature' => true, 'order' => 1],
+                ['cat' => $fondos, 'name' => 'Parrilla marina', 'description' => 'Mix de langostinos, pescado y calamares a la parrilla.', 'price' => 85.00, 'signature' => true, 'order' => 2],
+                ['cat' => $fondos, 'name' => 'Risotto de conchas', 'description' => 'Arroz cremoso con conchas y parmesano.', 'price' => 58.00, 'signature' => false, 'order' => 3],
+                ['cat' => $bebidas, 'name' => 'Pisco sour clásico', 'description' => 'Cóctel de pisco, limón y amargo de angostura.', 'price' => 22.00, 'signature' => false, 'order' => 4],
+                ['cat' => $bebidas, 'name' => 'Agua mineral', 'description' => 'Botella 500 ml, con o sin gas.', 'price' => 6.00, 'signature' => false, 'order' => 5],
+                ['cat' => $postres, 'name' => 'Cheesecake de maracuyá', 'description' => 'Base de galleta y crema ácida de maracuyá.', 'price' => 18.00, 'signature' => false, 'order' => 6],
+            ],
+        ];
+
+        foreach ($menus[$slug] ?? [] as $item) {
+            if ($item['cat'] === null) {
+                continue;
+            }
+
+            Dish::updateOrCreate(
+                [
+                    'restaurant_id' => $restaurant->id,
+                    'name' => $item['name'],
+                ],
+                [
+                    'dish_category_id' => $item['cat']->id,
+                    'description' => $item['description'],
+                    'price' => $item['price'],
+                    'is_available' => true,
+                    'is_signature' => $item['signature'],
+                    'display_order' => $item['order'],
+                ],
+            );
+        }
     }
 }

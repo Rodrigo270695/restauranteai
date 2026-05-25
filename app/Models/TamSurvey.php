@@ -9,6 +9,8 @@ class TamSurvey extends Model
 {
     protected $table = 'tam_surveys';
 
+    public const UPDATED_AT = null;
+
     protected $fillable = [
         'user_id',
         'pu1_useful',
@@ -23,6 +25,13 @@ class TamSurvey extends Model
         'bi2_recommend',
         'open_comment',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'created_at' => 'datetime',
+        ];
+    }
 
     public function user(): BelongsTo
     {

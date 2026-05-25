@@ -66,6 +66,23 @@ class UserPreferenceService
         ]);
     }
 
+    /**
+     * @param  list<string>  $slugs
+     */
+    public function primaryCuisineTypeIdFromSlugs(array $slugs): ?int
+    {
+        $first = $slugs[0] ?? null;
+
+        if ($first === null || $first === '') {
+            return null;
+        }
+
+        return CuisineType::query()
+            ->where('is_active', true)
+            ->where('slug', $first)
+            ->value('id');
+    }
+
     public function mapBudgetToPriceRange(?string $budget): ?string
     {
         return match ($budget) {

@@ -1,4 +1,4 @@
-import { index as exploreIndex } from '@/routes/explore';
+import { discover as exploreDiscover } from '@/routes/explore';
 
 type DiscoverQuery = {
     search?: string;
@@ -24,5 +24,5 @@ export function exploreDiscoverUrl(params: DiscoverQuery = {}): string {
         query.view = params.view;
     }
 
-    return exploreIndex.url(Object.keys(query).length ? { query } : undefined);
+    return exploreDiscover.url(Object.keys(query).length ? { query } : undefined);
 }

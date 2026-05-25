@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, MapPin, Navigation, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CuisineBadges } from '@/components/explore/cuisine-badges';
+import { RestaurantMenu, type RestaurantMenuData } from '@/components/explore/restaurant-menu';
 import { Button } from '@/components/ui/button';
 import { formatAvgPriceSoles, priceRangeLabel } from '@/lib/restaurant-price';
 import { home } from '@/routes';
@@ -25,7 +26,7 @@ type Props = {
         longitude?: number | null;
         cuisines: Array<{ name: string; is_primary?: boolean }>;
         images: Array<{ url: string | null; alt?: string | null }>;
-        dishes: Array<{ name: string; price: number; category?: string | null }>;
+        menu: RestaurantMenuData;
     };
 };
 
@@ -101,27 +102,7 @@ export default function PublicRestaurantShow({ restaurant }: Props) {
                                 {restaurant.description ?? restaurant.short_description}
                             </p>
 
-                            {restaurant.dishes.length > 0 && (
-                                <div className="mt-8">
-                                    <h2 className="mb-3 text-lg font-bold">{t('explore.signature_dishes')}</h2>
-                                    <ul className="grid gap-2 sm:grid-cols-2">
-                                        {restaurant.dishes.map(d => (
-                                            <li
-                                                key={d.name}
-                                                className="flex justify-between rounded-xl bg-orange-50/60 px-4 py-3 text-sm"
-                                            >
-                                                <span>
-                                                    {d.name}
-                                                    {d.category && (
-                                                        <span className="ml-1 text-gray-400">· {d.category}</span>
-                                                    )}
-                                                </span>
-                                                <span className="font-bold text-[#E8001A]">S/ {d.price.toFixed(2)}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
+                            <RestaurantMenu menu={restaurant.menu} className="mt-8" />
 
                             <div className="mt-8 flex flex-wrap gap-3">
                                 {mapsUrl && (
