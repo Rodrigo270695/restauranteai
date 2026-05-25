@@ -1,0 +1,3 @@
+nombre,especialidad_gastronomica,categoria_establecimiento,entorno_restaurante,ambiente_restaurante,rango_precios,momento_recomendado,servicios,ubicacion,publico_objetivo,dias,hora_apertura,hora_cierre,direccion,latitud,longitud,descripcion_corta,telefono
+Urumanka Barra Restaurante,Criolla,Restaurante tradicional,Urbano,Elegante,moderado,Almuerzo,WiFi|Reservas,Chiclayo,Turistas,lun-dom,07:00,21:00,Av. Ejemplo 123 Chiclayo,-6.77137,-79.84088,Sabores criollos en el corazón de Chiclayo,+51999999999
+La Casona Criolla,Criolla,Restaurante tradicional,Centro historico,Casual,moderado,Almuerzo|Cena,WiFi|Delivery,Chiclayo,Familia|Turistas,lun-dom,11:00,22:00,Calle Izaga 250,-6.77137,-79.84088,,
