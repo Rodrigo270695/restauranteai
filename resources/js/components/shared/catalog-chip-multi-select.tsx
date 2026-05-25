@@ -4,17 +4,22 @@ export type CatalogChipOption = { id: number; name: string };
 
 type Props = {
     options: CatalogChipOption[];
-    selectedIds: number[];
+    selectedIds?: number[];
     onChange: (ids: number[]) => void;
     disabled?: boolean;
 };
 
-export function CatalogChipMultiSelect({ options, selectedIds, onChange, disabled }: Props) {
+export function CatalogChipMultiSelect({
+    options,
+    selectedIds = [],
+    onChange,
+    disabled,
+}: Props) {
+    const ids = selectedIds ?? [];
+
     const toggle = (id: number) => {
         if (disabled) return;
-        onChange(
-            selectedIds.includes(id) ? selectedIds.filter(x => x !== id) : [...selectedIds, id],
-        );
+        onChange(ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id]);
     };
 
     if (options.length === 0) {
@@ -24,7 +29,7 @@ export function CatalogChipMultiSelect({ options, selectedIds, onChange, disable
     return (
         <div className="flex flex-wrap gap-2">
             {options.map(opt => {
-                const active = selectedIds.includes(opt.id);
+                const active = ids.includes(opt.id);
                 return (
                     <button
                         key={opt.id}

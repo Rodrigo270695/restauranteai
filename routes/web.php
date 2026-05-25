@@ -113,10 +113,10 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
 
             Route::get('restaurants', [AdminRestaurantController::class, 'index'])->name('restaurants');
             Route::post('restaurants', [AdminRestaurantController::class, 'store'])->name('restaurants.store');
-            Route::put('restaurants/{restaurant}', [AdminRestaurantController::class, 'update'])->name('restaurants.update');
-            Route::delete('restaurants/{restaurant}', [AdminRestaurantController::class, 'destroy'])->name('restaurants.destroy');
+            Route::put('restaurants/{restaurant:id}', [AdminRestaurantController::class, 'update'])->name('restaurants.update');
+            Route::delete('restaurants/{restaurant:id}', [AdminRestaurantController::class, 'destroy'])->name('restaurants.destroy');
 
-            Route::prefix('restaurants/{restaurant}')->name('restaurants.manage.')->group(function () {
+            Route::prefix('restaurants/{restaurant:id}')->name('restaurants.manage.')->group(function () {
                 Route::get('/', [RestaurantHubController::class, 'show'])->name('show');
                 Route::post('impersonate', [RestaurantHubController::class, 'impersonate'])->name('impersonate');
 
