@@ -6,6 +6,7 @@ use App\Models\RecommendedMoment;
 use App\Models\Restaurant;
 use App\Models\User;
 use App\Models\UserPreference;
+use App\Support\RestaurantHoursPresenter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -14,6 +15,10 @@ use Illuminate\Support\Collection;
  */
 class FallbackRecommendationEngine
 {
+    public function __construct(
+        private RestaurantHoursPresenter $hours,
+    ) {}
+
     /**
      * @param  array<string, mixed>  $context
      * @return Collection<int, array{restaurant_id: int, rank: int, score: float, algorithm: string}>
@@ -28,7 +33,7 @@ class FallbackRecommendationEngine
         $query = Restaurant::query()
             ->where('is_active', true)
             ->where('is_verified', true)
-            ->with(['restaurantEnvironments:id', 'recommendedMoments:id']);
+            ->with(['restaurantEnvironments:id', 'recommendedMoments:id', 'schedules']);
 
         if ($pref?->min_rating) {
             $query->where('avg_rating', '>=', (float) $pref->min_rating);
@@ -74,7 +79,9 @@ class FallbackRecommendationEngine
             ? RecommendedMoment::query()->whereIn('id', $momentIds)->pluck('slug')->all()
             : [];
 
-        $scored = $candidates->map(function (Restaurant $restaurant) use ($environmentIds, $momentIds, $preferredMomentSlugs) {
+        $scored = $candidates
+            ->filter(fn (Restaurant $restaurant) => $this->hours->isOpen($restaurant))
+            ->map(function (Restaurant $restaurant) use ($environmentIds, $momentIds, $preferredMomentSlugs) {
             $score = ((float) $restaurant->avg_rating) / 5;
             if ($restaurant->is_featured) {
                 $score += 0.08;

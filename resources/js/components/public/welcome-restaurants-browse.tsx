@@ -15,11 +15,19 @@ type Filters = {
     cuisine_type_id?: number | null;
     price_range?: string | null;
     district_id?: number | null;
+    ambiance_id?: number | null;
+    min_rating?: number | null;
+    open_now?: boolean;
+    featured_only?: boolean;
+    max_distance_km?: number | null;
     sort?: string;
     lat?: number | null;
     lng?: number | null;
     location_active?: boolean;
 };
+
+const RATING_OPTIONS = [3, 3.5, 4, 4.5] as const;
+const DISTANCE_KM_OPTIONS = [5, 10, 25, 50] as const;
 
 type PriceRangeOption = { value: string; label: string; name: string };
 
@@ -33,6 +41,7 @@ type Props = {
     restaurants: PaginatedRestaurants;
     cuisineTypes: { id: number; name: string; slug?: string }[];
     districts: { id: number; name: string }[];
+    ambiances: { id: number; name: string }[];
     priceRanges: PriceRangeOption[];
     filters: Filters;
     titleKey?: string;
@@ -40,7 +49,7 @@ type Props = {
     sectionId?: string;
 };
 
-const PAGINATION_ONLY = ['restaurants', 'cuisineTypes', 'districts', 'priceRanges', 'filters'] as const;
+const PAGINATION_ONLY = ['restaurants', 'cuisineTypes', 'districts', 'ambiances', 'priceRanges', 'filters'] as const;
 const PUBLIC_PER_PAGE = [9, 12, 15, 24];
 
 function coordsFromFilters(filters: Filters): { lat: number; lng: number } | null {
@@ -56,6 +65,7 @@ export function WelcomeRestaurantsBrowse({
     restaurants,
     cuisineTypes,
     districts,
+    ambiances,
     priceRanges,
     filters,
     titleKey = 'welcome.browse_title',
@@ -85,6 +95,11 @@ export function WelcomeRestaurantsBrowse({
                     cuisine_type_id: filters.cuisine_type_id || undefined,
                     price_range: filters.price_range || undefined,
                     district_id: filters.district_id || undefined,
+                    ambiance_id: filters.ambiance_id || undefined,
+                    min_rating: filters.min_rating ?? undefined,
+                    open_now: filters.open_now ? 1 : undefined,
+                    featured_only: filters.featured_only ? 1 : undefined,
+                    max_distance_km: filters.max_distance_km ?? undefined,
                     per_page: restaurants.per_page,
                 },
                 { preserveState: true, preserveScroll: true, replace: true },
@@ -114,6 +129,11 @@ export function WelcomeRestaurantsBrowse({
                 cuisine_type_id: merged.cuisine_type_id || undefined,
                 price_range: merged.price_range || undefined,
                 district_id: merged.district_id || undefined,
+                ambiance_id: merged.ambiance_id || undefined,
+                min_rating: merged.min_rating ?? undefined,
+                open_now: merged.open_now ? 1 : undefined,
+                featured_only: merged.featured_only ? 1 : undefined,
+                max_distance_km: merged.max_distance_km ?? undefined,
                 sort: isNearby ? 'nearby' : merged.sort || 'featured',
                 per_page: restaurants.per_page,
                 page: 1,
@@ -183,6 +203,44 @@ export function WelcomeRestaurantsBrowse({
                 clear: () => apply({ district_id: undefined }),
             });
         }
+    }
+    if (filters.ambiance_id) {
+        const a = ambiances.find(x => x.id === filters.ambiance_id);
+        if (a) {
+            activeTags.push({
+                key: 'ambiance',
+                label: a.name,
+                clear: () => apply({ ambiance_id: undefined }),
+            });
+        }
+    }
+    if (filters.min_rating != null) {
+        activeTags.push({
+            key: 'rating',
+            label: t('welcome.browse_rating_min', { rating: filters.min_rating }),
+            clear: () => apply({ min_rating: undefined }),
+        });
+    }
+    if (filters.open_now) {
+        activeTags.push({
+            key: 'open',
+            label: t('welcome.browse_open_now'),
+            clear: () => apply({ open_now: false }),
+        });
+    }
+    if (filters.featured_only) {
+        activeTags.push({
+            key: 'featured',
+            label: t('welcome.browse_featured_only'),
+            clear: () => apply({ featured_only: false }),
+        });
+    }
+    if (isNearby && filters.max_distance_km != null) {
+        activeTags.push({
+            key: 'distance',
+            label: t('welcome.browse_max_distance', { km: filters.max_distance_km }),
+            clear: () => apply({ max_distance_km: undefined }),
+        });
     }
 
     const locationBanner = () => {
@@ -310,6 +368,31 @@ export function WelcomeRestaurantsBrowse({
                 </div>
             )}
 
+            <div>
+                <p className="mb-2 text-xs font-semibold text-gray-700">{t('welcome.browse_rating')}</p>
+                <div className="flex flex-wrap gap-2">
+                    {RATING_OPTIONS.map(rating => (
+                        <button
+                            key={rating}
+                            type="button"
+                            onClick={() =>
+                                apply({
+                                    min_rating: filters.min_rating === rating ? undefined : rating,
+                                })
+                            }
+                            className={cn(
+                                'cursor-pointer rounded-xl border px-2.5 py-1.5 text-xs font-bold transition',
+                                filters.min_rating === rating
+                                    ? 'border-[#E8001A] bg-red-50 text-[#E8001A]'
+                                    : 'border-gray-200 bg-white text-gray-600 hover:border-orange-200',
+                            )}
+                        >
+                            ★ {rating}+
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             {districts.length > 0 && (
                 <div>
                     <p className="mb-2 text-xs font-semibold text-gray-700">{t('welcome.browse_district')}</p>
@@ -331,6 +414,80 @@ export function WelcomeRestaurantsBrowse({
                                 />
                                 {d.name}
                             </label>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {ambiances.length > 0 && (
+                <div>
+                    <p className="mb-2 text-xs font-semibold text-gray-700">{t('welcome.browse_ambiance')}</p>
+                    <div className="max-h-32 space-y-2 overflow-y-auto scrollbar-thin pr-1">
+                        {ambiances.map(a => (
+                            <label
+                                key={a.id}
+                                className="flex cursor-pointer items-center gap-2 text-sm text-gray-600"
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={filters.ambiance_id === a.id}
+                                    onChange={() =>
+                                        apply({
+                                            ambiance_id: filters.ambiance_id === a.id ? undefined : a.id,
+                                        })
+                                    }
+                                    className="size-4 rounded border-gray-300 text-[#E8001A] focus:ring-[#E8001A]"
+                                />
+                                {a.name}
+                            </label>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            <div className="space-y-2 border-t border-gray-100 pt-4">
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+                    <input
+                        type="checkbox"
+                        checked={!!filters.open_now}
+                        onChange={() => apply({ open_now: !filters.open_now })}
+                        className="size-4 rounded border-gray-300 text-[#E8001A] focus:ring-[#E8001A]"
+                    />
+                    {t('welcome.browse_open_now')}
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+                    <input
+                        type="checkbox"
+                        checked={!!filters.featured_only}
+                        onChange={() => apply({ featured_only: !filters.featured_only })}
+                        className="size-4 rounded border-gray-300 text-[#E8001A] focus:ring-[#E8001A]"
+                    />
+                    {t('welcome.browse_featured_only')}
+                </label>
+            </div>
+
+            {isNearby && (
+                <div>
+                    <p className="mb-2 text-xs font-semibold text-gray-700">{t('welcome.browse_max_distance_label')}</p>
+                    <div className="flex flex-wrap gap-2">
+                        {DISTANCE_KM_OPTIONS.map(km => (
+                            <button
+                                key={km}
+                                type="button"
+                                onClick={() =>
+                                    apply({
+                                        max_distance_km: filters.max_distance_km === km ? undefined : km,
+                                    })
+                                }
+                                className={cn(
+                                    'cursor-pointer rounded-xl border px-3 py-1.5 text-xs font-bold transition',
+                                    filters.max_distance_km === km
+                                        ? 'border-[#E8001A] bg-red-50 text-[#E8001A]'
+                                        : 'border-gray-200 bg-white text-gray-600 hover:border-orange-200',
+                                )}
+                            >
+                                {km} km
+                            </button>
                         ))}
                     </div>
                 </div>

@@ -7,6 +7,7 @@ use App\Services\RestaurantExploreService;
 use App\Services\TouristRouteService;
 use App\Services\UserInteractionService;
 use App\Support\PublicStorage;
+use App\Support\RestaurantHoursPresenter;
 use App\Support\RestaurantMenuPresenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -18,6 +19,7 @@ class ExploreRestaurantController extends Controller
         Request $request,
         Restaurant $restaurant,
         RestaurantExploreService $explore,
+        RestaurantHoursPresenter $hours,
         TouristRouteService $routes,
         UserInteractionService $interactions,
     ): mixed {
@@ -75,6 +77,7 @@ class ExploreRestaurantController extends Controller
                     'alt' => $img->alt_text,
                 ])->values()->all(),
                 'menu' => RestaurantMenuPresenter::forRestaurant($restaurant),
+                'hours' => $hours->forSchedules($restaurant->schedules),
             ],
             'inRoute' => $inRoute,
             'draftStopsCount' => $draft->stops_count,

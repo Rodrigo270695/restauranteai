@@ -1,6 +1,10 @@
 import { Link } from '@inertiajs/react';
 import { Clock, MapPin, Star } from 'lucide-react';
 import { CuisineBadges, type CuisineBadge } from '@/components/explore/cuisine-badges';
+import {
+    RestaurantHoursStatus,
+    type RestaurantHoursData,
+} from '@/components/explore/restaurant-hours-status';
 import { show as restaurantShow } from '@/routes/explore/restaurants';
 
 export type RestaurantCardData = {
@@ -18,12 +22,7 @@ export type RestaurantCardData = {
     distance_km?: number | null;
     cuisines: CuisineBadge[];
     recommendation_score?: number;
-};
-
-const PRICE: Record<string, string> = {
-    economico: '$',
-    moderado: '$$',
-    premium: '$$$',
+    hours?: RestaurantHoursData | null;
 };
 
 type RestaurantCardProps = {
@@ -60,9 +59,7 @@ export function RestaurantCard({
                 ) : (
                     <div className="flex h-full items-center justify-center text-gray-300">Sin foto</div>
                 )}
-                <span className="absolute left-2 top-2 rounded-full bg-green-600 px-2 py-0.5 text-[10px] font-bold text-white">
-                    Abierto
-                </span>
+                <RestaurantHoursStatus hours={restaurant.hours} variant="badge" />
                 {restaurant.recommendation_score != null && restaurant.recommendation_score > 0 && (
                     <span className="absolute right-2 top-2 rounded-full bg-[#E8001A] px-2 py-0.5 text-[10px] font-bold text-white shadow">
                         {restaurant.recommendation_score}%
@@ -80,7 +77,6 @@ export function RestaurantCard({
                     <p className="mt-0.5 line-clamp-2 text-xs text-gray-500">{restaurant.short_description}</p>
                 )}
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                    <span className="font-semibold text-orange-700">{PRICE[restaurant.price_range] ?? restaurant.price_range}</span>
                     {restaurant.district && (
                         <span className="flex items-center gap-0.5">
                             <MapPin className="size-3" />

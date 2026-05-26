@@ -3,6 +3,7 @@ import { ChevronRight, MapPin, Navigation, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { show as exploreRestaurantShow } from '@/routes/explore/restaurants';
 import type { RestaurantCardData } from '@/components/explore/restaurant-card';
+import { RestaurantHoursStatus } from '@/components/explore/restaurant-hours-status';
 import { formatAvgPriceSoles, priceRangeLabel } from '@/lib/restaurant-price';
 
 export function RestaurantGridCard({ restaurant }: { restaurant: RestaurantCardData & { is_featured?: boolean } }) {
@@ -50,6 +51,8 @@ export function RestaurantGridCard({ restaurant }: { restaurant: RestaurantCardD
                         {t('welcome.browse_featured')}
                     </span>
                 )}
+
+                <RestaurantHoursStatus hours={restaurant.hours} variant="badge" className="left-auto right-3 top-auto bottom-3" />
             </Link>
 
             <div className="flex flex-1 flex-col p-4">

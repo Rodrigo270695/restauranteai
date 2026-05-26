@@ -26,12 +26,17 @@ type Props = {
     restaurants?: PaginationMeta & { data: (RestaurantCardData & { is_featured?: boolean })[] };
     cuisineTypes?: { id: number; name: string }[];
     districts?: { id: number; name: string }[];
+    ambiances?: { id: number; name: string }[];
     priceRanges?: PriceRangeOption[];
     filters?: {
         search?: string;
         cuisine_type_id?: number | null;
         price_range?: string | null;
         district_id?: number | null;
+        ambiance_id?: number | null;
+        min_rating?: number | null;
+        open_now?: boolean;
+        featured_only?: boolean;
         sort?: string;
     };
 };
@@ -41,6 +46,7 @@ export default function Welcome({
     restaurants = { data: [], current_page: 1, last_page: 1, from: null, to: null, total: 0, per_page: 12, path: '/' },
     cuisineTypes = [],
     districts = [],
+    ambiances = [],
     priceRanges = [],
     filters = {},
 }: Props) {
@@ -175,6 +181,7 @@ export default function Welcome({
                 restaurants={restaurants}
                 cuisineTypes={cuisineTypes}
                 districts={districts}
+                ambiances={ambiances}
                 priceRanges={priceRanges}
                 filters={filters}
             />

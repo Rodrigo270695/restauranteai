@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Restaurant;
 use App\Models\User;
+use App\Support\RestaurantHoursPresenter;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
@@ -13,6 +14,7 @@ class RouteRecommendationService
         private RecommendationService $recommendations,
         private TouristRouteService $routes,
         private GeoDistanceService $geo,
+        private RestaurantHoursPresenter $hours,
     ) {}
 
     /**
@@ -46,13 +48,16 @@ class RouteRecommendationService
             ->where('is_verified', true)
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
+            ->with('schedules')
             ->get()
             ->sortBy(fn (Restaurant $r) => array_search($r->id, $rankedIds, true))
+            ->values()
+            ->filter(fn (Restaurant $r) => $this->hours->isOpen($r))
             ->values();
 
         if ($restaurants->isEmpty()) {
             throw ValidationException::withMessages([
-                'route' => 'Los locales recomendados no tienen ubicación en el mapa.',
+                'route' => 'No hay locales abiertos ahora para armar la ruta. Prueba más tarde o explora el mapa.',
             ]);
         }
 

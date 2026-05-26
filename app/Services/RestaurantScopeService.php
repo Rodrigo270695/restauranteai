@@ -48,16 +48,10 @@ class RestaurantScopeService
         return $request->session()->has(self::ACTING_SESSION_KEY);
     }
 
-    /** Super admin en rutas /app/* del dueño (suplantación): solo lectura. */
+    /** Super admin en suplantación puede editar (moderación del local). */
     public function isOwnerPanelReadOnly(Request $request): bool
     {
-        if (! $this->isActing($request)) {
-            return false;
-        }
-
-        $user = $request->user();
-
-        return $user?->hasRole('super_admin') === true;
+        return false;
     }
 
     public function actingRestaurant(Request $request): ?Restaurant

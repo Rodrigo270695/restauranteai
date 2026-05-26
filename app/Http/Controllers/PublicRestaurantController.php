@@ -4,12 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Restaurant;
 use App\Support\PublicStorage;
+use App\Support\RestaurantHoursPresenter;
 use App\Support\RestaurantMenuPresenter;
 use Inertia\Inertia;
 
 class PublicRestaurantController extends Controller
 {
-    public function show(Restaurant $restaurant): mixed
+    public function show(Restaurant $restaurant, RestaurantHoursPresenter $hours): mixed
     {
         abort_unless($restaurant->is_active && $restaurant->is_verified, 404);
 
@@ -17,6 +18,7 @@ class PublicRestaurantController extends Controller
             'cuisineTypes:id,name',
             'cuisineType:id,name',
             'district:id,name',
+            'schedules',
             'images' => fn ($q) => $q->orderByDesc('is_cover')->orderBy('display_order'),
         ]);
 
@@ -56,6 +58,7 @@ class PublicRestaurantController extends Controller
                     'alt' => $img->alt_text,
                 ])->values()->all(),
                 'menu' => RestaurantMenuPresenter::forRestaurant($restaurant),
+                'hours' => $hours->forSchedules($restaurant->schedules),
             ],
         ]);
     }

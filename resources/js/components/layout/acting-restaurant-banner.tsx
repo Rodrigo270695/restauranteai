@@ -13,9 +13,9 @@ export function ActingRestaurantBanner({ actingRestaurant }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200/80 bg-amber-50 px-4 py-2 text-sm text-amber-950">
             <span className="flex items-center gap-2">
                 <Eye className="size-4 shrink-0" />
-                Modo suplantación (solo lectura): panel de <strong>{actingRestaurant.name}</strong>
+                Gestionando como dueño: <strong>{actingRestaurant.name}</strong>
                 <span className="text-amber-800/80 hidden sm:inline">
-                    — no puedes guardar cambios; solo el dueño puede editar.
+                    — puedes editar datos, galería y platos. Los cambios se guardan en este local.
                 </span>
             </span>
             <Button

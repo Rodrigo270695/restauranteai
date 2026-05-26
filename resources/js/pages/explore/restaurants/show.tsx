@@ -3,6 +3,7 @@ import { ArrowLeft, Heart, MapPin, Navigation, Plus, Star, Trash2 } from 'lucide
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CuisineBadges } from '@/components/explore/cuisine-badges';
+import { RestaurantHoursStatus, type RestaurantHoursData } from '@/components/explore/restaurant-hours-status';
 import { RestaurantMenu, type RestaurantMenuData } from '@/components/explore/restaurant-menu';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -26,6 +27,7 @@ type Props = {
         cuisines: Array<{ name: string; is_primary?: boolean }>;
         images: Array<{ url: string | null; alt?: string | null }>;
         menu: RestaurantMenuData;
+        hours?: RestaurantHoursData | null;
     };
     inRoute: boolean;
     draftStopsCount: number;
@@ -110,6 +112,7 @@ function RestaurantShow({ restaurant, inRoute, draftStopsCount, isFavorited: ini
                             ({restaurant.total_reviews} {t('explore.menu_reviews')})
                         </span>
                     </div>
+                    <RestaurantHoursStatus hours={restaurant.hours} variant="inline" />
                     {restaurant.district && (
                         <p className="flex items-center gap-1 text-sm text-gray-600">
                             <MapPin className="size-4 text-[#E8001A]" />
@@ -147,14 +150,34 @@ function RestaurantShow({ restaurant, inRoute, draftStopsCount, isFavorited: ini
                             </Button>
                         ) : (
                             <Button
-                                className="flex-1 rounded-xl bg-[#E8001A] text-white"
+                                className="flex-1 rounded-xl bg-[#E8001A] text-white disabled:bg-gray-300 disabled:text-gray-500"
+                                disabled={
+                                    restaurant.hours != null
+                                    && restaurant.hours.label !== 'Horario no disponible'
+                                    && !restaurant.hours.is_open
+                                }
+                                title={
+                                    restaurant.hours
+                                    && restaurant.hours.label !== 'Horario no disponible'
+                                    && !restaurant.hours.is_open
+                                        ? t('explore.closed_no_route')
+                                        : undefined
+                                }
                                 onClick={() =>
                                     router.post(`/explore/routes/stops/${restaurant.slug}`, {}, { preserveScroll: true })
                                 }
                             >
                                 <Plus className="mr-1 size-4" />
-                                {t('explore.add_to_route')}
-                                {draftStopsCount > 0 && ` (${draftStopsCount})`}
+                                {restaurant.hours
+                                && restaurant.hours.label !== 'Horario no disponible'
+                                && !restaurant.hours.is_open
+                                    ? t('explore.closed_no_route_short')
+                                    : t('explore.add_to_route')}
+                                {draftStopsCount > 0
+                                && (!restaurant.hours
+                                    || restaurant.hours.is_open
+                                    || restaurant.hours.label === 'Horario no disponible')
+                                    && ` (${draftStopsCount})`}
                             </Button>
                         )}
                     </div>

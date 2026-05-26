@@ -7,6 +7,7 @@ use App\Models\RecommendationRequest;
 use App\Models\Restaurant;
 use App\Models\User;
 use App\Models\UserPreference;
+use App\Support\RestaurantHoursPresenter;
 use Illuminate\Support\Facades\Cache;
 
 class RecommendationService
@@ -15,6 +16,7 @@ class RecommendationService
         private MlRecommendationClient $mlClient,
         private FallbackRecommendationEngine $fallback,
         private RestaurantExploreService $explore,
+        private RestaurantHoursPresenter $hours,
     ) {}
 
     /**
@@ -90,33 +92,40 @@ class RecommendationService
                 'cuisineTypes:id,name',
                 'district:id,name',
                 'images' => fn ($q) => $q->orderByDesc('is_cover')->limit(1),
+                'schedules',
             ])
             ->whereIn('id', $ids)
             ->get()
             ->keyBy('id');
 
         $items = [];
+        $rank = 0;
 
         foreach ($scored as $row) {
             $restaurant = $restaurants->get($row['restaurant_id']);
-            if (! $restaurant) {
+            if (! $restaurant || ! $this->hours->isOpen($restaurant)) {
                 continue;
             }
 
+            $rank++;
             Recommendation::create([
                 'request_id' => $request->id,
                 'restaurant_id' => $restaurant->id,
-                'rank' => $row['rank'],
+                'rank' => $rank,
                 'score' => $row['score'],
             ]);
 
             $items[] = array_merge(
                 $this->explore->formatCard($restaurant, $context['latitude'] ?? null, $context['longitude'] ?? null),
                 [
-                    'rank' => $row['rank'],
+                    'rank' => $rank,
                     'recommendation_score' => (int) round($row['score'] * 100),
                 ],
             );
+
+            if (count($items) >= $topN) {
+                break;
+            }
         }
 
         return [

@@ -6,6 +6,7 @@ use App\Models\Restaurant;
 use App\Models\TouristRoute;
 use App\Models\TouristRouteStop;
 use App\Models\User;
+use App\Support\RestaurantHoursPresenter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -14,6 +15,7 @@ class TouristRouteService
     public function __construct(
         private GeoDistanceService $geo,
         private StreetRoutingService $streetRouting,
+        private RestaurantHoursPresenter $hours,
     ) {}
 
     public function draftFor(User $user): TouristRoute
@@ -42,6 +44,7 @@ class TouristRouteService
 
         foreach (array_slice($restaurants, 0, 8) as $restaurant) {
             abort_unless($restaurant->is_active && $restaurant->is_verified, 404);
+            $this->hours->assertOpenForVisit($restaurant);
             TouristRouteStop::create([
                 'tourist_route_id' => $route->id,
                 'restaurant_id' => $restaurant->id,
@@ -55,6 +58,7 @@ class TouristRouteService
     public function addStop(User $user, Restaurant $restaurant): TouristRoute
     {
         abort_unless($restaurant->is_active && $restaurant->is_verified, 404);
+        $this->hours->assertOpenForVisit($restaurant);
 
         $route = $this->draftFor($user);
 

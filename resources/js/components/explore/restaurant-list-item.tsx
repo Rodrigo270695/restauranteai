@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { Clock, MapPin, Minus, Plus, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CuisineBadges, type CuisineBadge } from '@/components/explore/cuisine-badges';
+import type { RestaurantHoursData } from '@/components/explore/restaurant-hours-status';
 import { cn } from '@/lib/utils';
 import { show as restaurantShow } from '@/routes/explore/restaurants';
 
@@ -17,12 +18,7 @@ export type RestaurantListItemData = {
     district?: string | null;
     distance_km?: number | null;
     cuisines: CuisineBadge[];
-};
-
-const PRICE: Record<string, string> = {
-    economico: '$',
-    moderado: '$$',
-    premium: '$$$',
+    hours?: RestaurantHoursData | null;
 };
 
 type Props = {
@@ -42,6 +38,10 @@ export function RestaurantListItem({
 }: Props) {
     const { t } = useTranslation();
     const inRoute = routePosition != null && routePosition > 0;
+    const canAddToRoute =
+        !restaurant.hours
+        || restaurant.hours.label === 'Horario no disponible'
+        || restaurant.hours.is_open;
     const isStart = routePosition === 1;
     const isEnd = routeTotal > 1 && routePosition === routeTotal;
 
@@ -90,7 +90,6 @@ export function RestaurantListItem({
                         <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-gray-500">{restaurant.short_description}</p>
                     )}
                     <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-gray-500">
-                        <span className="font-semibold text-orange-700">{PRICE[restaurant.price_range] ?? restaurant.price_range}</span>
                         {restaurant.district && (
                             <span className="flex items-center gap-0.5">
                                 <MapPin className="size-3 shrink-0 text-[#E8001A]/70" />
@@ -110,8 +109,14 @@ export function RestaurantListItem({
             {onToggleRoute && (
                 <button
                     type="button"
-                    title={inRoute ? t('explore.remove_from_route') : t('explore.add_to_route')}
-                    disabled={isBusy}
+                    title={
+                        inRoute
+                            ? t('explore.remove_from_route')
+                            : canAddToRoute
+                              ? t('explore.add_to_route')
+                              : t('explore.closed_no_route')
+                    }
+                    disabled={isBusy || (!inRoute && !canAddToRoute)}
                     onClick={e => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -121,7 +126,9 @@ export function RestaurantListItem({
                         'flex size-10 shrink-0 self-center items-center justify-center rounded-xl shadow-md transition',
                         inRoute
                             ? 'bg-white text-red-600 ring-2 ring-red-200 hover:bg-red-50'
-                            : 'bg-[#E8001A] text-white hover:scale-105 active:scale-95',
+                            : canAddToRoute
+                              ? 'bg-[#E8001A] text-white hover:scale-105 active:scale-95'
+                              : 'cursor-not-allowed bg-gray-200 text-gray-400',
                         isBusy && 'opacity-60',
                     )}
                 >

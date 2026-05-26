@@ -6,9 +6,14 @@ type PageProps = {
     panel?: PanelContext;
 };
 
-/** true cuando super_admin suplanta al dueño (solo consulta en /app/*). */
+/** true cuando el panel no permite guardar (p. ej. vista restringida futura). */
 export function useOwnerReadOnly(): boolean {
     const page = usePage<PageProps>();
+    const panel = page.props.panel;
 
-    return !!page.props.ownerPanelReadOnly || !!page.props.panel?.readOnly;
+    if (panel?.mode === 'admin') {
+        return false;
+    }
+
+    return !!page.props.ownerPanelReadOnly || !!panel?.readOnly;
 }

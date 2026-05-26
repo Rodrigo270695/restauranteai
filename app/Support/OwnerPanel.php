@@ -21,7 +21,7 @@ final class OwnerPanel
                 'mode' => $admin ? 'admin' : 'owner',
                 'baseUrl' => $admin ? '/app/admin/restaurants/'.$restaurant->id : null,
                 'hubUrl' => $admin ? '/app/admin/restaurants/'.$restaurant->id : null,
-                'readOnly' => ! $admin && $scope->isOwnerPanelReadOnly(request()),
+                'readOnly' => false,
             ],
         ];
     }

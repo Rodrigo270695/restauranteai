@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Ambiance;
 use App\Models\CuisineType;
 use App\Models\Restaurant;
 use App\Support\PublicStorage;
+use App\Support\RestaurantHoursPresenter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -13,6 +15,7 @@ class RestaurantExploreService
 {
     public function __construct(
         private GeoDistanceService $geo,
+        private RestaurantHoursPresenter $hours,
     ) {}
 
     /** @return Builder<Restaurant> */
@@ -26,6 +29,7 @@ class RestaurantExploreService
                 'cuisineType:id,name',
                 'district:id,name',
                 'images' => fn ($q) => $q->where('is_cover', true)->limit(1),
+                'schedules',
             ]);
 
         if ($search = $request->string('search')->trim()->value()) {
@@ -49,6 +53,21 @@ class RestaurantExploreService
 
         if ($district = $request->integer('district_id')) {
             $query->where('district_id', $district);
+        }
+
+        if ($ambiance = $request->integer('ambiance_id')) {
+            $query->where('ambiance_id', $ambiance);
+        }
+
+        if ($request->has('min_rating')) {
+            $minRating = $request->float('min_rating');
+            if ($minRating >= 1 && $minRating <= 5) {
+                $query->where('avg_rating', '>=', $minRating);
+            }
+        }
+
+        if ($request->boolean('featured_only')) {
+            $query->where('is_featured', true);
         }
 
         $sort = $request->string('sort')->value();
@@ -163,6 +182,7 @@ class RestaurantExploreService
                 'is_primary' => (bool) ($c->pivot->is_primary ?? ($c->id === $restaurant->cuisine_type_id)),
             ])->values()->all(),
             'is_featured' => (bool) $restaurant->is_featured,
+            'hours' => $this->hours->forSchedules($restaurant->schedules),
         ];
     }
 
@@ -180,6 +200,56 @@ class RestaurantExploreService
             ]);
     }
 
+    public function isRestaurantOpen(Restaurant $restaurant): bool
+    {
+        return $this->hours->isOpen($restaurant);
+    }
+
+    /**
+     * @param  array<string, mixed>  $extra
+     * @return array<string, mixed>
+     */
+    public function resolvePublicFilters(Request $request, array $extra = []): array
+    {
+        $priceRanges = $this->availablePriceRanges();
+        $allowedPrices = collect($priceRanges)->pluck('value')->all();
+        $priceRange = $request->string('price_range')->value() ?: null;
+        if ($priceRange && ! in_array($priceRange, $allowedPrices, true)) {
+            $priceRange = null;
+        }
+
+        $minRating = null;
+        if ($request->has('min_rating')) {
+            $candidate = round($request->float('min_rating'), 1);
+            foreach ([3, 3.5, 4, 4.5] as $allowed) {
+                if (abs($candidate - $allowed) < 0.01) {
+                    $minRating = $allowed;
+                    break;
+                }
+            }
+        }
+
+        $maxDistanceKm = null;
+        if ($request->has('max_distance_km')) {
+            $km = $request->integer('max_distance_km');
+            if (in_array($km, [5, 10, 25, 50], true)) {
+                $maxDistanceKm = $km;
+            }
+        }
+
+        return array_merge([
+            'search' => $request->string('search')->value(),
+            'cuisine_type_id' => $request->integer('cuisine_type_id') ?: null,
+            'price_range' => $priceRange,
+            'district_id' => $request->integer('district_id') ?: null,
+            'ambiance_id' => $request->integer('ambiance_id') ?: null,
+            'min_rating' => $minRating,
+            'open_now' => $request->boolean('open_now'),
+            'featured_only' => $request->boolean('featured_only'),
+            'max_distance_km' => $maxDistanceKm,
+        ], $extra);
+    }
+
     public function activeCuisines(): Collection
     {
         return CuisineType::query()
@@ -190,6 +260,15 @@ class RestaurantExploreService
             })
             ->orderBy('name')
             ->get(['id', 'name', 'slug']);
+    }
+
+    public function activeAmbiances(): Collection
+    {
+        return Ambiance::query()
+            ->where('is_active', true)
+            ->whereHas('restaurants', fn (Builder $r) => $this->publicRestaurantScope($r))
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
 
     /** Distritos Lambayeque con al menos un restaurante público. */

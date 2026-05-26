@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * En modo suplantación (super_admin viendo panel del dueño), bloquea POST/PUT/PATCH/DELETE.
+ * Reservado para bloquear mutaciones en el panel del dueño si se activa solo lectura.
  */
 class EnsureOwnerPanelCanMutate
 {

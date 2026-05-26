@@ -230,7 +230,11 @@ export function RestaurantFormPage({
             <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
                     title="Datos del local"
-                    description="Tu ficha pública en discover LAMB. Solo tú puedes editar la información de tu restaurante."
+                    description={
+                        panel?.mode === 'admin'
+                            ? 'Edita la ficha pública del local como super administrador.'
+                            : 'Tu ficha pública en discover LAMB.'
+                    }
                     stats={statBadges}
                 />
 

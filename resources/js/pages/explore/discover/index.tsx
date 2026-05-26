@@ -193,8 +193,20 @@ function DiscoverPage({
     const draftPath = (draftRoute.path_coordinates ?? []) as [number, number][];
 
     const toggleRoute = (slug: string) => {
-        setAddingSlug(slug);
         const inRoute = stopOrderBySlug.has(slug);
+        const target = restaurants.find(r => r.slug === slug);
+
+        if (
+            !inRoute
+            && target?.hours
+            && target.hours.label !== 'Horario no disponible'
+            && !target.hours.is_open
+        ) {
+            import('sonner').then(({ toast }) => toast.error(t('explore.closed_no_route')));
+            return;
+        }
+
+        setAddingSlug(slug);
 
         if (inRoute) {
             router.delete(`/explore/routes/stops/${slug}`, {

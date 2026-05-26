@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, MapPin, Navigation, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CuisineBadges } from '@/components/explore/cuisine-badges';
+import { RestaurantHoursStatus, type RestaurantHoursData } from '@/components/explore/restaurant-hours-status';
 import { RestaurantMenu, type RestaurantMenuData } from '@/components/explore/restaurant-menu';
 import { Button } from '@/components/ui/button';
 import { formatAvgPriceSoles, priceRangeLabel } from '@/lib/restaurant-price';
@@ -27,6 +28,7 @@ type Props = {
         cuisines: Array<{ name: string; is_primary?: boolean }>;
         images: Array<{ url: string | null; alt?: string | null }>;
         menu: RestaurantMenuData;
+        hours?: RestaurantHoursData | null;
     };
 };
 
@@ -79,6 +81,8 @@ export default function PublicRestaurantShow({ restaurant }: Props) {
                                     </span>
                                 </span>
                             </div>
+
+                            <RestaurantHoursStatus hours={restaurant.hours} variant="inline" className="mt-3" />
 
                             <div className="mt-3 flex flex-wrap items-center gap-3">
                                 {avgPrice && (
