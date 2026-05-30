@@ -5,13 +5,16 @@ import type { RestaurantCardData } from '@/components/explore/restaurant-card';
 import { WelcomeRestaurantsBrowse } from '@/components/public/welcome-restaurants-browse';
 import type { PaginationMeta } from '@/components/shared/pagination-links';
 import { useLanguageSync } from '@/hooks/use-language-sync';
+import { BrandLogo } from '@/components/common/brand-logo';
+import {
+    BRAND_BTN_STYLE,
+    BRAND_HERO_BG,
+    BRAND_HERO_GLOW,
+    BRAND_SECTION_BG,
+    BRAND_TITLE_GRADIENT,
+} from '@/lib/brand-styles';
 import { cn } from '@/lib/utils';
 import { login, register } from '@/routes';
-
-const BTN_PRIMARY: React.CSSProperties = {
-    background: 'linear-gradient(90deg, #E8001A 0%, #CC0010 50%, #8B0008 100%)',
-    boxShadow: '0 4px 18px rgba(200,0,10,0.28)',
-};
 
 const FEATURES = [
     { icon: Sparkles, key: 'feature1' },
@@ -61,30 +64,23 @@ export default function Welcome({
         <>
             <Head title={t('welcome.hero_title')} />
 
-            {/* Hero unificado: marca + features */}
-            <section
-                className="relative overflow-hidden pt-28 pb-10 lg:pt-32 lg:pb-12"
-                style={{
-                    background:
-                        'linear-gradient(135deg, #FFF8F0 0%, #FFFFFF 45%, #FFF0E8 75%, #FFE4D8 100%)',
-                }}
-            >
+            <section className="relative overflow-hidden pt-28 pb-10 lg:pt-32 lg:pb-12" style={{ background: BRAND_HERO_BG }}>
                 <div
                     className="pointer-events-none absolute -right-20 -top-20 h-[480px] w-[480px] rounded-full opacity-[0.18]"
-                    style={{ background: 'radial-gradient(circle, #E8001A, transparent 70%)' }}
+                    style={{ background: BRAND_HERO_GLOW }}
                 />
 
                 <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:gap-12">
                         <div className="flex-1 space-y-5 text-center lg:text-left">
-                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#E8001A]">
+                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-blue">
                                 Chiclayo · Lambayeque
                             </p>
                             <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl lg:text-5xl xl:text-6xl">
                                 {t('welcome.hero_title')}{' '}
                                 <span
                                     className="bg-clip-text text-transparent"
-                                    style={{ backgroundImage: 'linear-gradient(90deg, #E8001A, #FF6B00)' }}
+                                    style={{ backgroundImage: BRAND_TITLE_GRADIENT }}
                                 >
                                     {t('welcome.hero_highlight')}
                                 </span>
@@ -96,15 +92,14 @@ export default function Welcome({
                             <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
                                 <a
                                     href="#restaurantes"
-                                    className="cursor-pointer rounded-xl px-6 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98] sm:text-base"
-                                    style={BTN_PRIMARY}
+                                    className="btn-brand-cta cursor-pointer rounded-xl px-6 py-3 text-sm font-semibold sm:text-base"
                                 >
                                     {t('welcome.cta_explore')}
                                 </a>
                                 {canRegister && (
                                     <Link
                                         href={register()}
-                                        className="cursor-pointer rounded-xl border border-gray-200/80 bg-white/90 px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm backdrop-blur-sm transition-all hover:bg-white sm:text-base"
+                                        className="cursor-pointer rounded-xl border border-brand-blue/15 bg-white/90 px-6 py-3 text-sm font-semibold text-brand-blue shadow-sm backdrop-blur-sm transition-all hover:bg-white sm:text-base"
                                     >
                                         {t('welcome.cta_register')}
                                     </Link>
@@ -112,7 +107,7 @@ export default function Welcome({
                                 {isTourist && (
                                     <Link
                                         href="/explore"
-                                        className="cursor-pointer rounded-xl border border-gray-200/80 bg-white/90 px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm backdrop-blur-sm transition-all hover:bg-white sm:text-base"
+                                        className="cursor-pointer rounded-xl border border-brand-blue/15 bg-white/90 px-6 py-3 text-sm font-semibold text-brand-blue shadow-sm backdrop-blur-sm transition-all hover:bg-white sm:text-base"
                                     >
                                         {t('welcome.cta_go_explore')}
                                     </Link>
@@ -120,7 +115,7 @@ export default function Welcome({
                                 {isOwner && (
                                     <Link
                                         href="/owner/pending"
-                                        className="cursor-pointer rounded-xl border border-gray-200/80 bg-white/90 px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm backdrop-blur-sm transition-all hover:bg-white sm:text-base"
+                                        className="cursor-pointer rounded-xl border border-brand-blue/15 bg-white/90 px-6 py-3 text-sm font-semibold text-brand-blue shadow-sm backdrop-blur-sm transition-all hover:bg-white sm:text-base"
                                     >
                                         {t('nav.my_panel')}
                                     </Link>
@@ -142,11 +137,11 @@ export default function Welcome({
                         </div>
 
                         <div className="hidden shrink-0 lg:block">
-                            <img src="/logo.png" alt="DiscoverLambo" className="w-56 xl:w-72 drop-shadow-xl" />
+                            <BrandLogo surface="light" size="hero" className="drop-shadow-xl" />
                         </div>
                     </div>
 
-                    <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:mt-10">
+                    <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:mt-10 lg:grid-cols-3">
                         {FEATURES.map(({ icon: Icon, key }) => (
                             <div
                                 key={key}
@@ -157,7 +152,7 @@ export default function Welcome({
                             >
                                 <span
                                     className="flex size-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
-                                    style={BTN_PRIMARY}
+                                    style={BRAND_BTN_STYLE}
                                 >
                                     <Icon className="size-5" />
                                 </span>
@@ -186,13 +181,7 @@ export default function Welcome({
                 filters={filters}
             />
 
-            <section
-                className="py-16 lg:py-20"
-                style={{
-                    background:
-                        'radial-gradient(ellipse 120% 100% at 60% 30%, #E8001A 0%, #CC0010 35%, #9B0008 65%, #620005 100%)',
-                }}
-            >
+            <section className="py-16 lg:py-20" style={{ background: BRAND_SECTION_BG }}>
                 <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
                     <h2 className="mb-4 text-2xl font-extrabold text-white sm:text-3xl lg:text-4xl">
                         {t('welcome.cta_final_title')}
@@ -210,8 +199,7 @@ export default function Welcome({
                         {canRegister && (
                             <Link
                                 href={register()}
-                                className="cursor-pointer rounded-xl px-7 py-3.5 text-base font-semibold text-[#1B3A09] transition-all hover:opacity-90 active:scale-[0.98]"
-                                style={{ background: '#FFD000' }}
+                                className="btn-brand-cta cursor-pointer rounded-xl px-7 py-3.5 text-base font-semibold"
                             >
                                 {t('welcome.cta_register')}
                             </Link>
@@ -219,8 +207,7 @@ export default function Welcome({
                         {isTourist && (
                             <Link
                                 href="/explore"
-                                className="cursor-pointer rounded-xl px-7 py-3.5 text-base font-semibold text-[#1B3A09] transition-all hover:opacity-90 active:scale-[0.98]"
-                                style={{ background: '#FFD000' }}
+                                className="btn-brand-cta cursor-pointer rounded-xl px-7 py-3.5 text-base font-semibold"
                             >
                                 {t('welcome.cta_go_explore')}
                             </Link>

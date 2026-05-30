@@ -49,7 +49,7 @@ export default function RestaurantsNearby({
                 className="border-b border-orange-100/80 bg-gradient-to-br from-[#FFF8F0] to-white pt-24 pb-8"
             >
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#E8001A]">
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-orange">
                         Chiclayo · Lambayeque
                     </p>
                     <h1 className="mt-2 text-2xl font-extrabold text-gray-900 sm:text-3xl">

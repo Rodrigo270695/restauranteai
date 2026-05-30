@@ -18,10 +18,7 @@ type Props = {
     questions: Question[];
 };
 
-const BTN_STYLE: React.CSSProperties = {
-    background: 'linear-gradient(90deg, #E8001A 0%, #CC0010 50%, #8B0008 100%)',
-    boxShadow: '0 4px 18px rgba(200,0,10,0.25)',
-};
+import { AUTH_BTN_STYLE } from '@/lib/auth-styles';
 
 const LIKERT = [1, 2, 3, 4, 5] as const;
 
@@ -56,7 +53,7 @@ function TamSurveyPage({ completed, survey, questions }: Props) {
                     <p className="mt-2 text-sm text-gray-500">{t('explore.tam_done_desc')}</p>
                     <Link
                         href={exploreIndex.url()}
-                        className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-brand-red hover:underline"
+                        className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-brand-orange hover:underline"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         {t('explore.explore_btn')}
@@ -79,15 +76,15 @@ function TamSurveyPage({ completed, survey, questions }: Props) {
             <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
                 <Link
                     href={exploreIndex.url()}
-                    className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-brand-red"
+                    className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-brand-orange"
                 >
                     <ArrowLeft className="h-4 w-4" />
                     {t('explore.nav_explore')}
                 </Link>
 
                 <div className="mb-8 flex items-start gap-3">
-                    <div className="rounded-2xl bg-red-50 p-3">
-                        <ClipboardList className="h-6 w-6 text-brand-red" />
+                    <div className="rounded-2xl bg-orange-50 p-3">
+                        <ClipboardList className="h-6 w-6 text-brand-orange" />
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">{t('explore.tam_title')}</h1>
@@ -105,7 +102,7 @@ function TamSurveyPage({ completed, survey, questions }: Props) {
                 <div className="space-y-8">
                     {groups.map(group => (
                         <section key={group} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                            <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-brand-red">
+                            <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-brand-orange">
                                 {groupLabels[group]}
                             </h2>
                             <div className="space-y-6">
@@ -125,8 +122,8 @@ function TamSurveyPage({ completed, survey, questions }: Props) {
                                                         className={cn(
                                                             'h-10 w-10 rounded-xl border text-sm font-semibold transition-all',
                                                             answers[q.key] === n
-                                                                ? 'border-brand-red bg-brand-red text-white shadow-md'
-                                                                : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-red-200',
+                                                                ? 'border-brand-orange bg-brand-orange text-white shadow-md'
+                                                                : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-orange-200',
                                                         )}
                                                     >
                                                         {n}
@@ -152,7 +149,7 @@ function TamSurveyPage({ completed, survey, questions }: Props) {
                             rows={4}
                             value={comment}
                             onChange={e => setComment(e.target.value)}
-                            className="mt-2 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/20"
+                            className="mt-2 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/20"
                             placeholder={t('explore.tam_comment_placeholder')}
                         />
                     </section>
@@ -162,7 +159,7 @@ function TamSurveyPage({ completed, survey, questions }: Props) {
                         disabled={saving}
                         onClick={handleSubmit}
                         className="h-12 w-full rounded-2xl text-white"
-                        style={BTN_STYLE}
+                        style={AUTH_BTN_STYLE}
                     >
                         {saving ? <Spinner className="h-5 w-5" /> : t('explore.tam_submit')}
                     </Button>

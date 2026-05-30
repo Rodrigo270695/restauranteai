@@ -6,25 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
+import { AUTH_CARD_STYLE, AUTH_BTN_STYLE } from '@/lib/auth-styles';
 import { store as storeProfile } from '@/routes/profile/setup';
 
-const BTN_STYLE: React.CSSProperties = {
-    background: 'linear-gradient(90deg, #E8001A 0%, #CC0010 50%, #8B0008 100%)',
-    boxShadow: '0 4px 18px rgba(200,0,10,0.28)',
-};
-
-const CARD_STYLE: React.CSSProperties = {
-    background:
-        'radial-gradient(ellipse 110% 100% at 60% 30%, rgba(232,0,26,0.10) 0%, rgba(180,0,10,0.06) 40%, rgba(255,255,255,0.97) 100%)',
-    backdropFilter: 'blur(24px)',
-    WebkitBackdropFilter: 'blur(24px)',
-    border: '1px solid rgba(200,0,15,0.14)',
-    boxShadow: '0 12px 50px rgba(180,0,10,0.14), 0 1px 0 rgba(255,255,255,0.8) inset',
-};
-
 const SELECT_CLS = cn(
-    'h-11 w-full appearance-none rounded-xl border border-red-100 bg-white/80 px-4 text-sm text-gray-800',
-    'transition-all focus:border-brand-red focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-red/20',
+    'h-11 w-full appearance-none rounded-xl border border-orange-100 bg-white/80 px-4 text-sm text-gray-800',
+    'transition-all focus:border-brand-orange focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-orange/20',
 );
 
 type Budget = 'low' | 'medium' | 'high';
@@ -125,7 +112,7 @@ export default function ProfileSetup({
             >
                 <header className="flex items-center justify-between px-6 py-4">
                     <img src="/logo.png" alt="DiscoverLambo" className="h-10 w-auto" />
-                    <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-brand-red">
+                    <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-brand-orange">
                         {t('setup.step_label')}
                     </span>
                 </header>
@@ -134,25 +121,25 @@ export default function ProfileSetup({
                     <div className="mb-8 text-center">
                         <div
                             className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
-                            style={BTN_STYLE}
+                            style={AUTH_BTN_STYLE}
                         >
                             <Sparkles className="h-8 w-8 text-white" />
                         </div>
                         <h1 className="text-2xl font-bold text-gray-900">
                             {t('setup.almost')}{' '}
-                            <span className="text-brand-red">{firstName}!</span>
+                            <span className="text-brand-orange">{firstName}!</span>
                         </h1>
                         <p className="mt-1 text-sm text-gray-500">{t('setup.welcome_note')}</p>
                     </div>
 
-                    <div style={CARD_STYLE} className="rounded-2xl p-6">
+                    <div style={AUTH_CARD_STYLE} className="rounded-2xl p-6">
                         <div className="flex flex-col gap-6">
                             <div className="space-y-1.5">
                                 <Label className="text-sm font-semibold text-gray-700">
                                     {t('setup.city_label')}
                                 </Label>
                                 <div className="relative">
-                                    <MapPin className="pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2 text-brand-red opacity-60" />
+                                    <MapPin className="pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2 text-brand-orange opacity-60" />
                                     <select
                                         value={city}
                                         onChange={e => setCity(e.target.value)}
@@ -183,15 +170,15 @@ export default function ProfileSetup({
                                                 className={cn(
                                                     'cursor-pointer rounded-xl border-2 p-3 text-center transition-all duration-150',
                                                     budget === b.key
-                                                        ? 'border-brand-red bg-red-50 shadow-sm'
-                                                        : 'border-red-100 bg-white hover:border-red-200 hover:bg-red-50/40',
+                                                        ? 'border-brand-orange bg-orange-50 shadow-sm'
+                                                        : 'border-orange-100 bg-white hover:border-orange-200 hover:bg-orange-50/40',
                                                 )}
                                             >
                                                 <p
                                                     className={cn(
                                                         'text-sm font-semibold',
                                                         budget === b.key
-                                                            ? 'text-brand-red'
+                                                            ? 'text-brand-orange'
                                                             : 'text-gray-700',
                                                     )}
                                                 >
@@ -208,7 +195,7 @@ export default function ProfileSetup({
 
                             <div className="space-y-2">
                                 <Label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700">
-                                    <UtensilsCrossed className="h-4 w-4 text-brand-red opacity-70" />
+                                    <UtensilsCrossed className="h-4 w-4 text-brand-orange opacity-70" />
                                     {t('setup.cuisines_label')}
                                 </Label>
                                 {cuisineTypes.length === 0 ? (
@@ -223,8 +210,8 @@ export default function ProfileSetup({
                                                 className={cn(
                                                     'cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-all duration-150',
                                                     cuisines.includes(c.slug)
-                                                        ? 'border-brand-red bg-red-50 text-brand-red shadow-sm'
-                                                        : 'border-gray-200 bg-white text-gray-600 hover:border-red-200 hover:bg-red-50/40',
+                                                        ? 'border-brand-orange bg-orange-50 text-brand-orange shadow-sm'
+                                                        : 'border-gray-200 bg-white text-gray-600 hover:border-orange-200 hover:bg-orange-50/40',
                                                 )}
                                             >
                                                 {cuisines.includes(c.slug) ? '✓ ' : ''}
@@ -246,8 +233,8 @@ export default function ProfileSetup({
                                     maxLength={500}
                                     placeholder={t('setup.bio_placeholder')}
                                     className={cn(
-                                        'w-full resize-none rounded-xl border border-red-100 bg-white/80 px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400',
-                                        'transition-all focus:border-brand-red focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-red/20',
+                                        'w-full resize-none rounded-xl border border-orange-100 bg-white/80 px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400',
+                                        'transition-all focus:border-brand-orange focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-orange/20',
                                     )}
                                 />
                             </div>
@@ -260,7 +247,7 @@ export default function ProfileSetup({
                             onClick={handleSave}
                             disabled={saving || skipping}
                             className="h-12 w-full cursor-pointer rounded-xl border-0 text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98]"
-                            style={BTN_STYLE}
+                            style={AUTH_BTN_STYLE}
                         >
                             {saving ? (
                                 <>

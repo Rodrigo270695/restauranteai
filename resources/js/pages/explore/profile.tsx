@@ -74,13 +74,13 @@ interface Props {
 }
 
 const BTN_STYLE: React.CSSProperties = {
-    background: 'linear-gradient(90deg, #E8001A 0%, #CC0010 50%, #8B0008 100%)',
+    background: 'linear-gradient(90deg, #ffb833 0%, #ffa300 50%, #e59200 100%)',
     boxShadow: '0 4px 18px rgba(200,0,10,0.25)',
 };
 
 const SELECT_CLS = cn(
     'h-11 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-800',
-    'transition-all focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/20',
+    'transition-all focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/20',
 );
 
 type Budget = 'low' | 'medium' | 'high';
@@ -107,8 +107,8 @@ function ChipToggle({
             className={cn(
                 'cursor-pointer rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all duration-150',
                 active
-                    ? 'border-brand-red bg-red-50 text-brand-red shadow-sm'
-                    : 'border-gray-200 bg-white text-gray-600 hover:border-red-200 hover:bg-red-50/40',
+                    ? 'border-brand-orange bg-orange-50 text-brand-orange shadow-sm'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-orange-200 hover:bg-orange-50/40',
             )}
         >
             {children}
@@ -273,12 +273,12 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
                 <div className="space-y-5">
                     <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                         <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-gray-900">
-                            <MapPin className="h-4 w-4 text-brand-red" />
+                            <MapPin className="h-4 w-4 text-brand-orange" />
                             {t('explore.district_label')}
                         </h2>
                         <p className="mb-4 text-xs text-gray-500">{t('explore.district_hint')}</p>
                         <div className="relative">
-                            <MapPin className="pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2 text-brand-red opacity-50" />
+                            <MapPin className="pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2 text-brand-orange opacity-50" />
                             <select
                                 value={city}
                                 onChange={e => setCity(e.target.value)}
@@ -310,14 +310,14 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
                                         className={cn(
                                             'cursor-pointer rounded-xl border-2 p-3 text-center transition-all duration-150',
                                             budget === b.key
-                                                ? 'border-brand-red bg-red-50 shadow-sm'
-                                                : 'border-gray-100 bg-gray-50 hover:border-red-200 hover:bg-red-50/40',
+                                                ? 'border-brand-orange bg-orange-50 shadow-sm'
+                                                : 'border-gray-100 bg-gray-50 hover:border-orange-200 hover:bg-orange-50/40',
                                         )}
                                     >
                                         <p
                                             className={cn(
                                                 'text-sm font-semibold',
-                                                budget === b.key ? 'text-brand-red' : 'text-gray-700',
+                                                budget === b.key ? 'text-brand-orange' : 'text-gray-700',
                                             )}
                                         >
                                             {labels.label}
@@ -331,7 +331,7 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
 
                     <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                         <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-gray-900">
-                            <UtensilsCrossed className="h-4 w-4 text-brand-red" />
+                            <UtensilsCrossed className="h-4 w-4 text-brand-orange" />
                             {t('explore.cuisines_label')}
                         </h2>
                         <p className="mb-4 text-xs text-gray-500">{t('explore.cuisines_hint')}</p>
@@ -351,7 +351,7 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
 
                     <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                         <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-gray-900">
-                            <Wifi className="h-4 w-4 text-brand-red" />
+                            <Wifi className="h-4 w-4 text-brand-orange" />
                             {t('explore.services_label')}
                         </h2>
                         <p className="mb-4 text-xs text-gray-500">{t('explore.services_hint')}</p>
@@ -371,7 +371,7 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
 
                     <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                         <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-gray-900">
-                            <Languages className="h-4 w-4 text-brand-red" />
+                            <Languages className="h-4 w-4 text-brand-orange" />
                             {t('explore.languages_label')}
                         </h2>
                         <p className="mb-4 text-xs text-gray-500">{t('explore.languages_hint')}</p>
@@ -389,9 +389,9 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-red-100 bg-red-50/30 p-6 shadow-sm">
+                    <div className="rounded-2xl border border-orange-100 bg-orange-50/30 p-6 shadow-sm">
                         <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-gray-900">
-                            <Sparkles className="h-4 w-4 text-brand-red" />
+                            <Sparkles className="h-4 w-4 text-brand-orange" />
                             {t('explore.ml_prefs_title')}
                         </h2>
                         <p className="mb-4 text-xs text-gray-500">{t('explore.ml_prefs_desc')}</p>
@@ -431,7 +431,7 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
                                             className={cn(
                                                 'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium',
                                                 priceRange === p.value
-                                                    ? 'border-brand-red bg-brand-red text-white'
+                                                    ? 'border-brand-orange bg-brand-orange text-white'
                                                     : 'border-gray-200 bg-white text-gray-700',
                                             )}
                                         >
@@ -456,7 +456,7 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
                                             className={cn(
                                                 'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium',
                                                 minRating === r
-                                                    ? 'border-brand-red bg-brand-red text-white'
+                                                    ? 'border-brand-orange bg-brand-orange text-white'
                                                     : 'border-gray-200 bg-white',
                                             )}
                                         >
@@ -599,7 +599,7 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
 
                     <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                         <h2 className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-900">
-                            <Building2 className="h-4 w-4 text-brand-red" />
+                            <Building2 className="h-4 w-4 text-brand-orange" />
                             {t('explore.bio_label')}
                         </h2>
                         <textarea
@@ -610,7 +610,7 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
                             placeholder={t('explore.bio_placeholder')}
                             className={cn(
                                 'w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400',
-                                'transition-all focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/20',
+                                'transition-all focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/20',
                             )}
                         />
                         <p className="mt-1 text-right text-xs text-gray-300">{bio.length}/500</p>

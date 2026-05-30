@@ -250,7 +250,7 @@ export function WelcomeRestaurantsBrowse({
         if (status === 'loading') {
             return (
                 <div className="mb-4 flex items-center gap-2 rounded-xl border border-orange-100 bg-orange-50/80 px-4 py-3 text-sm text-orange-900">
-                    <LocateFixed className="size-4 shrink-0 animate-pulse text-[#E8001A]" />
+                    <LocateFixed className="size-4 shrink-0 animate-pulse text-brand-orange" />
                     {t('welcome.browse_geo_loading')}
                 </div>
             );
@@ -296,14 +296,14 @@ export function WelcomeRestaurantsBrowse({
         <div className="space-y-5">
             <div className="flex items-center justify-between">
                 <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                    <Filter className="size-4 text-[#E8001A]" />
+                    <Filter className="size-4 text-brand-orange" />
                     {t('welcome.browse_filters')}
                 </h3>
                 {activeTags.length > 0 && (
                     <button
                         type="button"
                         onClick={clearAll}
-                        className="cursor-pointer text-xs font-medium text-[#E8001A] hover:underline"
+                        className="cursor-pointer text-xs font-medium text-brand-orange hover:underline"
                     >
                         {t('welcome.browse_clear_all')}
                     </button>
@@ -328,7 +328,7 @@ export function WelcomeRestaurantsBrowse({
                                                 filters.cuisine_type_id === c.id ? undefined : c.id,
                                         })
                                     }
-                                    className="size-4 rounded border-gray-300 text-[#E8001A] focus:ring-[#E8001A]"
+                                    className="size-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange"
                                 />
                                 {c.name}
                             </label>
@@ -354,11 +354,11 @@ export function WelcomeRestaurantsBrowse({
                                 className={cn(
                                     'min-w-12 flex-1 cursor-pointer rounded-xl border px-2 py-2 text-sm font-bold transition',
                                     filters.price_range === p.value
-                                        ? 'border-[#E8001A] bg-red-50 text-[#E8001A]'
+                                        ? 'border-brand-orange bg-orange-50 text-brand-orange'
                                         : 'border-gray-200 bg-white text-gray-600 hover:border-orange-200',
                                 )}
                             >
-                                <span className="block text-sm font-extrabold text-[#E8001A]">{p.label}</span>
+                                <span className="block text-sm font-extrabold text-brand-orange">{p.label}</span>
                                 <span className="mt-0.5 block text-[9px] font-medium normal-case text-gray-500">
                                     {p.name}
                                 </span>
@@ -383,7 +383,7 @@ export function WelcomeRestaurantsBrowse({
                             className={cn(
                                 'cursor-pointer rounded-xl border px-2.5 py-1.5 text-xs font-bold transition',
                                 filters.min_rating === rating
-                                    ? 'border-[#E8001A] bg-red-50 text-[#E8001A]'
+                                    ? 'border-brand-orange bg-orange-50 text-brand-orange'
                                     : 'border-gray-200 bg-white text-gray-600 hover:border-orange-200',
                             )}
                         >
@@ -410,7 +410,7 @@ export function WelcomeRestaurantsBrowse({
                                             district_id: filters.district_id === d.id ? undefined : d.id,
                                         })
                                     }
-                                    className="size-4 rounded border-gray-300 text-[#E8001A] focus:ring-[#E8001A]"
+                                    className="size-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange"
                                 />
                                 {d.name}
                             </label>
@@ -436,7 +436,7 @@ export function WelcomeRestaurantsBrowse({
                                             ambiance_id: filters.ambiance_id === a.id ? undefined : a.id,
                                         })
                                     }
-                                    className="size-4 rounded border-gray-300 text-[#E8001A] focus:ring-[#E8001A]"
+                                    className="size-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange"
                                 />
                                 {a.name}
                             </label>
@@ -451,7 +451,7 @@ export function WelcomeRestaurantsBrowse({
                         type="checkbox"
                         checked={!!filters.open_now}
                         onChange={() => apply({ open_now: !filters.open_now })}
-                        className="size-4 rounded border-gray-300 text-[#E8001A] focus:ring-[#E8001A]"
+                        className="size-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange"
                     />
                     {t('welcome.browse_open_now')}
                 </label>
@@ -460,7 +460,7 @@ export function WelcomeRestaurantsBrowse({
                         type="checkbox"
                         checked={!!filters.featured_only}
                         onChange={() => apply({ featured_only: !filters.featured_only })}
-                        className="size-4 rounded border-gray-300 text-[#E8001A] focus:ring-[#E8001A]"
+                        className="size-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange"
                     />
                     {t('welcome.browse_featured_only')}
                 </label>
@@ -482,7 +482,7 @@ export function WelcomeRestaurantsBrowse({
                                 className={cn(
                                     'cursor-pointer rounded-xl border px-3 py-1.5 text-xs font-bold transition',
                                     filters.max_distance_km === km
-                                        ? 'border-[#E8001A] bg-red-50 text-[#E8001A]'
+                                        ? 'border-brand-orange bg-orange-50 text-brand-orange'
                                         : 'border-gray-200 bg-white text-gray-600 hover:border-orange-200',
                                 )}
                             >
@@ -528,7 +528,7 @@ export function WelcomeRestaurantsBrowse({
                         </div>
                         <Button
                             type="submit"
-                            className="h-11 shrink-0 cursor-pointer rounded-xl bg-[#E8001A] px-4 text-white hover:bg-[#CC0010]"
+                            className="h-11 shrink-0 cursor-pointer rounded-xl bg-brand-orange px-4 text-white hover:bg-brand-orange-dark"
                         >
                             <Search className="size-4" />
                         </Button>
@@ -553,7 +553,7 @@ export function WelcomeRestaurantsBrowse({
                                 key={tag.key}
                                 type="button"
                                 onClick={tag.clear}
-                                className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-gray-200 transition hover:ring-[#E8001A]"
+                                className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-gray-200 transition hover:ring-brand-orange"
                             >
                                 {tag.label}
                                 <X className="size-3" />

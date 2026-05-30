@@ -1,4 +1,4 @@
-﻿import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '@/components/common/language-switcher';
 import { useScrollNavbar } from '@/hooks/use-scroll-navbar';
@@ -21,8 +21,8 @@ export function Navbar() {
     const isWelcomePage = url === '/';
     const scrolled = useScrollNavbar(60);
 
-    // En la welcome: transparente arriba, sólido al hacer scroll
-    // En cualquier otra página: siempre sólido
+    // En la welcome: transparente arriba, s?lido al hacer scroll
+    // En cualquier otra p?gina: siempre s?lido
     const solid = isWelcomePage ? scrolled : true;
 
     const roles = auth.roles ?? [];
@@ -34,18 +34,20 @@ export function Navbar() {
                 'fixed top-0 left-0 right-0 z-40 transition-all duration-300',
                 solid
                     ? 'border-b border-gray-100/80 bg-white/90 shadow-[0_4px_24px_rgba(0,0,0,0.07)] backdrop-blur-xl'
-                    : 'bg-transparent',
+                    : isWelcomePage
+                      ? 'border-b border-brand-blue/5 bg-white/70 backdrop-blur-md'
+                      : 'bg-transparent',
             )}
         >
             <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
                 {/* Logo */}
-                <NavLogo scrolled={solid} />
+                <NavLogo />
 
-                {/* Links según rol */}
+                {/* Links seg?n rol */}
                 <NavLinks scrolled={solid} />
 
-                {/* Derecha: idioma (solo público/turista) + usuario */}
+                {/* Derecha: idioma (solo p?blico/turista) + usuario */}
                 <div className="flex items-center gap-2">
                     {isPublicOrTourist && <LanguageSwitcher variant="light" />}
 
@@ -61,15 +63,14 @@ export function Navbar() {
                             </Link>
                             <Link
                                 href={register()}
-                                className="cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
-                                style={{ background: 'linear-gradient(90deg,#E8001A,#8B0008)' }}
+                                className="btn-brand-cta cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold transition-all active:scale-[0.98]"
                             >
                                 {t('nav.register')}
                             </Link>
                         </div>
                     )}
 
-                    {/* Hamburguesa — mobile */}
+                    {/* Hamburguesa ? mobile */}
                     <NavMobileMenu user={user} scrolled={solid} />
                 </div>
 

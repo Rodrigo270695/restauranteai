@@ -61,7 +61,7 @@ export function RestaurantCard({
                 )}
                 <RestaurantHoursStatus hours={restaurant.hours} variant="badge" />
                 {restaurant.recommendation_score != null && restaurant.recommendation_score > 0 && (
-                    <span className="absolute right-2 top-2 rounded-full bg-[#E8001A] px-2 py-0.5 text-[10px] font-bold text-white shadow">
+                    <span className="absolute right-2 top-2 rounded-full bg-brand-orange px-2 py-0.5 text-[10px] font-bold text-white shadow">
                         {restaurant.recommendation_score}%
                     </span>
                 )}

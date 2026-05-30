@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { register } from '@/routes';
 
 const BTN_PRIMARY: React.CSSProperties = {
-    background: 'linear-gradient(90deg, #E8001A 0%, #CC0010 50%, #8B0008 100%)',
+    background: 'linear-gradient(90deg, #ffb833 0%, #ffa300 50%, #e59200 100%)',
     boxShadow: '0 4px 18px rgba(200,0,10,0.28)',
 };
 
@@ -50,7 +50,7 @@ export default function ContactPage({ defaults, supportEmail, canRegister = true
             >
                 <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="mx-auto max-w-3xl text-center">
-                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#E8001A]">
+                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-orange">
                             Chiclayo · Lambayeque
                         </p>
                         <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
@@ -65,7 +65,7 @@ export default function ContactPage({ defaults, supportEmail, canRegister = true
                 <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-5 lg:gap-12 lg:px-8">
                     <div className="space-y-5 lg:col-span-2">
                         <div className="rounded-2xl border border-white bg-white p-5 shadow-sm">
-                            <Building2 className="size-8 text-[#E8001A]" />
+                            <Building2 className="size-8 text-brand-orange" />
                             <h2 className="mt-3 text-lg font-bold text-gray-900">
                                 {t('contact.info_integrate_title')}
                             </h2>
@@ -75,7 +75,7 @@ export default function ContactPage({ defaults, supportEmail, canRegister = true
                             {canRegister && (
                                 <Link
                                     href={register()}
-                                    className="mt-4 inline-block text-sm font-semibold text-[#E8001A] hover:underline"
+                                    className="mt-4 inline-block text-sm font-semibold text-brand-orange hover:underline"
                                 >
                                     {t('contact.info_register_link')} →
                                 </Link>
@@ -93,12 +93,12 @@ export default function ContactPage({ defaults, supportEmail, canRegister = true
                         </div>
 
                         <div className="rounded-2xl border border-orange-100 bg-orange-50/60 p-5">
-                            <Mail className="size-6 text-[#E8001A]" />
+                            <Mail className="size-6 text-brand-orange" />
                             <p className="mt-2 text-sm text-gray-700">
                                 {t('contact.direct_email')}{' '}
                                 <a
                                     href={`mailto:${supportEmail}`}
-                                    className="font-semibold text-[#E8001A] hover:underline"
+                                    className="font-semibold text-brand-orange hover:underline"
                                 >
                                     {supportEmail}
                                 </a>
@@ -137,7 +137,7 @@ export default function ContactPage({ defaults, supportEmail, canRegister = true
                                                 name="type"
                                                 value={inquiryType}
                                                 onChange={e => setInquiryType(e.target.value as InquiryType)}
-                                                className="mt-1.5 flex h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm shadow-sm focus:border-[#E8001A] focus:outline-none focus:ring-1 focus:ring-[#E8001A]"
+                                                className="mt-1.5 flex h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm shadow-sm focus:border-brand-orange focus:outline-none focus:ring-1 focus:ring-brand-orange"
                                             >
                                                 {TYPE_OPTIONS.map(value => (
                                                     <option key={value} value={value}>
@@ -146,7 +146,7 @@ export default function ContactPage({ defaults, supportEmail, canRegister = true
                                                 ))}
                                             </select>
                                             {errors.type && (
-                                                <p className="mt-1 text-xs text-red-600">{errors.type}</p>
+                                                <p className="mt-1 text-xs text-brand-orange-dark">{errors.type}</p>
                                             )}
                                         </div>
 
@@ -161,7 +161,7 @@ export default function ContactPage({ defaults, supportEmail, canRegister = true
                                                     required
                                                 />
                                                 {errors.name && (
-                                                    <p className="mt-1 text-xs text-red-600">{errors.name}</p>
+                                                    <p className="mt-1 text-xs text-brand-orange-dark">{errors.name}</p>
                                                 )}
                                             </div>
                                             <div>
@@ -175,7 +175,7 @@ export default function ContactPage({ defaults, supportEmail, canRegister = true
                                                     required
                                                 />
                                                 {errors.email && (
-                                                    <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+                                                    <p className="mt-1 text-xs text-brand-orange-dark">{errors.email}</p>
                                                 )}
                                             </div>
                                         </div>
@@ -194,7 +194,7 @@ export default function ContactPage({ defaults, supportEmail, canRegister = true
                                                 className="mt-1.5 rounded-xl"
                                             />
                                             {errors.phone && (
-                                                <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
+                                                <p className="mt-1 text-xs text-brand-orange-dark">{errors.phone}</p>
                                             )}
                                         </div>
 
@@ -211,7 +211,7 @@ export default function ContactPage({ defaults, supportEmail, canRegister = true
                                                         required
                                                     />
                                                     {errors.restaurant_name && (
-                                                        <p className="mt-1 text-xs text-red-600">
+                                                        <p className="mt-1 text-xs text-brand-orange-dark">
                                                             {errors.restaurant_name}
                                                         </p>
                                                     )}
@@ -231,7 +231,7 @@ export default function ContactPage({ defaults, supportEmail, canRegister = true
                                                         className="mt-1.5 rounded-xl"
                                                     />
                                                     {errors.district && (
-                                                        <p className="mt-1 text-xs text-red-600">
+                                                        <p className="mt-1 text-xs text-brand-orange-dark">
                                                             {errors.district}
                                                         </p>
                                                     )}
@@ -253,7 +253,7 @@ export default function ContactPage({ defaults, supportEmail, canRegister = true
                                                 required
                                             />
                                             {errors.message && (
-                                                <p className="mt-1 text-xs text-red-600">{errors.message}</p>
+                                                <p className="mt-1 text-xs text-brand-orange-dark">{errors.message}</p>
                                             )}
                                         </div>
 

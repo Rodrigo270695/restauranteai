@@ -6,9 +6,9 @@ import { useLanguageSync } from '@/hooks/use-language-sync';
 import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
 
-// Gradiente más limpio: rojo brillante en el centro, extremos en rojo medio (no tan oscuro)
+// Panel izquierdo: azul institucional con acento naranja
 const BRAND_GRADIENT =
-    'radial-gradient(ellipse 130% 120% at 55% 35%, #F0001E 0%, #D4000F 30%, #B00009 55%, #8C0007 75%, #780006 100%)';
+    'radial-gradient(ellipse 130% 120% at 55% 35%, #0d4a9e 0%, #073577 35%, #052a58 65%, #031d3d 100%)';
 
 type FeatureKey = 'restaurants' | 'ai' | 'best';
 
@@ -41,7 +41,7 @@ export default function AuthBrandLayout({ children, title, description }: AuthLa
                 <div
                     className="pointer-events-none absolute inset-0"
                     style={{
-                        background: 'radial-gradient(ellipse 60% 50% at 50% 80%, rgba(220,0,10,0.35), transparent 70%)',
+                        background: 'radial-gradient(ellipse 60% 50% at 50% 80%, rgba(255,163,0,0.22), transparent 70%)',
                     }}
                 />
 
@@ -121,7 +121,7 @@ export default function AuthBrandLayout({ children, title, description }: AuthLa
                     </Link>
                 </div>
 
-                <div className="w-full max-w-sm">
+                <div className="w-full max-w-md">
                     {/* Form slot */}
                     {children}
 

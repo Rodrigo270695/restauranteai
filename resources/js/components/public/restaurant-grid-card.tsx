@@ -35,13 +35,13 @@ export function RestaurantGridCard({ restaurant }: { restaurant: RestaurantCardD
 
                 <span className="absolute right-3 top-3 flex flex-col items-end rounded-lg bg-white/95 px-2.5 py-1 text-right shadow-sm backdrop-blur-sm">
                     {avgPrice && (
-                        <span className="text-sm font-extrabold text-[#E8001A]">{avgPrice}</span>
+                        <span className="text-sm font-extrabold text-brand-orange">{avgPrice}</span>
                     )}
                     <span className="text-[10px] font-semibold text-gray-600">{tierLabel}</span>
                 </span>
 
                 {primaryCuisine && (
-                    <span className="absolute bottom-3 left-3 rounded-lg bg-[#E8001A] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-md">
+                    <span className="absolute bottom-3 left-3 rounded-lg bg-brand-orange px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-md">
                         {primaryCuisine}
                     </span>
                 )}
@@ -57,14 +57,14 @@ export function RestaurantGridCard({ restaurant }: { restaurant: RestaurantCardD
 
             <div className="flex flex-1 flex-col p-4">
                 {primaryCuisine && (
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#E8001A]">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-brand-orange">
                         {primaryCuisine}
                     </p>
                 )}
 
                 <div className="mt-1 flex items-start justify-between gap-2">
                     <Link href={detailHref} className="min-w-0 flex-1">
-                        <h3 className="line-clamp-1 text-lg font-bold text-gray-900 transition group-hover:text-[#E8001A]">
+                        <h3 className="line-clamp-1 text-lg font-bold text-gray-900 transition group-hover:text-brand-orange">
                             {restaurant.name}
                         </h3>
                     </Link>
@@ -82,7 +82,7 @@ export function RestaurantGridCard({ restaurant }: { restaurant: RestaurantCardD
 
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
                     <span className="flex min-w-0 items-center gap-1.5">
-                        <MapPin className="size-3.5 shrink-0 text-[#E8001A]" />
+                        <MapPin className="size-3.5 shrink-0 text-brand-orange" />
                         <span className="truncate">
                             {restaurant.district ? `${restaurant.district}, Chiclayo` : 'Chiclayo, Lambayeque'}
                         </span>
@@ -115,7 +115,7 @@ export function RestaurantGridCard({ restaurant }: { restaurant: RestaurantCardD
                     </div>
                     <Link
                         href={detailHref}
-                        className="flex items-center gap-0.5 text-sm font-semibold text-[#E8001A] transition hover:gap-1"
+                        className="flex items-center gap-0.5 text-sm font-semibold text-brand-orange transition hover:gap-1"
                     >
                         {t('welcome.browse_view_detail')}
                         <ChevronRight className="size-4" />

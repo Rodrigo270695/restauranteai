@@ -1,6 +1,9 @@
 ﻿import { Form, Head, setLayoutProps } from '@inertiajs/react';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
+import { ShieldCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { AuthGlassCard } from '@/components/auth/auth-glass-card';
 import InputError from '@/components/common/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,9 +13,18 @@ import {
     InputOTPSlot,
 } from '@/components/ui/input-otp';
 import { OTP_MAX_LENGTH } from '@/hooks/use-two-factor-auth';
+import {
+    AUTH_BTN_STYLE,
+    AUTH_INPUT_CLS,
+    authLinkAccentClass,
+    authSubtitleClass,
+    authTitleClass,
+} from '@/lib/auth-styles';
+import { cn } from '@/lib/utils';
 import { store } from '@/routes/two-factor/login';
 
 export default function TwoFactorChallenge() {
+    const { t } = useTranslation();
     const [showRecoveryInput, setShowRecoveryInput] = useState<boolean>(false);
     const [code, setCode] = useState<string>('');
 
@@ -23,20 +35,18 @@ export default function TwoFactorChallenge() {
     }>(() => {
         if (showRecoveryInput) {
             return {
-                title: 'Recovery code',
-                description:
-                    'Please confirm access to your account by entering one of your emergency recovery codes.',
-                toggleText: 'login using an authentication code',
+                title: t('auth.two_factor_recovery_title'),
+                description: t('auth.two_factor_recovery_desc'),
+                toggleText: t('auth.two_factor_use_code'),
             };
         }
 
         return {
-            title: 'Authentication code',
-            description:
-                'Enter the authentication code provided by your authenticator application.',
-            toggleText: 'login using a recovery code',
+            title: t('auth.two_factor_title'),
+            description: t('auth.two_factor_desc'),
+            toggleText: t('auth.two_factor_use_recovery'),
         };
-    }, [showRecoveryInput]);
+    }, [showRecoveryInput, t]);
 
     setLayoutProps({
         title: authConfigContent.title,
@@ -51,31 +61,43 @@ export default function TwoFactorChallenge() {
 
     return (
         <>
-            <Head title="Two-factor authentication" />
+            <Head title={t('auth.two_factor_title')} />
 
-            <div className="space-y-6">
+            <AuthGlassCard>
+                <div className="mb-6 flex flex-col items-center gap-3 text-center">
+                    <span
+                        className="flex h-12 w-12 items-center justify-center rounded-xl"
+                        style={AUTH_BTN_STYLE}
+                    >
+                        <ShieldCheck className="h-6 w-6 text-white" />
+                    </span>
+                    <div>
+                        <h1 className={authTitleClass}>{authConfigContent.title}</h1>
+                        <p className={authSubtitleClass}>{authConfigContent.description}</p>
+                    </div>
+                </div>
+
                 <Form
                     action={store.url()}
                     method="post"
-                    className="space-y-4"
+                    className="flex flex-col gap-4"
                     resetOnError
                     resetOnSuccess={!showRecoveryInput}
                 >
                     {({ errors, processing, clearErrors }) => (
                         <>
                             {showRecoveryInput ? (
-                                <>
+                                <div className="space-y-1.5">
                                     <Input
                                         name="recovery_code"
                                         type="text"
-                                        placeholder="Enter recovery code"
+                                        placeholder={t('auth.two_factor_recovery_placeholder')}
                                         autoFocus={showRecoveryInput}
                                         required
+                                        className={cn(AUTH_INPUT_CLS, 'pl-3', errors.recovery_code && 'border-red-400 bg-red-50')}
                                     />
-                                    <InputError
-                                        message={errors.recovery_code}
-                                    />
-                                </>
+                                    <InputError message={errors.recovery_code} />
+                                </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center space-y-3 text-center">
                                     <div className="flex w-full items-center justify-center">
@@ -89,15 +111,13 @@ export default function TwoFactorChallenge() {
                                             autoFocus
                                         >
                                             <InputOTPGroup>
-                                                {Array.from(
-                                                    { length: OTP_MAX_LENGTH },
-                                                    (_, index) => (
-                                                        <InputOTPSlot
-                                                            key={index}
-                                                            index={index}
-                                                        />
-                                                    ),
-                                                )}
+                                                {Array.from({ length: OTP_MAX_LENGTH }, (_, index) => (
+                                                    <InputOTPSlot
+                                                        key={index}
+                                                        index={index}
+                                                        className="border-orange-100 focus:border-brand-orange focus:ring-brand-orange/25"
+                                                    />
+                                                ))}
                                             </InputOTPGroup>
                                         </InputOTP>
                                     </div>
@@ -107,28 +127,27 @@ export default function TwoFactorChallenge() {
 
                             <Button
                                 type="submit"
-                                className="w-full"
+                                className="h-11 w-full cursor-pointer rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
+                                style={AUTH_BTN_STYLE}
                                 disabled={processing}
                             >
-                                Continue
+                                {t('auth.two_factor_continue')}
                             </Button>
 
-                            <div className="text-center text-sm text-muted-foreground">
-                                <span>or you can </span>
+                            <p className="text-center text-sm text-gray-500">
+                                {t('auth.two_factor_or')}{' '}
                                 <button
                                     type="button"
-                                    className="cursor-pointer text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
-                                    onClick={() =>
-                                        toggleRecoveryMode(clearErrors)
-                                    }
+                                    className={authLinkAccentClass}
+                                    onClick={() => toggleRecoveryMode(clearErrors)}
                                 >
                                     {authConfigContent.toggleText}
                                 </button>
-                            </div>
+                            </p>
                         </>
                     )}
                 </Form>
-            </div>
+            </AuthGlassCard>
         </>
     );
 }

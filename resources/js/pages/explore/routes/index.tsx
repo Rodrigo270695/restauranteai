@@ -90,14 +90,14 @@ function RoutesIndex({ activeRoutes, historyRoutes, draftRoute }: Props) {
                                 onChange={e => setRouteDate(e.target.value)}
                                 className="rounded-xl bg-white"
                             />
-                            <Button type="submit" className="w-full rounded-xl bg-[#E8001A] text-white">
+                            <Button type="submit" className="w-full rounded-xl bg-brand-orange text-white">
                                 {t('explore.publish_route')}
                             </Button>
                         </form>
                     </div>
                 )}
 
-                <Button className="h-12 w-full rounded-2xl bg-[#E8001A] text-white shadow-md" asChild>
+                <Button className="h-12 w-full rounded-2xl bg-brand-orange text-white shadow-md" asChild>
                     <Link href={exploreDiscoverUrl()}>
                         <Plus className="mr-2 size-4" />
                         {t('explore.create_route_cta')}
@@ -110,7 +110,7 @@ function RoutesIndex({ activeRoutes, historyRoutes, draftRoute }: Props) {
                         onClick={() => setTab('active')}
                         className={cn(
                             'flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold',
-                            tab === 'active' ? 'bg-[#E8001A] text-white' : 'text-gray-600',
+                            tab === 'active' ? 'bg-brand-orange text-white' : 'text-gray-600',
                         )}
                     >
                         <Route className="size-4" />
@@ -121,7 +121,7 @@ function RoutesIndex({ activeRoutes, historyRoutes, draftRoute }: Props) {
                         onClick={() => setTab('history')}
                         className={cn(
                             'flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold',
-                            tab === 'history' ? 'bg-[#E8001A] text-white' : 'text-gray-600',
+                            tab === 'history' ? 'bg-brand-orange text-white' : 'text-gray-600',
                         )}
                     >
                         <History className="size-4" />
@@ -155,7 +155,7 @@ function RoutesIndex({ activeRoutes, historyRoutes, draftRoute }: Props) {
                                 </div>
                                 <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                                     <span className="flex items-center gap-1">
-                                        <Calendar className="size-3 text-[#E8001A]" />
+                                        <Calendar className="size-3 text-brand-orange" />
                                         {formatDate(r.route_date, i18n.language)}
                                     </span>
                                     <span>{r.stops_count} {t('explore.stops_label')}</span>
@@ -171,7 +171,7 @@ function RoutesIndex({ activeRoutes, historyRoutes, draftRoute }: Props) {
                             <div className="flex border-t border-gray-50">
                                 <button
                                     type="button"
-                                    className="flex flex-1 items-center justify-center gap-1 py-2.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                                    className="flex flex-1 items-center justify-center gap-1 py-2.5 text-xs font-medium text-brand-orange-dark hover:bg-orange-50"
                                     onClick={() => {
                                         if (confirm(t('explore.confirm_delete_route'))) {
                                             router.delete(destroyRoute.url(r.id));

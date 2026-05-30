@@ -1,6 +1,5 @@
-﻿import { Form, Head, router } from '@inertiajs/react';
+﻿import { Form, Head } from '@inertiajs/react';
 import { KeyRound, Mail } from 'lucide-react';
-import { useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import InputError from '@/components/common/input-error';
 import PasswordInput from '@/components/common/password-input';
@@ -9,11 +8,20 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useAuthMountFlip } from '@/hooks/use-auth-page-flip';
+import {
+    AUTH_BTN_STYLE,
+    AUTH_CARD_STYLE,
+    AUTH_INPUT_CLS,
+    authIconClass,
+    authLinkAccentClass,
+    authLinkBlueClass,
+    authSubtitleClass,
+    authTitleClass,
+} from '@/lib/auth-styles';
 import { cn } from '@/lib/utils';
 import { store } from '@/routes/login';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
 type BackFace = 'register' | 'forgot';
 
 type Props = {
@@ -22,32 +30,6 @@ type Props = {
     canRegister: boolean;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Estilos reutilizables
-// ─────────────────────────────────────────────────────────────────────────────
-const CARD_STYLE: React.CSSProperties = {
-    background:
-        'radial-gradient(ellipse 110% 100% at 60% 30%, rgba(232,0,26,0.13) 0%, rgba(180,0,10,0.09) 40%, rgba(100,0,5,0.06) 70%, rgba(255,255,255,0.94) 100%)',
-    backdropFilter: 'blur(24px)',
-    WebkitBackdropFilter: 'blur(24px)',
-    border: '1px solid rgba(200,0,15,0.18)',
-    boxShadow: '0 12px 50px rgba(180,0,10,0.20), 0 1px 0 rgba(255,255,255,0.7) inset',
-};
-
-const INPUT_CLS = cn(
-    'h-11 pl-10 transition-all',
-    'border-red-100 bg-white/80 placeholder:text-gray-400',
-    'focus-visible:border-brand-red focus-visible:bg-white focus-visible:ring-brand-red/20',
-);
-
-const BTN_STYLE: React.CSSProperties = {
-    background: 'linear-gradient(90deg, #E8001A 0%, #CC0010 50%, #8B0008 100%)',
-    boxShadow: '0 4px 18px rgba(200,0,10,0.28)',
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Google icon
-// ─────────────────────────────────────────────────────────────────────────────
 function GoogleIcon() {
     return (
         <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
@@ -59,9 +41,6 @@ function GoogleIcon() {
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Cara FRENTE — Login
-// ─────────────────────────────────────────────────────────────────────────────
 function LoginFace({
     status,
     canResetPassword,
@@ -73,8 +52,8 @@ function LoginFace({
     return (
         <div className="flex flex-col gap-0 p-8">
             <div className="mb-6 text-center">
-                <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t('auth.welcome_back')}</h1>
-                <p className="mt-1 text-sm text-gray-500">{t('auth.signin_subtitle')}</p>
+                <h1 className={authTitleClass}>{t('auth.welcome_back')}</h1>
+                <p className={authSubtitleClass}>{t('auth.signin_subtitle')}</p>
             </div>
 
             {status && (
@@ -83,7 +62,6 @@ function LoginFace({
                 </div>
             )}
 
-            {/* Google */}
             <a
                 href="/auth/google/redirect"
                 className="mb-4 flex h-11 w-full cursor-pointer items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md active:scale-[0.98]"
@@ -92,61 +70,96 @@ function LoginFace({
                 {t('auth.google')}
             </a>
 
-            {/* Divider */}
-                <div className="mb-4 flex items-center gap-3">
-                    <div className="flex-1 border-t border-gray-300" />
-                    <span className="text-xs font-medium text-gray-500">{t('auth.or_email')}</span>
-                    <div className="flex-1 border-t border-gray-300" />
-                </div>
+            <div className="mb-4 flex items-center gap-3">
+                <div className="flex-1 border-t border-gray-300" />
+                <span className="text-xs font-medium text-gray-500">{t('auth.or_email')}</span>
+                <div className="flex-1 border-t border-gray-300" />
+            </div>
 
             <Form action={store.url()} method="post" resetOnSuccess={['password']} className="flex flex-col gap-4">
                 {({ processing, errors }) => (
                     <>
                         <div className="space-y-1.5">
-                            <Label htmlFor="email" className="text-sm font-medium text-gray-700">{t('auth.email')}</Label>
+                            <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                                {t('auth.email')}
+                            </Label>
                             <div className="relative">
-                                <Mail className="pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2 text-brand-red opacity-60" />
-                                <Input id="email" type="email" name="email" required autoFocus tabIndex={1} autoComplete="email" placeholder={t('auth.email_placeholder')}
-                                    className={cn(INPUT_CLS, errors.email && 'border-red-400 bg-red-50')} />
+                                <Mail className={cn('pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2', authIconClass)} />
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    name="email"
+                                    required
+                                    autoFocus
+                                    tabIndex={1}
+                                    autoComplete="email"
+                                    placeholder={t('auth.email_placeholder')}
+                                    className={cn(AUTH_INPUT_CLS, errors.email && 'border-red-400 bg-red-50')}
+                                />
                             </div>
                             <InputError message={errors.email} />
                         </div>
 
                         <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="password" className="text-sm font-medium text-gray-700">{t('auth.password')}</Label>
+                                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                                    {t('auth.password')}
+                                </Label>
                                 {canResetPassword && (
-                                    <button type="button" onClick={() => onFlipTo('forgot')}
-                                        className="cursor-pointer text-xs font-medium text-brand-red hover:text-red-700">
+                                    <button type="button" onClick={() => onFlipTo('forgot')} className={authLinkAccentClass}>
                                         {t('auth.forgot_password')}
                                     </button>
                                 )}
                             </div>
                             <div className="relative">
-                                <KeyRound className="pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2 text-brand-red opacity-60" />
-                                <PasswordInput id="password" name="password" required tabIndex={2} autoComplete="current-password" placeholder={t('auth.password_placeholder')}
-                                    className={cn(INPUT_CLS, errors.password && 'border-red-400 bg-red-50')} />
+                                <KeyRound className={cn('pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2', authIconClass)} />
+                                <PasswordInput
+                                    id="password"
+                                    name="password"
+                                    required
+                                    tabIndex={2}
+                                    autoComplete="current-password"
+                                    placeholder={t('auth.password_placeholder')}
+                                    className={cn(AUTH_INPUT_CLS, errors.password && 'border-red-400 bg-red-50')}
+                                />
                             </div>
                             <InputError message={errors.password} />
                         </div>
 
                         <div className="flex items-center gap-2.5">
-                            <Checkbox id="remember" name="remember" tabIndex={3}
-                                className="border-gray-300 data-[state=checked]:border-brand-red data-[state=checked]:bg-brand-red" />
-                            <Label htmlFor="remember" className="cursor-pointer text-sm text-gray-600 select-none">{t('auth.remember_me')}</Label>
+                            <Checkbox
+                                id="remember"
+                                name="remember"
+                                tabIndex={3}
+                                className="border-gray-300 data-[state=checked]:border-brand-orange data-[state=checked]:bg-brand-orange"
+                            />
+                            <Label htmlFor="remember" className="cursor-pointer text-sm text-gray-600 select-none">
+                                {t('auth.remember_me')}
+                            </Label>
                         </div>
 
-                        <Button type="submit"
+                        <Button
+                            type="submit"
                             className="mt-1 h-11 w-full cursor-pointer rounded-xl text-sm font-semibold tracking-wide text-white transition-all active:scale-[0.98] disabled:opacity-60"
-                            style={BTN_STYLE} tabIndex={4} disabled={processing} data-test="login-button">
-                            {processing ? <span className="flex items-center gap-2"><Spinner />{t('auth.signing_in')}</span> : t('auth.sign_in')}
+                            style={AUTH_BTN_STYLE}
+                            tabIndex={4}
+                            disabled={processing}
+                            data-test="login-button"
+                        >
+                            {processing ? (
+                                <span className="flex items-center gap-2">
+                                    <Spinner />
+                                    {t('auth.signing_in')}
+                                </span>
+                            ) : (
+                                t('auth.sign_in')
+                            )}
                         </Button>
 
                         {canRegister && (
                             <p className="mt-1 text-center text-sm text-gray-500">
                                 {t('auth.no_account')}{' '}
-                                <button type="button" onClick={() => onFlipTo('register')}
-                                    className="cursor-pointer font-semibold text-brand-red hover:text-red-700">
+                                <button type="button" onClick={() => onFlipTo('register')} className={authLinkBlueClass}>
                                     {t('auth.register_free')}
                                 </button>
                             </p>
@@ -158,54 +171,22 @@ function LoginFace({
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Componente principal con flip
-// Mismo patrón que register.tsx y forgot-password.tsx:
-//   entrada  90° → 0°   (viene desde la derecha)
-//   salida   0° → -90°  (sale hacia la izquierda)
-// ─────────────────────────────────────────────────────────────────────────────
-const FLIP_MS = 540;
-
 export default function Login(props: Props) {
     const { t } = useTranslation();
+    const { wrapStyle, cardWrapStyle, flipTo } = useAuthMountFlip();
 
-    // Flip-in en montaje
-    const [mounted, setMounted] = useState(false);
-    // Flip-out al navegar
-    const [exiting, setExiting] = useState(false);
-
-    useLayoutEffect(() => {
-        const id = requestAnimationFrame(() => setMounted(true));
-
-        return () => cancelAnimationFrame(id);
-    }, []);
-
-    const flipTo = (face: BackFace) => {
-        if (exiting) {
-            return;
-        }
-
-        setExiting(true);
-        setTimeout(() => {
-            router.visit(face === 'register' ? '/register' : '/forgot-password');
-        }, FLIP_MS);
-    };
-
-    const cardWrapStyle: React.CSSProperties = {
-        // entrada: 90°→0°  |  salida: 0°→-90°  |  inicial (sin transición): 90°
-        transform: exiting ? 'rotateY(-90deg)' : mounted ? 'rotateY(0deg)' : 'rotateY(90deg)',
-        transition: mounted ? `transform ${FLIP_MS}ms cubic-bezier(0.4, 0, 0.2, 1)` : 'none',
-        willChange: 'transform',
+    const flipToFace = (face: BackFace) => {
+        flipTo(face === 'register' ? '/register' : '/forgot-password');
     };
 
     return (
         <>
             <Head title={t('auth.sign_in')} />
 
-            <div style={{ perspective: '1200px' }}>
+            <div style={wrapStyle}>
                 <div style={cardWrapStyle}>
-                    <div className="w-full rounded-3xl" style={CARD_STYLE}>
-                        <LoginFace {...props} onFlipTo={flipTo} />
+                    <div className="w-full rounded-3xl" style={AUTH_CARD_STYLE}>
+                        <LoginFace {...props} onFlipTo={flipToFace} />
                     </div>
                 </div>
             </div>

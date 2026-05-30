@@ -90,7 +90,7 @@ export function NavMobileMenu({ user }: NavMobileMenuProps) {
                                 <span key={labelKey}
                                     className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-gray-300">
                                     {t(labelKey)}
-                                    <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-brand-red">Soon</span>
+                                    <span className="rounded-full bg-orange-50 px-1.5 py-0.5 text-[10px] font-bold text-brand-orange">Soon</span>
                                 </span>
                             );
                         }
@@ -100,7 +100,7 @@ export function NavMobileMenu({ user }: NavMobileMenuProps) {
                                 onClick={() => setOpen(false)}
                                 className={cn(
                                     'rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                                    isActive ? 'bg-red-50 text-brand-red' : 'text-gray-700 hover:bg-gray-50',
+                                    isActive ? 'bg-orange-50 text-brand-orange' : 'text-gray-700 hover:bg-gray-50',
                                 )}
                             >
                                 {t(labelKey)}
@@ -115,26 +115,26 @@ export function NavMobileMenu({ user }: NavMobileMenuProps) {
                         {isTourist && (
                             <Link href="/explore/profile" onClick={() => setOpen(false)}
                                 className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                <User className="h-4 w-4 text-brand-red" />
+                                <User className="h-4 w-4 text-brand-orange" />
                                 {t('explore.my_profile')}
                             </Link>
                         )}
                         {isOwner && (
                             <Link href="/owner/pending" onClick={() => setOpen(false)}
                                 className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                <Store className="h-4 w-4 text-brand-red" />
+                                <Store className="h-4 w-4 text-brand-orange" />
                                 {t('nav.my_panel')}
                             </Link>
                         )}
                         {isAdmin && (
                             <Link href="/dashboard" onClick={() => setOpen(false)}
                                 className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                <LayoutDashboard className="h-4 w-4 text-brand-red" />
+                                <LayoutDashboard className="h-4 w-4 text-brand-orange" />
                                 Dashboard
                             </Link>
                         )}
                         <Link href={logout()} method="post" as="button" onClick={() => setOpen(false)}
-                            className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50">
+                            className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-red-500 hover:bg-orange-50">
                             <LogOut className="h-4 w-4" />
                             {t('nav.logout')}
                         </Link>
@@ -147,7 +147,7 @@ export function NavMobileMenu({ user }: NavMobileMenuProps) {
                         </Link>
                         <Link href={register()} onClick={() => setOpen(false)}
                             className="rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-white"
-                            style={{ background: 'linear-gradient(90deg,#E8001A,#8B0008)' }}>
+                            style={{ background: 'linear-gradient(90deg,#ffb833,#ffa300,#e59200)' }}>
                             {t('nav.register')}
                         </Link>
                     </div>

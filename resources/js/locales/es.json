@@ -54,7 +54,22 @@
         "owner_notice": "Tu cuenta será revisada por nuestro equipo antes de activarse. Te notificaremos por correo.",
         "owner_notice_title": "Revisión pendiente",
         "back_to_roles": "Cambiar tipo de cuenta",
-        "tourist_google_note": "Google disponible solo para turistas"
+        "tourist_google_note": "Google disponible solo para turistas",
+        "reset_title": "Restablecer contraseña",
+        "reset_subtitle": "Ingresa tu nueva contraseña para continuar.",
+        "reset_submit": "Restablecer contraseña",
+        "confirm_title": "Confirmar contraseña",
+        "confirm_subtitle": "Esta es un área segura. Confirma tu contraseña para continuar.",
+        "confirm_submit": "Confirmar",
+        "two_factor_title": "Código de autenticación",
+        "two_factor_desc": "Ingresa el código de tu aplicación de autenticación.",
+        "two_factor_recovery_title": "Código de recuperación",
+        "two_factor_recovery_desc": "Ingresa uno de tus códigos de recuperación de emergencia.",
+        "two_factor_recovery_placeholder": "Ingresa tu código de recuperación",
+        "two_factor_use_code": "usar código de autenticación",
+        "two_factor_use_recovery": "usar un código de recuperación",
+        "two_factor_continue": "Continuar",
+        "two_factor_or": "o puedes"
     },
     "setup": {
         "title": "Cuéntanos sobre ti",

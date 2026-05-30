@@ -43,7 +43,7 @@ export function ExplorePageHeader({ title, subtitle, backHref, onBack, showHome 
             {showHome && (
                 <Link
                     href={home.url()}
-                    className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#E8001A] shadow-sm ring-1 ring-orange-100 transition hover:bg-orange-50"
+                    className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand-orange shadow-sm ring-1 ring-orange-100 transition hover:bg-orange-50"
                     title={t('explore.back_home')}
                 >
                     <Home className="size-5" />

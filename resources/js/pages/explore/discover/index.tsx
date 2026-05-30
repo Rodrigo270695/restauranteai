@@ -72,7 +72,7 @@ function DraftRoutePanel({
         >
             <div className="flex items-start gap-3">
                 <div className="rounded-xl bg-white p-2 shadow-sm ring-1 ring-orange-100">
-                    <Route className="size-5 text-[#E8001A]" />
+                    <Route className="size-5 text-brand-orange" />
                 </div>
                 <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-gray-900">
@@ -82,7 +82,7 @@ function DraftRoutePanel({
                         {draftRoute.stops.map(s => s.restaurant.name).join(' → ')}
                     </p>
                     {draftRoute.total_distance_km != null && (
-                        <p className="mt-1 text-[11px] font-medium text-[#E8001A]">
+                        <p className="mt-1 text-[11px] font-medium text-brand-orange">
                             {t('explore.route_summary', {
                                 count: stopsCount,
                                 km: draftRoute.total_distance_km,
@@ -96,7 +96,7 @@ function DraftRoutePanel({
             {!showPublish ? (
                 <div className="mt-3 flex gap-2">
                     <Button
-                        className="flex-1 rounded-xl bg-[#E8001A] text-white hover:bg-[#CC0010]"
+                        className="flex-1 rounded-xl bg-brand-orange text-white hover:bg-brand-orange-dark"
                         onClick={() => setShowPublish(true)}
                     >
                         {t('explore.save_route')}
@@ -128,7 +128,7 @@ function DraftRoutePanel({
                             className="rounded-xl bg-white pl-10"
                         />
                     </div>
-                    <Button type="submit" className="w-full rounded-xl bg-[#E8001A] text-white">
+                    <Button type="submit" className="w-full rounded-xl bg-brand-orange text-white">
                         {t('explore.publish_route')}
                     </Button>
                 </form>
@@ -266,7 +266,7 @@ function DiscoverPage({
                     }}
                     className={cn(
                         'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition',
-                        !cuisineId ? 'bg-[#E8001A] text-white' : 'bg-white text-gray-600 ring-1 ring-gray-200',
+                        !cuisineId ? 'bg-brand-orange text-white' : 'bg-white text-gray-600 ring-1 ring-gray-200',
                     )}
                 >
                     <UtensilsCrossed className="mr-1 inline size-3" />
@@ -287,7 +287,7 @@ function DiscoverPage({
                         className={cn(
                             'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition',
                             cuisineId === c.id
-                                ? 'bg-[#E8001A] text-white'
+                                ? 'bg-brand-orange text-white'
                                 : 'bg-white text-gray-600 ring-1 ring-gray-200',
                         )}
                     >
@@ -350,7 +350,7 @@ function DiscoverPage({
                             className={cn(
                                 'rounded-xl px-3 py-2 text-sm font-medium',
                                 flash.type === 'error'
-                                    ? 'bg-red-50 text-red-800'
+                                    ? 'bg-orange-50 text-red-800'
                                     : 'bg-green-50 text-green-800',
                             )}
                         >
@@ -367,7 +367,7 @@ function DiscoverPage({
                 <div className="flex flex-col p-4 pb-32">
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="text-sm font-bold text-gray-900">{t('explore.near_you')}</h2>
-                        <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-[#E8001A]">
+                        <span className="rounded-full bg-orange-50 px-2 py-0.5 text-xs font-semibold text-brand-orange">
                             {t('explore.places_count', { count: restaurants.length })}
                         </span>
                     </div>
@@ -390,7 +390,7 @@ function DiscoverPage({
                             className={cn(
                                 'max-w-2xl rounded-xl px-4 py-2 text-sm font-medium',
                                 flash.type === 'error'
-                                    ? 'bg-red-50 text-red-800 ring-1 ring-red-100'
+                                    ? 'bg-orange-50 text-red-800 ring-1 ring-red-100'
                                     : 'bg-green-50 text-green-800 ring-1 ring-green-100',
                             )}
                         >
@@ -410,7 +410,7 @@ function DiscoverPage({
                                     {t('explore.discoveries_chiclayo')}
                                 </p>
                             </div>
-                            <span className="rounded-full bg-[#E8001A] px-2.5 py-1 text-xs font-bold text-white">
+                            <span className="rounded-full bg-brand-orange px-2.5 py-1 text-xs font-bold text-white">
                                 {restaurants.length}
                             </span>
                         </div>
@@ -429,7 +429,7 @@ function DiscoverPage({
                                 {t('explore.map_panel_title')}
                             </p>
                             {stopsCount > 0 && draftRoute.total_distance_km != null && (
-                                <p className="text-xs font-medium text-[#E8001A]">
+                                <p className="text-xs font-medium text-brand-orange">
                                     {t('explore.route_summary', {
                                         count: stopsCount,
                                         km: draftRoute.total_distance_km,

@@ -68,7 +68,7 @@ const CUISINE_STYLES: Record<string, { icon: LucideIcon; color: string }> = {
     criolla: { icon: ChefHat, color: 'bg-orange-50 text-orange-600 border-orange-100' },
     marina: { icon: Fish, color: 'bg-blue-50 text-blue-600 border-blue-100' },
     ceviche: { icon: Fish, color: 'bg-cyan-50 text-cyan-600 border-cyan-100' },
-    chifa: { icon: UtensilsCrossed, color: 'bg-red-50 text-red-700 border-red-100' },
+    chifa: { icon: UtensilsCrossed, color: 'bg-orange-50 text-orange-700 border-orange-100' },
     lambayecana: { icon: Flame, color: 'bg-amber-50 text-amber-700 border-amber-100' },
 };
 
@@ -120,8 +120,8 @@ export default function ExploreIndex({
                     <div
                         className="relative overflow-hidden rounded-3xl px-6 py-8 sm:px-10 sm:py-10"
                         style={{
-                            background: 'linear-gradient(135deg, #E8001A 0%, #CC0010 40%, #8B0008 100%)',
-                            boxShadow: '0 20px 60px rgba(200,0,10,0.30)',
+                            background: 'linear-gradient(135deg, #073577 0%, #0d4a9e 40%, #052a58 100%)',
+                            boxShadow: '0 20px 60px rgba(7, 53, 119, 0.28)',
                         }}
                     >
                         {/* Decoración de fondo */}
@@ -129,11 +129,11 @@ export default function ExploreIndex({
                         <div className="pointer-events-none absolute -bottom-12 -left-6 h-40 w-40 rounded-full bg-white/5" />
 
                         <div className="relative z-10">
-                            <p className="text-sm font-medium text-red-200">{t('explore.greeting')}</p>
+                            <p className="text-sm font-medium text-blue-200">{t('explore.greeting')}</p>
                             <h1 className="mt-0.5 text-2xl font-bold text-white sm:text-3xl">
                                 {firstName} 👋
                             </h1>
-                            <p className="mt-1 text-sm text-red-100">{t('explore.portal_subtitle')}</p>
+                            <p className="mt-1 text-sm text-blue-100">{t('explore.portal_subtitle')}</p>
 
                             {/* Barra de búsqueda */}
                             <div className="relative mt-6 max-w-xl">
@@ -210,7 +210,7 @@ export default function ExploreIndex({
                                     <button
                                         type="button"
                                         onClick={() => router.post(exploreRecommend.url())}
-                                        className="flex cursor-pointer items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-brand-red transition hover:bg-red-100"
+                                        className="flex cursor-pointer items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-brand-orange transition hover:bg-orange-100"
                                     >
                                         <Sparkles className="h-3 w-3" />
                                         {t('explore.refresh_recommendations')}
@@ -230,12 +230,12 @@ export default function ExploreIndex({
                                     ))}
                                 </div>
                             ) : (
-                                <div className="rounded-2xl border border-dashed border-red-200 bg-red-50/60 p-5 text-center">
-                                    <Sparkles className="mx-auto mb-2 h-6 w-6 text-brand-red opacity-60" />
+                                <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50/60 p-5 text-center">
+                                    <Sparkles className="mx-auto mb-2 h-6 w-6 text-brand-orange opacity-60" />
                                     <p className="text-sm font-medium text-gray-700">{t('explore.no_recommendations')}</p>
                                     <Link
                                         href={exploreProfile.url()}
-                                        className="mt-3 inline-flex text-xs font-semibold text-brand-red hover:underline"
+                                        className="mt-3 inline-flex text-xs font-semibold text-brand-orange hover:underline"
                                     >
                                         {t('explore.complete_profile_btn')}
                                     </Link>
@@ -245,7 +245,7 @@ export default function ExploreIndex({
                             <div className="mt-4 text-center">
                                 <Link
                                     href={exploreDiscoverUrl({ search: search || undefined })}
-                                    className="inline-flex items-center gap-1 text-sm font-semibold text-brand-red hover:underline"
+                                    className="inline-flex items-center gap-1 text-sm font-semibold text-brand-orange hover:underline"
                                 >
                                     {t('explore.browse_all')} <ArrowRight className="h-4 w-4" />
                                 </Link>
@@ -264,7 +264,7 @@ export default function ExploreIndex({
                                 <h3 className="text-sm font-bold text-gray-900">{t('explore.preferences_title')}</h3>
                                 <Link
                                     href={exploreProfile.url()}
-                                    className="flex cursor-pointer items-center gap-1 text-xs font-medium text-brand-red hover:underline"
+                                    className="flex cursor-pointer items-center gap-1 text-xs font-medium text-brand-orange hover:underline"
                                 >
                                     Editar <ArrowRight className="h-3 w-3" />
                                 </Link>
@@ -275,7 +275,7 @@ export default function ExploreIndex({
                                     {/* Ciudad */}
                                     {profile?.city && (
                                         <div className="flex items-center gap-2 text-sm text-gray-600">
-                                            <MapPin className="h-4 w-4 text-brand-red opacity-60" />
+                                            <MapPin className="h-4 w-4 text-brand-orange opacity-60" />
                                             <span>{profile.city}</span>
                                         </div>
                                     )}
@@ -296,7 +296,7 @@ export default function ExploreIndex({
                                                 {profile.preferred_cuisines.slice(0, 6).map(c => (
                                                     <span
                                                         key={c}
-                                                        className="rounded-full border border-red-100 bg-red-50 px-2.5 py-0.5 text-xs font-medium text-brand-red"
+                                                        className="rounded-full border border-orange-100 bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-brand-orange"
                                                     >
                                                         {c}
                                                     </span>
@@ -317,7 +317,7 @@ export default function ExploreIndex({
                                     <Link
                                         href={exploreProfile.url()}
                                         className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white transition-all hover:brightness-110"
-                                        style={{ background: 'linear-gradient(90deg, #E8001A 0%, #8B0008 100%)' }}
+                                        style={{ background: 'linear-gradient(90deg, #ffb833 0%, #ffa300 50%, #e59200 100%)' }}
                                     >
                                         <Sparkles className="h-3.5 w-3.5" />
                                         {t('explore.complete_profile_btn')}
@@ -339,7 +339,7 @@ export default function ExploreIndex({
                             <p className="mb-4 text-xs text-gray-500">{t('explore.tam_card_desc')}</p>
                             <Link
                                 href={tamSurvey.url()}
-                                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-xs font-semibold text-brand-red transition hover:bg-red-100"
+                                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-orange-100 bg-orange-50 px-4 py-2.5 text-xs font-semibold text-brand-orange transition hover:bg-orange-100"
                             >
                                 <ClipboardList className="h-4 w-4" />
                                 {tamCompleted ? t('explore.tam_card_view') : t('explore.tam_card_cta')}
@@ -347,7 +347,7 @@ export default function ExploreIndex({
                         </div>
 
                         {mlPreference && (
-                            <div className="rounded-2xl border border-dashed border-red-100 bg-white p-5 text-xs text-gray-600">
+                            <div className="rounded-2xl border border-dashed border-orange-100 bg-white p-5 text-xs text-gray-600">
                                 <p className="font-semibold text-gray-800">{t('explore.ml_active_title')}</p>
                                 <ul className="mt-2 space-y-1">
                                     {mlPreference.cuisine && <li>• {mlPreference.cuisine}</li>}
@@ -374,7 +374,7 @@ export default function ExploreIndex({
                             <h3 className="mb-4 text-sm font-bold text-gray-900">{t('explore.activity_title')}</h3>
                             <div className="grid grid-cols-2 gap-3">
                                 {[
-                                    { labelKey: 'explore.stat_reviews',   value: '0', color: 'text-brand-red' },
+                                    { labelKey: 'explore.stat_reviews',   value: '0', color: 'text-brand-orange' },
                                     { labelKey: 'explore.stat_favorites', value: '0', color: 'text-amber-500' },
                                     { labelKey: 'explore.stat_visits',    value: '0', color: 'text-blue-500' },
                                     { labelKey: 'explore.stat_points',    value: '0', color: 'text-green-500' },

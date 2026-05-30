@@ -54,7 +54,22 @@
         "owner_notice": "Your account will be reviewed by our team before activation. We'll notify you by email.",
         "owner_notice_title": "Pending review",
         "back_to_roles": "Change account type",
-        "tourist_google_note": "Google available for tourists only"
+        "tourist_google_note": "Google available for tourists only",
+        "reset_title": "Reset password",
+        "reset_subtitle": "Enter your new password to continue.",
+        "reset_submit": "Reset password",
+        "confirm_title": "Confirm password",
+        "confirm_subtitle": "This is a secure area. Please confirm your password before continuing.",
+        "confirm_submit": "Confirm",
+        "two_factor_title": "Authentication code",
+        "two_factor_desc": "Enter the code from your authenticator app.",
+        "two_factor_recovery_title": "Recovery code",
+        "two_factor_recovery_desc": "Enter one of your emergency recovery codes.",
+        "two_factor_recovery_placeholder": "Enter your recovery code",
+        "two_factor_use_code": "use authentication code",
+        "two_factor_use_recovery": "use a recovery code",
+        "two_factor_continue": "Continue",
+        "two_factor_or": "or you can"
     },
     "setup": {
         "title": "Tell us about yourself",

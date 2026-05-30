@@ -19,8 +19,8 @@ export function NavLinkItem({ href, label, exact = false, scrolled = false }: Na
                 'relative pb-1 text-sm font-medium transition-all duration-200',
                 'after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:rounded-full after:transition-transform after:duration-200',
                 isActive
-                    ? 'font-semibold text-brand-red after:scale-x-100 after:bg-brand-red'
-                    : 'text-gray-600 after:scale-x-0 after:bg-brand-red hover:text-gray-900 hover:after:scale-x-100',
+                    ? 'font-semibold text-brand-orange after:scale-x-100 after:bg-brand-orange'
+                    : 'text-gray-600 after:scale-x-0 after:bg-brand-orange hover:text-gray-900 hover:after:scale-x-100',
             )}
         >
             {label}

@@ -81,13 +81,13 @@ function RestaurantShow({ restaurant, inRoute, draftStopsCount, isFavorited: ini
                     <button
                         type="button"
                         onClick={toggleFavorite}
-                        className="rounded-full p-2 hover:bg-red-50"
+                        className="rounded-full p-2 hover:bg-orange-50"
                         aria-label={favorited ? t('explore.unfavorite') : t('explore.favorite')}
                     >
                         <Heart
                             className={cn(
                                 'size-5',
-                                favorited ? 'fill-[#E8001A] text-[#E8001A]' : 'text-gray-400',
+                                favorited ? 'fill-brand-orange text-brand-orange' : 'text-gray-400',
                             )}
                         />
                     </button>
@@ -115,7 +115,7 @@ function RestaurantShow({ restaurant, inRoute, draftStopsCount, isFavorited: ini
                     <RestaurantHoursStatus hours={restaurant.hours} variant="inline" />
                     {restaurant.district && (
                         <p className="flex items-center gap-1 text-sm text-gray-600">
-                            <MapPin className="size-4 text-[#E8001A]" />
+                            <MapPin className="size-4 text-brand-orange" />
                             {restaurant.address ?? restaurant.district}
                         </p>
                     )}
@@ -142,7 +142,7 @@ function RestaurantShow({ restaurant, inRoute, draftStopsCount, isFavorited: ini
                         {inRoute ? (
                             <Button
                                 variant="outline"
-                                className="flex-1 rounded-xl border-red-200 text-red-600"
+                                className="flex-1 rounded-xl border-orange-200 text-brand-orange-dark"
                                 onClick={() => router.delete(`/explore/routes/stops/${restaurant.slug}`)}
                             >
                                 <Trash2 className="mr-1 size-4" />
@@ -150,7 +150,7 @@ function RestaurantShow({ restaurant, inRoute, draftStopsCount, isFavorited: ini
                             </Button>
                         ) : (
                             <Button
-                                className="flex-1 rounded-xl bg-[#E8001A] text-white disabled:bg-gray-300 disabled:text-gray-500"
+                                className="flex-1 rounded-xl bg-brand-orange text-white disabled:bg-gray-300 disabled:text-gray-500"
                                 disabled={
                                     restaurant.hours != null
                                     && restaurant.hours.label !== 'Horario no disponible'

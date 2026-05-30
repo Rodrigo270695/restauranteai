@@ -77,7 +77,7 @@ function RouteShow({ route: routeData, mapCenter }: Props) {
                         <h1 className="truncate text-lg font-bold">{routeData.name}</h1>
                         {dateLabel && (
                             <p className="flex items-center gap-1 text-xs text-gray-500">
-                                <Calendar className="size-3 text-[#E8001A]" />
+                                <Calendar className="size-3 text-brand-orange" />
                                 {dateLabel}
                             </p>
                         )}
@@ -111,7 +111,7 @@ function RouteShow({ route: routeData, mapCenter }: Props) {
                         <h2 className="mt-3 text-sm font-bold text-gray-900">{t('explore.follow_route')}</h2>
                         <p className="mt-1 text-xs text-gray-500">{t('explore.follow_route_desc')}</p>
                         {googleMultiStop && (
-                            <Button className="mt-3 w-full rounded-xl bg-[#E8001A] text-white" asChild>
+                            <Button className="mt-3 w-full rounded-xl bg-brand-orange text-white" asChild>
                                 <a href={googleMultiStop} target="_blank" rel="noreferrer">
                                     <Navigation className="mr-2 size-4" />
                                     {t('explore.open_in_maps')}

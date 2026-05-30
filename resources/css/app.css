@@ -8,17 +8,21 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-    /* DiscoverLambo brand colors */
-    --color-brand-dark:        #1A0800;
-    --color-brand-brown:       #5C1E00;
-    --color-brand-red:         #D91C1C;
-    --color-brand-red-light:   #FF3B30;
-    --color-brand-dark-orange: #C45000;
-    --color-brand-orange:      #FF6B00;
-    --color-brand-yellow:      #FFB300;
-    --color-brand-gold:        #FFD000;
-    /* Color activo del navbar (verde oliva del logo) */
-    --color-brand-nav-active:  #3A7010;
+    /* DiscoverLambo — azul institucional + naranja acento */
+    --color-brand-blue:        #073577;
+    --color-brand-blue-light:  #0d4a9e;
+    --color-brand-blue-dark:   #052a58;
+    --color-brand-orange:      #ffa300;
+    --color-brand-orange-light: #ffb833;
+    --color-brand-orange-dark: #e59200;
+    --color-brand-red:         #ffa300;
+    --color-brand-red-light:   #ffb833;
+    --color-brand-dark:        #052a58;
+    --color-brand-brown:       #073577;
+    --color-brand-dark-orange: #e59200;
+    --color-brand-yellow:      #ffb347;
+    --color-brand-gold:        #ffc966;
+    --color-brand-nav-active:  #ffa300;
 
     --font-sans:
         'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
@@ -80,19 +84,19 @@
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
+    --primary: #073577;
+    --primary-foreground: #ffffff;
     --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
+    --secondary-foreground: #073577;
     --muted: oklch(0.97 0 0);
     --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
+    --accent: #fff4eb;
+    --accent-foreground: #073577;
     --destructive: oklch(0.577 0.245 27.325);
     --destructive-foreground: oklch(0.577 0.245 27.325);
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
-    --ring: oklch(0.87 0 0);
+    --ring: #ffa300;
     --chart-1: oklch(0.646 0.222 41.116);
     --chart-2: oklch(0.6 0.118 184.704);
     --chart-3: oklch(0.398 0.07 227.392);
@@ -100,13 +104,13 @@
     --chart-5: oklch(0.769 0.188 70.08);
     --radius: 0.625rem;
     --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-foreground: #073577;
+    --sidebar-primary: #073577;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #fff4eb;
+    --sidebar-accent-foreground: #073577;
     --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.87 0 0);
+    --sidebar-ring: #ffa300;
 }
 
 .dark {
@@ -116,8 +120,8 @@
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.145 0 0);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.985 0 0);
-    --primary-foreground: oklch(0.205 0 0);
+    --primary: #ffa300;
+    --primary-foreground: #ffffff;
     --secondary: oklch(0.269 0 0);
     --secondary-foreground: oklch(0.985 0 0);
     --muted: oklch(0.269 0 0);
@@ -136,8 +140,8 @@
     --chart-5: oklch(0.645 0.246 16.439);
     --sidebar: oklch(0.205 0 0);
     --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.985 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-primary: #ffa300;
+    --sidebar-primary-foreground: #ffffff;
     --sidebar-accent: oklch(0.269 0 0);
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(0.269 0 0);
@@ -160,8 +164,8 @@
  */
 @layer components {
     .btn-brand-cta {
-        background: linear-gradient(90deg, #e8001a 0%, #cc0010 50%, #8b0008 100%);
-        box-shadow: 0 4px 18px rgba(200, 0, 10, 0.28);
+        background: linear-gradient(90deg, #ffb833 0%, #ffa300 45%, #e59200 100%);
+        box-shadow: 0 4px 18px rgba(255, 163, 0, 0.32);
         color: #fff;
         border-style: none;
         transition:
@@ -171,7 +175,7 @@
     }
 
     .btn-brand-cta:hover:not(:disabled) {
-        filter: brightness(1.1);
+        filter: brightness(1.06);
     }
 
     .btn-brand-cta:active:not(:disabled) {
@@ -181,8 +185,8 @@
     .btn-brand-cta:focus-visible {
         outline: none;
         box-shadow:
-            0 4px 18px rgba(200, 0, 10, 0.28),
-            0 0 0 3px rgba(217, 28, 28, 0.35);
+            0 4px 18px rgba(255, 163, 0, 0.32),
+            0 0 0 3px rgba(7, 53, 119, 0.25);
     }
 
     /* Leaflet: mantener mapa bajo navbar y barras fijas del portal turista */
@@ -203,7 +207,7 @@
 
     .scrollbar-thin {
         scrollbar-width: thin;
-        scrollbar-color: rgba(232, 0, 26, 0.35) transparent;
+        scrollbar-color: rgba(255, 163, 0, 0.35) transparent;
     }
 
     .scrollbar-thin::-webkit-scrollbar {
@@ -213,7 +217,7 @@
 
     .scrollbar-thin::-webkit-scrollbar-thumb {
         border-radius: 999px;
-        background: rgba(232, 0, 26, 0.35);
+        background: rgba(255, 163, 0, 0.35);
     }
 
     .scrollbar-thin::-webkit-scrollbar-track {

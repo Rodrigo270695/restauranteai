@@ -75,7 +75,7 @@ export function NavLinks({ scrolled = false }: NavLinksProps) {
                             className="flex cursor-not-allowed items-center gap-1.5 text-sm font-medium text-gray-300"
                         >
                             {t(labelKey)}
-                            <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-brand-red">
+                            <span className="rounded-full bg-orange-50 px-1.5 py-0.5 text-[10px] font-bold text-brand-orange">
                                 Soon
                             </span>
                         </span>
@@ -90,10 +90,10 @@ export function NavLinks({ scrolled = false }: NavLinksProps) {
                             'relative pb-1 text-sm font-medium transition-all duration-200',
                             'after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:rounded-full after:transition-transform after:duration-200',
                             isActive
-                                ? 'font-semibold text-brand-red after:scale-x-100 after:bg-brand-red'
+                                ? 'font-semibold text-brand-orange after:scale-x-100 after:bg-brand-orange'
                                 : scrolled || url !== '/'
-                                  ? 'text-gray-600 after:scale-x-0 after:bg-brand-red hover:text-gray-900 hover:after:scale-x-100'
-                                  : 'text-gray-700 after:scale-x-0 after:bg-brand-red hover:text-gray-900 hover:after:scale-x-100',
+                                  ? 'text-gray-600 after:scale-x-0 after:bg-brand-orange hover:text-gray-900 hover:after:scale-x-100'
+                                  : 'text-gray-700 after:scale-x-0 after:bg-brand-orange hover:text-gray-900 hover:after:scale-x-100',
                         )}
                     >
                         {t(labelKey)}

@@ -55,7 +55,7 @@ function DishCard({ dish }: { dish: MenuDish }) {
             <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                     <h4 className="font-semibold leading-snug text-gray-900">{dish.name}</h4>
-                    <span className="shrink-0 text-base font-bold text-[#E8001A]">
+                    <span className="shrink-0 text-base font-bold text-brand-orange">
                         S/ {dish.price.toFixed(2)}
                     </span>
                 </div>
@@ -80,7 +80,7 @@ function DishCard({ dish }: { dish: MenuDish }) {
                         {dish.is_featured && (
                             <Badge
                                 variant="outline"
-                                className="border-red-200 bg-red-50 text-[10px] font-semibold text-[#E8001A]"
+                                className="border-orange-200 bg-orange-50 text-[10px] font-semibold text-brand-orange"
                             >
                                 <Sparkles className="mr-0.5 size-3" />
                                 {t('explore.menu_featured')}
@@ -120,7 +120,7 @@ export function RestaurantMenu({ menu, className }: Props) {
                 return (
                     <div key={section.slug + String(section.id)}>
                         <div className="mb-3 flex items-center gap-2 border-b border-orange-100 pb-2">
-                            <span className="flex size-8 items-center justify-center rounded-lg bg-red-50 text-[#E8001A]">
+                            <span className="flex size-8 items-center justify-center rounded-lg bg-orange-50 text-brand-orange">
                                 <Icon className="size-4" />
                             </span>
                             <div>

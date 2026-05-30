@@ -42,7 +42,7 @@ export function AiRouteGenerateButton({ className }: Props) {
     return (
         <section
             className={cn(
-                'relative overflow-hidden rounded-3xl border border-red-100/90 bg-linear-to-br from-red-50/90 via-white to-orange-50/60 p-5 shadow-sm',
+                'relative overflow-hidden rounded-3xl border border-orange-100/90 bg-linear-to-br from-orange-50/90 via-white to-orange-50/60 p-5 shadow-sm',
                 className,
             )}
         >
@@ -59,7 +59,7 @@ export function AiRouteGenerateButton({ className }: Props) {
             <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0 flex-1">
                     <div className="mb-1 flex items-center gap-2">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-100 text-brand-red">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-100 text-brand-orange">
                             <Route className="h-4 w-4" />
                         </span>
                         <h2 className="text-base font-bold text-gray-900">{t('explore.ai_route_title')}</h2>
@@ -73,10 +73,10 @@ export function AiRouteGenerateButton({ className }: Props) {
                     onClick={handleGenerate}
                     className={cn(
                         'relative w-full shrink-0 overflow-hidden rounded-2xl px-5 py-3.5 text-sm font-semibold text-white shadow-md transition sm:w-auto',
-                        'bg-linear-to-r from-[#E8001A] via-[#CC0010] to-[#8B0008]',
+                        'bg-linear-to-r from-brand-orange via-brand-orange-dark to-brand-orange-dark',
                         'hover:shadow-lg hover:brightness-105',
                         'disabled:cursor-wait disabled:opacity-95',
-                        loading && 'ring-2 ring-red-200 ring-offset-2',
+                        loading && 'ring-2 ring-orange-200 ring-offset-2',
                     )}
                 >
                     {loading && (

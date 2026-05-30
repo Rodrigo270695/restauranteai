@@ -6,6 +6,7 @@ import { useFlashToast } from '@/hooks/use-flash-toast';
 import { useLanguageSync } from '@/hooks/use-language-sync';
 import { cn } from '@/lib/utils';
 import { exploreDiscoverUrl } from '@/lib/explore-discover-url';
+import { BrandLogo } from '@/components/common/brand-logo';
 import { home } from '@/routes';
 import { index as exploreRoutes } from '@/routes/explore/routes';
 import { profile as exploreProfile } from '@/routes/explore';
@@ -33,7 +34,7 @@ export default function TouristExploreLayout({ children, wide = false }: Props) 
     };
 
     return (
-        <div className="relative min-h-screen bg-[#FFF8F2] pb-24 md:pb-6">
+        <div className="relative min-h-screen bg-[#f0f5fb] pb-24 md:pb-6">
             <header className="sticky top-0 z-[100] border-b border-orange-100/80 bg-white/95 shadow-sm backdrop-blur-md">
                 <div
                     className={cn(
@@ -41,12 +42,7 @@ export default function TouristExploreLayout({ children, wide = false }: Props) 
                         wide ? 'max-w-[100%] lg:px-6' : 'max-w-lg md:max-w-7xl',
                     )}
                 >
-                    <Link href={home.url()} className="flex min-w-0 items-center gap-2">
-                        <img src="/logo.png" alt="DiscoverLambo" className="h-8 w-auto shrink-0" />
-                        <span className="hidden truncate text-sm font-bold text-gray-900 sm:inline">
-                            DiscoverLambo
-                        </span>
-                    </Link>
+                    <BrandLogo href={home.url()} surface="light" size="sm" />
                     <div className="hidden items-center gap-1 md:flex">
                         {NAV.map(item => {
                             const Icon = item.icon;
@@ -58,7 +54,7 @@ export default function TouristExploreLayout({ children, wide = false }: Props) 
                                     className={cn(
                                         'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition',
                                         isActive(href)
-                                            ? 'bg-[#E8001A] text-white shadow-sm'
+                                            ? 'bg-brand-orange text-white shadow-sm'
                                             : 'text-gray-600 hover:bg-orange-50',
                                     )}
                                 >
@@ -96,16 +92,16 @@ export default function TouristExploreLayout({ children, wide = false }: Props) 
                                 href={href}
                                 className={cn(
                                     'flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10px] font-semibold transition',
-                                    active ? 'text-[#E8001A]' : 'text-gray-500',
+                                    active ? 'text-brand-orange' : 'text-gray-500',
                                 )}
                             >
                                 <span
                                     className={cn(
                                         'flex size-9 items-center justify-center rounded-xl transition',
-                                        active && 'bg-red-50',
+                                        active && 'bg-orange-50',
                                     )}
                                 >
-                                    <Icon className={cn('size-5', active && 'text-[#E8001A]')} />
+                                    <Icon className={cn('size-5', active && 'text-brand-orange')} />
                                 </span>
                                 {t(item.labelKey)}
                             </Link>

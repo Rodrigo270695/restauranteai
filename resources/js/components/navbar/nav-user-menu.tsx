@@ -42,7 +42,7 @@ function UserAvatar({ user, size = 'md' }: { user: UserType; size?: 'sm' | 'md' 
         <span
             className={cn(
                 'flex items-center justify-center rounded-full font-semibold text-white',
-                'bg-linear-to-br from-brand-red to-brand-orange',
+                'bg-linear-to-br from-brand-blue to-brand-orange',
                 sizeClass,
             )}
         >

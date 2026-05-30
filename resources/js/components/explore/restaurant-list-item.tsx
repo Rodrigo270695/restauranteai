@@ -57,7 +57,7 @@ export function RestaurantListItem({
                     className={cn(
                         'flex w-11 shrink-0 flex-col items-center justify-center rounded-xl text-center',
                         isStart && 'bg-green-600 text-white',
-                        isEnd && !isStart && 'bg-[#E8001A] text-white',
+                        isEnd && !isStart && 'bg-brand-orange text-white',
                         !isStart && !isEnd && 'bg-amber-500 text-white',
                     )}
                 >
@@ -83,7 +83,7 @@ export function RestaurantListItem({
 
                 <div className="min-w-0 flex-1 py-0.5">
                     <CuisineBadges cuisines={restaurant.cuisines} size="xs" />
-                    <h3 className="mt-1 line-clamp-1 text-sm font-bold text-gray-900 group-hover:text-[#E8001A]">
+                    <h3 className="mt-1 line-clamp-1 text-sm font-bold text-gray-900 group-hover:text-brand-orange">
                         {restaurant.name}
                     </h3>
                     {restaurant.short_description && (
@@ -92,7 +92,7 @@ export function RestaurantListItem({
                     <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-gray-500">
                         {restaurant.district && (
                             <span className="flex items-center gap-0.5">
-                                <MapPin className="size-3 shrink-0 text-[#E8001A]/70" />
+                                <MapPin className="size-3 shrink-0 text-brand-orange/70" />
                                 <span className="truncate">{restaurant.district}</span>
                             </span>
                         )}
@@ -125,9 +125,9 @@ export function RestaurantListItem({
                     className={cn(
                         'flex size-10 shrink-0 self-center items-center justify-center rounded-xl shadow-md transition',
                         inRoute
-                            ? 'bg-white text-red-600 ring-2 ring-red-200 hover:bg-red-50'
+                            ? 'bg-white text-brand-orange-dark ring-2 ring-orange-200 hover:bg-orange-50'
                             : canAddToRoute
-                              ? 'bg-[#E8001A] text-white hover:scale-105 active:scale-95'
+                              ? 'bg-brand-orange text-white hover:scale-105 active:scale-95'
                               : 'cursor-not-allowed bg-gray-200 text-gray-400',
                         isBusy && 'opacity-60',
                     )}

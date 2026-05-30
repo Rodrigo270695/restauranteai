@@ -86,7 +86,7 @@ export default function PublicRestaurantShow({ restaurant }: Props) {
 
                             <div className="mt-3 flex flex-wrap items-center gap-3">
                                 {avgPrice && (
-                                    <span className="rounded-xl bg-red-50 px-3 py-1.5 text-base font-extrabold text-[#E8001A]">
+                                    <span className="rounded-xl bg-orange-50 px-3 py-1.5 text-base font-extrabold text-brand-orange">
                                         {t('welcome.browse_avg_price', { price: avgPrice })}
                                     </span>
                                 )}
@@ -97,7 +97,7 @@ export default function PublicRestaurantShow({ restaurant }: Props) {
 
                             {restaurant.district && (
                                 <p className="mt-2 flex items-center gap-2 text-gray-600">
-                                    <MapPin className="size-4 text-[#E8001A]" />
+                                    <MapPin className="size-4 text-brand-orange" />
                                     {restaurant.address ?? restaurant.district}
                                 </p>
                             )}
@@ -110,7 +110,7 @@ export default function PublicRestaurantShow({ restaurant }: Props) {
 
                             <div className="mt-8 flex flex-wrap gap-3">
                                 {mapsUrl && (
-                                    <Button className="rounded-xl bg-[#E8001A] text-white" asChild>
+                                    <Button className="rounded-xl bg-brand-orange text-white" asChild>
                                         <a href={mapsUrl} target="_blank" rel="noreferrer">
                                             <Navigation className="mr-2 size-4" />
                                             {t('explore.how_to_get')}

@@ -1,4 +1,4 @@
-ï»¿import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { LogOut, Menu, User, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -37,7 +37,7 @@ function Avatar({ name }: { name: string }) {
     return (
         <span
             className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white"
-            style={{ background: 'linear-gradient(135deg, #E8001A 0%, #8B0008 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #073577 0%, #052a58 100%)' }}
         >
             {initials}
         </span>
@@ -55,7 +55,7 @@ export default function TouristNavbar() {
     const isActive = (href: string) => {
         if (href === '#') return false;
         const currentPath = window.location.pathname;
-        // ComparaciÃ³n exacta para rutas raÃ­z y portal para evitar falsos positivos
+        // Comparación exacta para rutas raíz y portal para evitar falsos positivos
         if (href === '/' || href === '/explore') return currentPath === href;
         return currentPath.startsWith(href);
     };
@@ -65,12 +65,12 @@ export default function TouristNavbar() {
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 items-center justify-between gap-4">
 
-                    {/* Logo â†’ va a la pÃ¡gina de inicio pÃºblica */}
+                    {/* Logo ? va a la página de inicio pública */}
                     <Link href="/" className="shrink-0">
                         <img src="/logo.png" alt="DiscoverLambo" className="h-10 w-auto" />
                     </Link>
 
-                    {/* Nav links â€” desktop */}
+                    {/* Nav links — desktop */}
                     <div className="hidden items-center gap-1 md:flex">
                         {NAV_ITEMS.map(item => (
                             item.ready ? (
@@ -80,9 +80,9 @@ export default function TouristNavbar() {
                                     className={cn(
                                         'relative px-4 py-2 text-sm font-medium transition-colors',
                                         isActive(item.href)
-                                            ? 'text-brand-red'
+                                            ? 'text-brand-orange'
                                             : 'text-gray-600 hover:text-gray-900',
-                                        'after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:rounded-full after:bg-brand-red after:transition-transform',
+                                        'after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:rounded-full after:bg-brand-orange after:transition-transform',
                                         isActive(item.href) && 'after:scale-x-100',
                                     )}
                                 >
@@ -92,10 +92,10 @@ export default function TouristNavbar() {
                                 <span
                                     key={item.key}
                                     className="relative flex cursor-not-allowed items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-300"
-                                    title="PrÃ³ximamente"
+                                    title="Próximamente"
                                 >
                                     {t(item.labelKey)}
-                                    <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-brand-red">
+                                    <span className="rounded-full bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-brand-orange">
                                         Soon
                                     </span>
                                 </span>
@@ -109,13 +109,13 @@ export default function TouristNavbar() {
                             <LanguageSwitcher />
                         </div>
 
-                        {/* User menu â€” desktop */}
+                        {/* User menu — desktop */}
                         {user && (
                             <div className="relative hidden md:block">
                                 <button
                                     type="button"
                                     onClick={() => setUserMenuOpen(v => !v)}
-                                    className="flex cursor-pointer items-center gap-2 rounded-full p-0.5 transition-all hover:ring-2 hover:ring-brand-red/30"
+                                    className="flex cursor-pointer items-center gap-2 rounded-full p-0.5 transition-all hover:ring-2 hover:ring-brand-orange/30"
                                 >
                                     <Avatar name={user.name} />
                                 </button>
@@ -142,7 +142,7 @@ export default function TouristNavbar() {
                                                 <Link
                                                     href={exploreProfile.url()}
                                                     onClick={() => setUserMenuOpen(false)}
-                                                    className="flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-red-50 hover:text-brand-red"
+                                                    className="flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-orange-50 hover:text-brand-orange"
                                                 >
                                                     <User className="h-4 w-4" />
                                                     {t('explore.my_profile')}
@@ -154,7 +154,7 @@ export default function TouristNavbar() {
                                                     href="/logout"
                                                     method="post"
                                                     as="button"
-                                                    className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-sm text-red-500 transition-colors hover:bg-red-50"
+                                                    className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-sm text-red-500 transition-colors hover:bg-orange-50"
                                                 >
                                                     <LogOut className="h-4 w-4" />
                                                     {t('explore.logout')}
@@ -166,12 +166,12 @@ export default function TouristNavbar() {
                             </div>
                         )}
 
-                        {/* BotÃ³n hamburguesa â€” mobile */}
+                        {/* Botón hamburguesa — mobile */}
                         <button
                             type="button"
                             onClick={() => setMenuOpen(v => !v)}
                             className="flex cursor-pointer items-center justify-center rounded-xl p-2 text-gray-600 transition-colors hover:bg-gray-100 md:hidden"
-                            aria-label={menuOpen ? 'Cerrar menÃº' : 'Abrir menÃº'}
+                            aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
                         >
                             {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                         </button>
@@ -179,7 +179,7 @@ export default function TouristNavbar() {
                 </div>
             </div>
 
-            {/* MenÃº mÃ³vil */}
+            {/* Menú móvil */}
             {menuOpen && (
                 <div className="border-t border-gray-100 bg-white md:hidden">
                     <div className="px-4 py-3 space-y-1">
@@ -192,7 +192,7 @@ export default function TouristNavbar() {
                                     className={cn(
                                         'block rounded-xl px-4 py-2.5 text-sm font-medium transition-colors',
                                         isActive(item.href)
-                                            ? 'bg-red-50 text-brand-red'
+                                            ? 'bg-orange-50 text-brand-orange'
                                             : 'text-gray-700 hover:bg-gray-50',
                                     )}
                                 >
@@ -204,7 +204,7 @@ export default function TouristNavbar() {
                                     className="flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-medium text-gray-300"
                                 >
                                     {t(item.labelKey)}
-                                    <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-brand-red">
+                                    <span className="rounded-full bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-brand-orange">
                                         Soon
                                     </span>
                                 </span>
@@ -212,7 +212,7 @@ export default function TouristNavbar() {
                         ))}
                     </div>
 
-                    {/* User info mÃ³vil */}
+                    {/* User info móvil */}
                     {user && (
                         <div className="border-t border-gray-100 px-4 py-3">
                             <div className="mb-3 flex items-center gap-3">
@@ -225,7 +225,7 @@ export default function TouristNavbar() {
                             <Link
                                 href={exploreProfile.url()}
                                 onClick={() => setMenuOpen(false)}
-                                className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-gray-700 hover:bg-red-50 hover:text-brand-red"
+                                className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-gray-700 hover:bg-orange-50 hover:text-brand-orange"
                             >
                                 <User className="h-4 w-4" />
                                 {t('explore.my_profile')}
@@ -234,7 +234,7 @@ export default function TouristNavbar() {
                                 href="/logout"
                                 method="post"
                                 as="button"
-                                className="flex w-full items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-red-500 hover:bg-red-50"
+                                className="flex w-full items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-red-500 hover:bg-orange-50"
                             >
                                 <LogOut className="h-4 w-4" />
                                 {t('explore.logout')}
@@ -242,7 +242,7 @@ export default function TouristNavbar() {
                         </div>
                     )}
 
-                    {/* Language switcher mÃ³vil */}
+                    {/* Language switcher móvil */}
                     <div className="border-t border-gray-100 px-4 py-3">
                         <LanguageSwitcher />
                     </div>

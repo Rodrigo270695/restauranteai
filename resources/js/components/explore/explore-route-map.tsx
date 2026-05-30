@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import L from 'leaflet';
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet';
 import { useStreetRoutePath } from '@/hooks/use-street-route-path';
+import { BRAND_MAP_END } from '@/lib/brand-styles';
 import { cn } from '@/lib/utils';
 import 'leaflet/dist/leaflet.css';
 
@@ -21,7 +22,7 @@ const pinIcon = L.divIcon({
 function orderStopIcon(position: number, total: number) {
     const isStart = position === 1;
     const isEnd = total > 1 && position === total;
-    const bg = isStart ? '#16a34a' : isEnd ? '#E8001A' : '#f59e0b';
+    const bg = isStart ? '#16a34a' : isEnd ? BRAND_MAP_END : '#f59e0b';
     const sub = isStart ? 'INICIO' : isEnd ? 'FIN' : '';
     const size = isStart || isEnd ? 40 : 34;
 
@@ -155,7 +156,7 @@ export function ExploreRouteMap({
                             <Polyline
                                 positions={path}
                                 pathOptions={{
-                                    color: '#E8001A',
+                                    color: BRAND_MAP_END,
                                     weight: 6,
                                     opacity: 0.9,
                                     lineCap: 'round',
@@ -178,7 +179,7 @@ export function ExploreRouteMap({
                     )}
                     {totalStops > 1 && (
                         <span className="flex items-center gap-1">
-                            <span className="flex size-4 items-center justify-center rounded-full bg-[#E8001A] text-[9px] font-bold text-white">
+                            <span className="flex size-4 items-center justify-center rounded-full bg-brand-orange text-[9px] font-bold text-white">
                                 {totalStops}
                             </span>
                             {t('explore.route_end')}

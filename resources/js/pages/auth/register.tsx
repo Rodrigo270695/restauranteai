@@ -1,6 +1,6 @@
-﻿import { Form, Head, router } from '@inertiajs/react';
+﻿import { Form, Head } from '@inertiajs/react';
 import { Building2, CheckCircle2, Hash, KeyRound, Mail, MapPin, Phone, UserRound, UtensilsCrossed } from 'lucide-react';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import InputError from '@/components/common/input-error';
 import PasswordInput from '@/components/common/password-input';
@@ -8,66 +8,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useAuthPageFlip } from '@/hooks/use-auth-page-flip';
+import {
+    AUTH_BTN_STYLE,
+    AUTH_CARD_STYLE,
+    AUTH_INPUT_CLS,
+    authIconClass,
+    authLinkBlueClass,
+    authSubtitleClass,
+    authTitleClass,
+} from '@/lib/auth-styles';
 import { cn } from '@/lib/utils';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
 
-// ─── Estilos compartidos con login.tsx ───────────────────────────────────────
-const CARD_STYLE: React.CSSProperties = {
-    background:
-        'radial-gradient(ellipse 110% 100% at 60% 30%, rgba(232,0,26,0.13) 0%, rgba(180,0,10,0.09) 40%, rgba(100,0,5,0.06) 70%, rgba(255,255,255,0.94) 100%)',
-    backdropFilter: 'blur(24px)',
-    WebkitBackdropFilter: 'blur(24px)',
-    border: '1px solid rgba(200,0,15,0.18)',
-    boxShadow: '0 12px 50px rgba(180,0,10,0.20), 0 1px 0 rgba(255,255,255,0.7) inset',
-};
-
-const BTN_STYLE: React.CSSProperties = {
-    background: 'linear-gradient(90deg, #E8001A 0%, #CC0010 50%, #8B0008 100%)',
-    boxShadow: '0 4px 18px rgba(200,0,10,0.28)',
-};
-
-const BTN_GHOST: React.CSSProperties = {
-    background: 'rgba(220,0,15,0.07)',
-    border: '1.5px solid rgba(200,0,15,0.18)',
-};
-
-const INPUT_CLS = cn(
-    'h-11 pl-10 transition-all',
-    'border-red-100 bg-white/80 placeholder:text-gray-400',
-    'focus-visible:border-brand-red focus-visible:bg-white focus-visible:ring-brand-red/20',
-);
-
-const FLIP_MS = 540;
 const STEP_MS = 260;
 
 type Role = 'tourist' | 'restaurant_owner';
-
-// ─── Hook de flip cross-page ─────────────────────────────────────────────────
-function usePageFlip(backUrl: string) {
-    const [mounted, setMounted] = useState(false);
-    const [exiting, setExiting] = useState(false);
-
-    useLayoutEffect(() => {
-        const id = requestAnimationFrame(() => setMounted(true));
-        return () => cancelAnimationFrame(id);
-    }, []);
-
-    const flipBack = () => {
-        if (exiting) return;
-        setExiting(true);
-        setTimeout(() => router.visit(backUrl), FLIP_MS);
-    };
-
-    const wrapStyle: React.CSSProperties = { perspective: '1200px' };
-    const cardWrapStyle: React.CSSProperties = {
-        transform: exiting ? 'rotateY(-90deg)' : mounted ? 'rotateY(0deg)' : 'rotateY(90deg)',
-        transition: mounted ? `transform ${FLIP_MS}ms cubic-bezier(0.4,0,0.2,1)` : 'none',
-        willChange: 'transform',
-    };
-
-    return { wrapStyle, cardWrapStyle, flipBack };
-}
 
 // ─── Icono Google ─────────────────────────────────────────────────────────────
 function GoogleIcon() {
@@ -98,21 +55,21 @@ function RoleCard({ icon, title, description, selected, onClick }: RoleCardProps
             className={cn(
                 'group flex w-full cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 p-5 text-center transition-all duration-200',
                 selected
-                    ? 'border-brand-red bg-red-50/70 shadow-md'
-                    : 'border-red-100 bg-white/60 hover:border-red-200 hover:bg-red-50/40 hover:shadow-sm',
+                    ? 'border-brand-orange bg-orange-50/70 shadow-md'
+                    : 'border-orange-100 bg-white/60 hover:border-orange-200 hover:bg-orange-50/40 hover:shadow-sm',
             )}
         >
             <span
                 className={cn(
                     'flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-200',
-                    selected ? 'text-white shadow-lg' : 'bg-red-50 text-brand-red group-hover:bg-red-100',
+                    selected ? 'text-white shadow-lg' : 'bg-orange-50 text-brand-orange group-hover:bg-orange-100',
                 )}
-                style={selected ? BTN_STYLE : undefined}
+                style={selected ? AUTH_BTN_STYLE : undefined}
             >
                 {icon}
             </span>
             <div>
-                <p className={cn('text-sm font-semibold', selected ? 'text-brand-red' : 'text-gray-800')}>
+                <p className={cn('text-sm font-semibold', selected ? 'text-brand-orange' : 'text-gray-800')}>
                     {title}
                 </p>
                 <p className="mt-0.5 text-xs text-gray-500 leading-relaxed">{description}</p>
@@ -123,7 +80,7 @@ function RoleCard({ icon, title, description, selected, onClick }: RoleCardProps
 
 export default function Register() {
     const { t } = useTranslation();
-    const { wrapStyle, cardWrapStyle, flipBack } = usePageFlip(login.url());
+    const { wrapStyle, cardWrapStyle, flipBack } = useAuthPageFlip(login.url());
 
     const [step, setStep] = useState<1 | 2>(1);
     const [role, setRole] = useState<Role | null>(null);
@@ -189,7 +146,7 @@ export default function Register() {
 
             <div style={wrapStyle}>
                 <div style={cardWrapStyle}>
-                    <div style={CARD_STYLE} className="rounded-2xl">
+                    <div className="w-full rounded-3xl" style={AUTH_CARD_STYLE}>
                         <div className="flex flex-col gap-0 p-8">
 
                             {/* ── Header ──────────────────────────────────────── */}
@@ -206,15 +163,15 @@ export default function Register() {
                                 <div className="flex items-center gap-3">
                                     <span
                                         className="flex h-10 w-10 items-center justify-center rounded-xl"
-                                        style={BTN_STYLE}
+                                        style={AUTH_BTN_STYLE}
                                     >
                                         <UserRound className="h-5 w-5 text-white" />
                                     </span>
                                     <div>
-                                        <h1 className="text-xl font-bold text-gray-900">
+                                        <h1 className={authTitleClass}>
                                             {step === 1 ? t('auth.choose_role_title') : t('auth.register_title')}
                                         </h1>
-                                        <p className="text-sm text-gray-500">
+                                        <p className={authSubtitleClass}>
                                             {step === 1
                                                 ? t('auth.choose_role_subtitle')
                                                 : role === 'tourist'
@@ -226,8 +183,8 @@ export default function Register() {
 
                                 {/* Indicador de paso */}
                                 <div className="mt-4 flex items-center gap-2">
-                                    <div className={cn('h-1.5 flex-1 rounded-full transition-all', step >= 1 ? 'bg-brand-red' : 'bg-gray-200')} />
-                                    <div className={cn('h-1.5 flex-1 rounded-full transition-all', step >= 2 ? 'bg-brand-red' : 'bg-gray-200')} />
+                                    <div className={cn('h-1.5 flex-1 rounded-full transition-all', step >= 1 ? 'bg-brand-orange' : 'bg-gray-200')} />
+                                    <div className={cn('h-1.5 flex-1 rounded-full transition-all', step >= 2 ? 'bg-brand-orange' : 'bg-gray-200')} />
                                 </div>
                             </div>
 
@@ -257,7 +214,7 @@ export default function Register() {
                                             <button
                                                 type="button"
                                                 onClick={flipBack}
-                                                className="cursor-pointer font-semibold text-brand-red hover:text-red-700"
+                                                className={authLinkBlueClass}
                                             >
                                                 {t('auth.sign_in')}
                                             </button>
@@ -314,10 +271,10 @@ export default function Register() {
                                                     {/* Nombre */}
                                                     <div className="space-y-1.5">
                                                         <Label htmlFor="name" className="text-sm font-medium text-gray-700">
-                                                            {t('auth.name')} <span className="text-brand-red">*</span>
+                                                            {t('auth.name')} <span className="text-brand-orange">*</span>
                                                         </Label>
                                                         <div className="relative">
-                                                            <UserRound className="pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2 text-brand-red opacity-60" />
+                                                            <UserRound className={cn('pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2', authIconClass)} />
                                                             <Input
                                                                 id="name"
                                                                 type="text"
@@ -327,7 +284,7 @@ export default function Register() {
                                                                 tabIndex={1}
                                                                 autoComplete="name"
                                                                 placeholder={t('auth.name_placeholder')}
-                                                                className={cn(INPUT_CLS, errors.name && 'border-red-400 bg-red-50')}
+                                                                className={cn(AUTH_INPUT_CLS, errors.name && 'border-red-400 bg-red-50')}
                                                             />
                                                         </div>
                                                         <InputError message={errors.name} />
@@ -336,10 +293,10 @@ export default function Register() {
                                                     {/* Email */}
                                                     <div className="space-y-1.5">
                                                         <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                                                            {t('auth.email')} <span className="text-brand-red">*</span>
+                                                            {t('auth.email')} <span className="text-brand-orange">*</span>
                                                         </Label>
                                                         <div className="relative">
-                                                            <Mail className="pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2 text-brand-red opacity-60" />
+                                                            <Mail className={cn('pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2', authIconClass)} />
                                                             <Input
                                                                 id="email"
                                                                 type="email"
@@ -348,7 +305,7 @@ export default function Register() {
                                                                 tabIndex={2}
                                                                 autoComplete="email"
                                                                 placeholder={t('auth.email_placeholder')}
-                                                                className={cn(INPUT_CLS, errors.email && 'border-red-400 bg-red-50')}
+                                                                className={cn(AUTH_INPUT_CLS, errors.email && 'border-red-400 bg-red-50')}
                                                             />
                                                         </div>
                                                         <InputError message={errors.email} />
@@ -360,11 +317,11 @@ export default function Register() {
                                                             {/* RUC con validación SUNAT */}
                                                             <div className="space-y-1.5">
                                                                 <Label htmlFor="ruc" className="text-sm font-medium text-gray-700">
-                                                                    {t('auth.ruc')} <span className="text-brand-red">*</span>
+                                                                    {t('auth.ruc')} <span className="text-brand-orange">*</span>
                                                                 </Label>
                                                                 <div className="flex gap-2">
                                                                     <div className="relative flex-1">
-                                                                        <Hash className="pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2 text-brand-red opacity-60" />
+                                                                        <Hash className={cn('pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2', authIconClass)} />
                                                                         <Input
                                                                             id="ruc"
                                                                             name="ruc"
@@ -378,7 +335,7 @@ export default function Register() {
                                                                             }}
                                                                             placeholder={t('auth.ruc_placeholder')}
                                                                             className={cn(
-                                                                            INPUT_CLS,
+                                                                            AUTH_INPUT_CLS,
                                                                             rucStatus === 'error' && 'border-red-400 bg-red-50',
                                                                             errors.ruc && 'border-red-400 bg-red-50',
                                                                         )}
@@ -394,7 +351,7 @@ export default function Register() {
                                                                                 ? 'bg-green-100 text-green-700'
                                                                                 : 'text-white',
                                                                         )}
-                                                                        style={rucStatus !== 'valid' ? BTN_STYLE : undefined}
+                                                                        style={rucStatus !== 'valid' ? AUTH_BTN_STYLE : undefined}
                                                                     >
                                                                         {rucStatus === 'validating' ? (
                                                                             <><Spinner className="h-3 w-3" /> {t('auth.ruc_validating')}</>
@@ -414,10 +371,10 @@ export default function Register() {
                                                             {/* Razón social (auto-llenado tras validar RUC) */}
                                                             <div className="space-y-1.5">
                                                                 <Label htmlFor="business_name" className="text-sm font-medium text-gray-700">
-                                                                    {t('auth.business_name')} <span className="text-brand-red">*</span>
+                                                                    {t('auth.business_name')} <span className="text-brand-orange">*</span>
                                                                 </Label>
                                                                 <div className="relative">
-                                                                    <Building2 className="pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2 text-brand-red opacity-60" />
+                                                                    <Building2 className={cn('pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2', authIconClass)} />
                                                                     <Input
                                                                         id="business_name"
                                                                         type="text"
@@ -429,7 +386,7 @@ export default function Register() {
                                                                         readOnly={rucStatus === 'valid'}
                                                                         placeholder={t('auth.business_name_placeholder')}
                                                                         className={cn(
-                                                                            INPUT_CLS,
+                                                                            AUTH_INPUT_CLS,
                                                                             rucStatus === 'valid' && 'cursor-not-allowed border-green-300 bg-green-50/80 text-green-800',
                                                                             errors.business_name && 'border-red-400 bg-red-50',
                                                                         )}
@@ -444,14 +401,14 @@ export default function Register() {
                                                                         {t('auth.phone')}
                                                                     </Label>
                                                                     <div className="relative">
-                                                                        <Phone className="pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2 text-brand-red opacity-60" />
+                                                                        <Phone className={cn('pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2', authIconClass)} />
                                                                         <Input
                                                                             id="phone"
                                                                             type="tel"
                                                                             name="phone"
                                                                             tabIndex={4}
                                                                             placeholder={t('auth.phone_placeholder')}
-                                                                            className={cn(INPUT_CLS, errors.phone && 'border-red-400 bg-red-50')}
+                                                                            className={cn(AUTH_INPUT_CLS, errors.phone && 'border-red-400 bg-red-50')}
                                                                         />
                                                                     </div>
                                                                     <InputError message={errors.phone} />
@@ -462,14 +419,14 @@ export default function Register() {
                                                                         {t('auth.city')}
                                                                     </Label>
                                                                     <div className="relative">
-                                                                        <MapPin className="pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2 text-brand-red opacity-60" />
+                                                                        <MapPin className={cn('pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2', authIconClass)} />
                                                                         <Input
                                                                             id="city"
                                                                             type="text"
                                                                             name="city"
                                                                             tabIndex={5}
                                                                             placeholder={t('auth.city_placeholder')}
-                                                                            className={cn(INPUT_CLS, errors.city && 'border-red-400 bg-red-50')}
+                                                                            className={cn(AUTH_INPUT_CLS, errors.city && 'border-red-400 bg-red-50')}
                                                                         />
                                                                     </div>
                                                                     <InputError message={errors.city} />
@@ -481,7 +438,7 @@ export default function Register() {
                                                     {/* Password */}
                                                     <div className="space-y-1.5">
                                                         <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                                                            {t('auth.password')} <span className="text-brand-red">*</span>
+                                                            {t('auth.password')} <span className="text-brand-orange">*</span>
                                                         </Label>
                                                         <PasswordInput
                                                             id="password"
@@ -490,8 +447,8 @@ export default function Register() {
                                                             tabIndex={role === 'restaurant_owner' ? 6 : 3}
                                                             autoComplete="new-password"
                                                             placeholder={t('auth.password_placeholder')}
-                                                            className={cn(INPUT_CLS, errors.password && 'border-red-400 bg-red-50')}
-                                                            leftIcon={<KeyRound className="h-4 w-4 text-brand-red opacity-60" />}
+                                                            className={cn(AUTH_INPUT_CLS, errors.password && 'border-red-400 bg-red-50')}
+                                                            leftIcon={<KeyRound className={cn('h-4 w-4', authIconClass)} />}
                                                         />
                                                         <InputError message={errors.password} />
                                                     </div>
@@ -499,7 +456,7 @@ export default function Register() {
                                                     {/* Confirm Password */}
                                                     <div className="space-y-1.5">
                                                         <Label htmlFor="password_confirmation" className="text-sm font-medium text-gray-700">
-                                                            {t('auth.confirm_password')} <span className="text-brand-red">*</span>
+                                                            {t('auth.confirm_password')} <span className="text-brand-orange">*</span>
                                                         </Label>
                                                         <PasswordInput
                                                             id="password_confirmation"
@@ -508,8 +465,8 @@ export default function Register() {
                                                             tabIndex={role === 'restaurant_owner' ? 7 : 4}
                                                             autoComplete="new-password"
                                                             placeholder={t('auth.confirm_password_placeholder')}
-                                                            className={cn(INPUT_CLS, errors.password_confirmation && 'border-red-400 bg-red-50')}
-                                                            leftIcon={<KeyRound className="h-4 w-4 text-brand-red opacity-60" />}
+                                                            className={cn(AUTH_INPUT_CLS, errors.password_confirmation && 'border-red-400 bg-red-50')}
+                                                            leftIcon={<KeyRound className={cn('h-4 w-4', authIconClass)} />}
                                                         />
                                                         <InputError message={errors.password_confirmation} />
                                                     </div>
@@ -519,7 +476,7 @@ export default function Register() {
                                                         type="submit"
                                                         tabIndex={role === 'restaurant_owner' ? 8 : 5}
                                                         className="mt-1 h-11 w-full cursor-pointer rounded-xl border-0 text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98]"
-                                                        style={BTN_STYLE}
+                                                        style={AUTH_BTN_STYLE}
                                                         data-test="register-user-button"
                                                     >
                                                         {processing && <Spinner />}
@@ -534,7 +491,7 @@ export default function Register() {
                                             <button
                                                 type="button"
                                                 onClick={flipBack}
-                                                className="cursor-pointer font-semibold text-brand-red hover:text-red-700"
+                                                className={authLinkBlueClass}
                                             >
                                                 {t('auth.sign_in')}
                                             </button>
