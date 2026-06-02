@@ -16,6 +16,7 @@
         "laravel/socialite": "^5.27",
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
+        "phpoffice/phpspreadsheet": "^5.7",
         "spatie/laravel-permission": "^7.4"
     },
     "require-dev": {

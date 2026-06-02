@@ -25,8 +25,21 @@ Archivo: **`plantilla_restaurantes.csv`**
 1. Abre en Excel o importa en Google Sheets.
 2. Rellena **una fila por restaurante**.
 3. Guarda como CSV UTF-8.
-4. Importación (cuando esté el comando):  
-   `php artisan restaurants:import database/imports/tu_archivo.csv`
+4. Importación:
+
+```powershell
+php artisan db:seed
+
+php artisan restaurants:import "database/imports/restaurantes dataset.xlsx"
+```
+
+Opciones útiles:
+
+- `--dry-run` — valida sin guardar
+- `--owner=tu@email.com` — usuario dueño de los locales
+- `--strict` — detiene al primer error
+
+También acepta `plantilla_restaurantes.csv` o `restaurantes_lambayeque_plantilla.xlsx`.
 
 ---
 
