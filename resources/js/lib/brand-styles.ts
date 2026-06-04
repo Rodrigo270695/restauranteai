@@ -29,3 +29,6 @@ export const BRAND_PORTAL_HEADER =
 
 /** Mapa — punto final de ruta */
 export const BRAND_MAP_END = '#ffa300';
+
+/** Mapa — tramo desde la ubicación actual hacia el primer local */
+export const BRAND_MAP_ACCESS = '#073577';

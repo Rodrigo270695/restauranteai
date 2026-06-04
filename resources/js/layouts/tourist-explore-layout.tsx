@@ -14,7 +14,13 @@ import { profile as exploreProfile } from '@/routes/explore';
 type Props = { children: React.ReactNode; wide?: boolean };
 
 const NAV = [
-    { key: 'explore', href: () => exploreDiscoverUrl(), icon: Map, labelKey: 'explore.nav_explore' },
+    {
+        key: 'explore',
+        href: () => exploreDiscoverUrl(),
+        icon: Map,
+        labelKey: 'explore.nav_explore',
+        topBadgeKey: 'explore.near_you',
+    },
     { key: 'routes', href: () => exploreRoutes.url(), icon: Route, labelKey: 'explore.nav_routes' },
     { key: 'profile', href: () => exploreProfile.url(), icon: User, labelKey: 'explore.my_profile' },
 ] as const;
@@ -43,22 +49,36 @@ export default function TouristExploreLayout({ children, wide = false }: Props) 
                     )}
                 >
                     <BrandLogo href={home.url()} surface="light" size="sm" />
-                    <div className="hidden items-center gap-1 md:flex">
+                    <div className="hidden items-center gap-1 overflow-visible md:flex">
                         {NAV.map(item => {
                             const Icon = item.icon;
                             const href = item.href();
+                            const topBadgeKey = 'topBadgeKey' in item ? item.topBadgeKey : undefined;
+
                             return (
                                 <Link
                                     key={item.key}
                                     href={href}
                                     className={cn(
-                                        'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition',
+                                        'relative inline-flex items-center gap-1.5 rounded-full px-3 pb-1.5 pt-2.5 text-sm font-medium transition',
                                         isActive(href)
                                             ? 'bg-brand-orange text-white shadow-sm'
                                             : 'text-gray-600 hover:bg-orange-50',
                                     )}
                                 >
-                                    <Icon className="size-4" />
+                                    {topBadgeKey && (
+                                        <span
+                                            className={cn(
+                                                'pointer-events-none absolute -top-1 left-1/2 max-w-[5.5rem] -translate-x-1/2 truncate rounded px-1.5 py-px text-[7px] font-bold uppercase leading-none tracking-wide',
+                                                isActive(href)
+                                                    ? 'bg-white/95 text-brand-orange'
+                                                    : 'bg-brand-orange text-white',
+                                            )}
+                                        >
+                                            {t(topBadgeKey)}
+                                        </span>
+                                    )}
+                                    <Icon className="size-4 shrink-0" />
                                     {t(item.labelKey)}
                                 </Link>
                             );
@@ -86,15 +106,27 @@ export default function TouristExploreLayout({ children, wide = false }: Props) 
                         const Icon = item.icon;
                         const href = item.href();
                         const active = isActive(href);
+                        const topBadgeKey = 'topBadgeKey' in item ? item.topBadgeKey : undefined;
+
                         return (
                             <Link
                                 key={item.key}
                                 href={href}
                                 className={cn(
-                                    'flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10px] font-semibold transition',
+                                    'relative flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1 text-[10px] font-semibold transition',
                                     active ? 'text-brand-orange' : 'text-gray-500',
                                 )}
                             >
+                                {topBadgeKey && (
+                                    <span
+                                        className={cn(
+                                            'mb-0.5 max-w-full truncate rounded px-1 py-px text-[6px] font-bold uppercase leading-none tracking-wide',
+                                            active ? 'bg-brand-orange text-white' : 'bg-orange-100 text-brand-orange',
+                                        )}
+                                    >
+                                        {t(topBadgeKey)}
+                                    </span>
+                                )}
                                 <span
                                     className={cn(
                                         'flex size-9 items-center justify-center rounded-xl transition',

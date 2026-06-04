@@ -5,6 +5,7 @@ import type { InertiaFormProps } from '@inertiajs/react';
 import { FormField, ResourceModal } from '@/components/modals/resource-modal';
 import { CuisineTypeMultiSelect } from '@/components/shared/cuisine-type-multi-select';
 import { Input } from '@/components/ui/input';
+import { PRICE_RANGES } from '@/lib/restaurant-price';
 import { cn } from '@/lib/utils';
 
 export type RestaurantFormData = {
@@ -31,12 +32,6 @@ export type RestaurantFormModalProps = {
     >;
     onSubmit: (e: FormEvent<HTMLFormElement>) => void;
 };
-
-const PRICE_OPTIONS = [
-    { value: 'economico', label: 'Económico' },
-    { value: 'moderado', label: 'Moderado' },
-    { value: 'premium', label: 'Premium' },
-] as const;
 
 const selectClass = cn(
     'flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm shadow-xs',
@@ -129,7 +124,7 @@ export function RestaurantFormModal({
                     onChange={(e) => form.setData('price_range', e.target.value)}
                     disabled={form.processing}
                 >
-                    {PRICE_OPTIONS.map((o) => (
+                    {PRICE_RANGES.map((o) => (
                         <option key={o.value} value={o.value}>
                             {o.label}
                         </option>

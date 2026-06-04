@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUserGeolocation } from '@/hooks/use-user-geolocation';
 import { cn } from '@/lib/utils';
+import { priceRangeLabel } from '@/lib/restaurant-price';
 
 type Filters = {
     search?: string;
@@ -173,7 +174,7 @@ export function WelcomeRestaurantsBrowse({
     const priceLabel = (value: string) =>
         priceRanges.find(p => p.value === value)?.name ??
         priceRanges.find(p => p.value === value)?.label ??
-        value;
+        priceRangeLabel(value);
 
     const activeTags: Array<{ key: string; label: string; clear: () => void }> = [];
 

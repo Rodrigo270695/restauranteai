@@ -4,6 +4,8 @@ namespace App\Http\Requests\Explore;
 
 use App\Models\CuisineType;
 use App\Models\District;
+use App\Support\BudgetPreference;
+use App\Support\PriceRange;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -12,6 +14,15 @@ class UserPreferenceRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user()?->hasRole('tourist') ?? false;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $budget = $this->input('budget_preference');
+
+        if (is_string($budget) && $budget !== '') {
+            $this->merge(['budget_preference' => [$budget]]);
+        }
     }
 
     public function rules(): array
@@ -29,12 +40,13 @@ class UserPreferenceRequest extends FormRequest
         return [
             'city' => ['nullable', 'string', 'max:100', Rule::in($districtNames)],
             'bio' => ['nullable', 'string', 'max:500'],
-            'budget_preference' => ['nullable', Rule::in(['low', 'medium', 'high'])],
+            'budget_preference' => ['nullable', 'array'],
+            'budget_preference.*' => ['string', Rule::in(BudgetPreference::VALUES)],
             'preferred_cuisines' => ['nullable', 'array'],
             'preferred_cuisines.*' => ['string', Rule::in($cuisineSlugs)],
             'cuisine_type_id' => ['nullable', 'exists:cuisine_types,id'],
             'ambiance_id' => ['nullable', 'exists:ambiances,id'],
-            'price_range' => ['nullable', Rule::in(['economico', 'moderado', 'premium'])],
+            'price_range' => ['nullable', Rule::in(PriceRange::VALUES)],
             'max_distance_km' => ['nullable', 'numeric', 'min:0.5', 'max:200'],
             'party_type_ids' => ['nullable', 'array'],
             'party_type_ids.*' => ['integer', Rule::exists('party_types', 'id')->where('is_active', true)],

@@ -52,7 +52,7 @@ También acepta `plantilla_restaurantes.csv` o `restaurantes_lambayeque_plantill
 | `categoria_establecimiento` | No | Restaurante tradicional | Solo referencia; hoy no hay campo en BD |
 | `entorno_restaurante` | Recomendado | Urbano | Urbano, Campestre, Centro historico, Vista al mar, Centro comercial |
 | `ambiente_restaurante` | Recomendado | Elegante | Casual, Elegante, Moderno, Tradicional, Familiar, Romantico, Cultural, Festivo, Tranquilo |
-| `rango_precios` | Sí | moderado | Solo: `economico`, `moderado`, `premium` (minúsculas, sin tildes) |
+| `rango_precios` | Sí | moderado | Solo: `economico`, `moderado`, `caro` (minúsculas, sin tildes) |
 | `momento_recomendado` | Recomendado | Almuerzo | Varios: `Desayuno\|Almuerzo\|Cena\|Brunch\|Bar` |
 | `servicios` | No | WiFi\|Reservas\|Delivery | Separar con **\|** (barra vertical) |
 | `ubicacion` | Sí | Chiclayo | Distrito: Chiclayo, Lambayeque, Pimentel, La Victoria, etc. |
@@ -72,7 +72,7 @@ También acepta `plantilla_restaurantes.csv` o `restaurantes_lambayeque_plantill
 
 - **No cambies** los nombres de la primera fila (cabeceras).
 - **Varios valores** en la misma celda: usa `|` (ej. `WiFi|Reservas|Delivery`).
-- **Precios**: escribe exactamente `economico`, `moderado` o `premium`.
+- **Precios**: escribe exactamente `economico`, `moderado` o `caro`.
 - **Ubicación** debe coincidir con un distrito ya cargado (geografía Lambayeque).
 - Sin **latitud/longitud** el local no aparece bien en mapa ni en rutas con IA.
 - Evita comas dentro de un campo; si necesitas coma, encierra el texto entre comillas `"..."`.

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\LoadsTouristProfileCatalogs;
 use App\Http\Requests\TouristProfileSetupRequest;
+use App\Support\BudgetPreference;
 use App\Services\UserPreferenceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -39,7 +40,7 @@ class TouristProfileController extends Controller
             'profile' => $profile ? [
                 'city' => $profile->city,
                 'bio' => $profile->bio,
-                'budget_preference' => $profile->budget_preference,
+                'budget_preference' => BudgetPreference::normalize($profile->budget_preference),
                 'preferred_cuisines' => $this->normalizePreferredCuisineSlugs($profile->preferred_cuisines ?? []),
             ] : null,
             'cuisineTypes' => $this->activeCuisineTypes(),

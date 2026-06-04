@@ -16,6 +16,7 @@ use App\Models\RestaurantProfile;
 use App\Models\RestaurantSchedule;
 use App\Models\User;
 use App\Services\RestaurantCuisineService;
+use App\Support\PriceRange;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -91,7 +92,7 @@ class DemoRestaurantSeeder extends Seeder
                 'name' => 'Mar y Tierra Chiclayo',
                 'slug' => 'mar-y-tierra-chiclayo',
                 'cuisine_type_id' => $marina?->id,
-                'price_range' => 'premium',
+                'price_range' => 'caro',
                 'short_description' => 'Mariscos frescos y pescados del día.',
                 'address' => 'Av. Santa Victoria 890, Chiclayo',
                 'latitude' => -6.78210000,
@@ -119,11 +120,7 @@ class DemoRestaurantSeeder extends Seeder
             $cuisineTypeId = $data['cuisine_type_id'] ?? null;
             unset($data['cuisine_type_id']);
 
-            $avgPrice = match ($data['price_range']) {
-                'economico' => 25.00,
-                'premium' => 85.00,
-                default => 45.00,
-            };
+            $avgPrice = PriceRange::avgPrice($data['price_range']);
 
             $restaurant = Restaurant::updateOrCreate(
                 ['slug' => $data['slug']],
@@ -218,7 +215,7 @@ class DemoRestaurantSeeder extends Seeder
             ['user_id' => $tourist->id],
             [
                 'city' => 'Chiclayo',
-                'budget_preference' => 'medium',
+                'budget_preference' => ['medium'],
                 'preferred_cuisines' => ['Criolla', 'Marina'],
                 'completed_at' => now(),
             ],

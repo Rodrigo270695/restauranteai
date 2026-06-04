@@ -15,6 +15,7 @@ use App\Models\RestaurantEnvironment;
 use App\Services\RestaurantCuisineService;
 use App\Services\RestaurantScopeService;
 use App\Support\OwnerPanel;
+use App\Support\PriceRange;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -126,11 +127,15 @@ class RestaurantController extends Controller
             'whatsapp' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:100'],
             'website' => ['nullable', 'string', 'max:255'],
-            'price_range' => ['required', 'in:economico,moderado,premium'],
+            'price_range' => ['required', PriceRange::validationRule()],
             'avg_price_per_person' => ['nullable', 'numeric', 'min:0'],
             'capacity' => ['nullable', 'integer', 'min:1'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
+
+        if ($error = PriceRange::avgPriceError($data['price_range'], $data['avg_price_per_person'] ?? null)) {
+            return back()->withErrors(['avg_price_per_person' => $error])->withInput();
+        }
 
         $restaurant = $this->scopedRestaurant($request, $scope, $restaurant);
 

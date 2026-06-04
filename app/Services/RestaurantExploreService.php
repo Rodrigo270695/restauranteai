@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Ambiance;
 use App\Models\CuisineType;
 use App\Models\Restaurant;
+use App\Support\PriceRange;
 use App\Support\PublicStorage;
 use App\Support\RestaurantHoursPresenter;
 use Illuminate\Database\Eloquent\Builder;
@@ -103,7 +104,21 @@ class RestaurantExploreService
      */
     public function sortByDistance(Collection $restaurants, float $lat, float $lng, float $maxKm = 50): Collection
     {
+        return $this->rankByDistance($restaurants, $lat, $lng)
+            ->filter(fn (Restaurant $r) => $r->distance_km <= $maxKm)
+            ->values();
+    }
+
+    /**
+     * Calcula distancia y ordena de menor a mayor (sin filtrar por radio).
+     *
+     * @param  Collection<int, Restaurant>  $restaurants
+     * @return Collection<int, Restaurant>
+     */
+    public function rankByDistance(Collection $restaurants, float $lat, float $lng): Collection
+    {
         return $restaurants
+            ->filter(fn (Restaurant $r) => $r->latitude && $r->longitude)
             ->map(function (Restaurant $restaurant) use ($lat, $lng) {
                 $restaurant->distance_km = $this->geo->kmBetween(
                     $lat,
@@ -114,9 +129,72 @@ class RestaurantExploreService
 
                 return $restaurant;
             })
-            ->filter(fn (Restaurant $r) => $r->distance_km <= $maxKm)
             ->sortBy('distance_km')
             ->values();
+    }
+
+    /**
+     * Cercanos priorizando locales abiertos (o agregables) y luego distancia.
+     *
+     * @param  Collection<int, Restaurant>  $restaurants
+     * @return Collection<int, Restaurant>
+     */
+    public function rankByProximityPreference(Collection $restaurants, float $lat, float $lng): Collection
+    {
+        $ranked = $restaurants
+            ->filter(fn (Restaurant $r) => $r->latitude && $r->longitude)
+            ->map(function (Restaurant $restaurant) use ($lat, $lng) {
+                $restaurant->distance_km = $this->geo->kmBetween(
+                    $lat,
+                    $lng,
+                    (float) $restaurant->latitude,
+                    (float) $restaurant->longitude,
+                );
+
+                return $restaurant;
+            })
+            ->values();
+
+        return $ranked
+            ->sort(function (Restaurant $a, Restaurant $b) {
+                $aAvailable = $this->hours->isAvailableForRouteNow($a) ? 0 : 1;
+                $bAvailable = $this->hours->isAvailableForRouteNow($b) ? 0 : 1;
+
+                if ($aAvailable !== $bAvailable) {
+                    return $aAvailable <=> $bAvailable;
+                }
+
+                return ($a->distance_km ?? PHP_FLOAT_MAX) <=> ($b->distance_km ?? PHP_FLOAT_MAX);
+            })
+            ->values();
+    }
+
+    /**
+     * Los N más cercanos primero (abiertos primero); el resto en orden editorial.
+     *
+     * @param  Collection<int, Restaurant>  $restaurants
+     * @return Collection<int, Restaurant>
+     */
+    public function orderWithNearbyFirst(
+        Collection $restaurants,
+        float $lat,
+        float $lng,
+        int $nearbyLimit = 30,
+    ): Collection {
+        $nearby = $this->rankByProximityPreference($restaurants, $lat, $lng)->take($nearbyLimit);
+        $nearbyIds = $nearby->pluck('id')->all();
+
+        $remaining = $restaurants
+            ->reject(fn (Restaurant $r) => in_array($r->id, $nearbyIds, true))
+            ->sortBy([
+                fn (Restaurant $r) => $this->hours->isAvailableForRouteNow($r) ? 0 : 1,
+                fn (Restaurant $r) => $r->is_featured ? 0 : 1,
+                fn (Restaurant $r) => - (float) $r->avg_rating,
+                fn (Restaurant $r) => $r->name,
+            ])
+            ->values();
+
+        return $nearby->concat($remaining)->values();
     }
 
     private function validatedLatitude(Request $request): ?float
@@ -288,12 +366,9 @@ class RestaurantExploreService
      */
     public function availablePriceRanges(): array
     {
-        $order = ['economico', 'moderado', 'premium'];
-        $names = [
-            'economico' => 'Económico',
-            'moderado' => 'Moderado',
-            'premium' => 'Premium',
-        ];
+        $names = collect(PriceRange::VALUES)
+            ->mapWithKeys(fn (string $key) => [$key => PriceRange::label($key)])
+            ->all();
 
         $found = Restaurant::query()
             ->where('is_active', true)
@@ -301,15 +376,16 @@ class RestaurantExploreService
             ->whereNotNull('price_range')
             ->distinct()
             ->pluck('price_range')
+            ->map(fn (?string $v) => $v === 'premium' ? PriceRange::CARO : $v)
             ->all();
 
-        return collect($order)
+        return collect(PriceRange::VALUES)
             ->filter(fn (string $key) => in_array($key, $found, true))
             ->map(function (string $key) use ($names) {
                 $minPrice = Restaurant::query()
                     ->where('is_active', true)
                     ->where('is_verified', true)
-                    ->where('price_range', $key)
+                    ->whereIn('price_range', $key === PriceRange::CARO ? [PriceRange::CARO, 'premium'] : [$key])
                     ->whereNotNull('avg_price_per_person')
                     ->min('avg_price_per_person');
 
@@ -327,12 +403,7 @@ class RestaurantExploreService
 
     private function priceRangeLabel(?string $priceRange): ?string
     {
-        return match ($priceRange) {
-            'economico' => 'Económico',
-            'moderado' => 'Moderado',
-            'premium' => 'Premium',
-            default => $priceRange,
-        };
+        return PriceRange::label($priceRange);
     }
 
     private function publicRestaurantScope(Builder $query): Builder

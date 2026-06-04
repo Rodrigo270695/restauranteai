@@ -53,7 +53,7 @@ trait LoadsTouristProfileCatalogs
         return [
             ['key' => 'low', 'price_range' => 'economico'],
             ['key' => 'medium', 'price_range' => 'moderado'],
-            ['key' => 'high', 'price_range' => 'premium'],
+            ['key' => 'high', 'price_range' => 'caro'],
         ];
     }
 

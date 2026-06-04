@@ -1,7 +1,8 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Calendar, Filter, Route, Search, UtensilsCrossed } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useUserGeolocation } from '@/hooks/use-user-geolocation';
 import { ExplorePageHeader } from '@/components/explore/explore-page-header';
 import { ExploreRouteMap, type MapMarker } from '@/components/explore/explore-route-map';
 import { RestaurantListItem, type RestaurantListItemData } from '@/components/explore/restaurant-list-item';
@@ -32,7 +33,11 @@ type Props = {
         cuisine_type_id?: number | null;
         price_range?: string | null;
         view: 'map' | 'list';
+        lat?: number | null;
+        lng?: number | null;
+        location_active?: boolean;
     };
+    nearbyLimit?: number;
     draftRoute: DraftRoute;
     draftStopSlugs: string[];
     mapCenter: { lat: number; lng: number };
@@ -145,9 +150,50 @@ function DiscoverPage({
     draftRoute,
     draftStopSlugs,
     mapCenter,
+    nearbyLimit = 30,
 }: Props) {
     const { t } = useTranslation();
     const { flash } = usePage().props as { flash?: { type?: string; message?: string } };
+    const syncedGeoRef = useRef(false);
+
+    const serverCoords =
+        filters.lat != null && filters.lng != null
+            ? { lat: filters.lat, lng: filters.lng }
+            : null;
+
+    const navigateWithCoords = useCallback(
+        (lat: number, lng: number) => {
+            router.get(
+                exploreDiscoverUrl({
+                    search: filters.search || undefined,
+                    cuisine_type_id: filters.cuisine_type_id || undefined,
+                    view: 'map',
+                    lat,
+                    lng,
+                }),
+                {},
+                { preserveState: true, preserveScroll: true, replace: true },
+            );
+        },
+        [filters.search, filters.cuisine_type_id],
+    );
+
+    const { coords: userLocation } = useUserGeolocation({
+        serverCoords,
+        onCoordinates: (lat, lng) => {
+            if (syncedGeoRef.current || serverCoords) {
+                return;
+            }
+            syncedGeoRef.current = true;
+            navigateWithCoords(lat, lng);
+        },
+    });
+
+    const geoQuery = useCallback(() => {
+        const lat = filters.lat ?? userLocation?.lat;
+        const lng = filters.lng ?? userLocation?.lng;
+        return lat != null && lng != null ? { lat, lng } : {};
+    }, [filters.lat, filters.lng, userLocation]);
 
     const [search, setSearch] = useState(filters.search ?? '');
     const [cuisineId, setCuisineId] = useState<number | ''>(filters.cuisine_type_id ?? '');
@@ -156,12 +202,15 @@ function DiscoverPage({
     const [routeDate, setRouteDate] = useState(new Date().toISOString().slice(0, 10));
     const [addingSlug, setAddingSlug] = useState<string | null>(null);
 
+    const locationActive = filters.location_active === true;
+
     const applyFilters = () => {
         router.get(
             exploreDiscoverUrl({
                 search: search || undefined,
                 cuisine_type_id: cuisineId || undefined,
                 view: 'map',
+                ...geoQuery(),
             }),
             {},
             { preserveState: true, replace: true },
@@ -170,16 +219,36 @@ function DiscoverPage({
 
     const stopsCount = draftRoute.stops_count;
 
-    const stopOrderBySlug = new Map(
-        draftRoute.stops.map(s => [s.restaurant.slug, s.position]),
+    const stopOrderBySlug = useMemo(
+        () => new Map(draftRoute.stops.map(s => [s.restaurant.slug, s.position])),
+        [draftRoute.stops],
     );
 
-    const sortedRestaurants = [...restaurants].sort((a, b) => {
-        const pa = stopOrderBySlug.get(a.slug) ?? 999;
-        const pb = stopOrderBySlug.get(b.slug) ?? 999;
-        if (pa !== pb) return pa - pb;
-        return a.name.localeCompare(b.name);
-    });
+    const sortedRestaurants = useMemo(() => {
+        const orderIndex = new Map(restaurants.map((r, index) => [r.slug, index]));
+
+        return [...restaurants].sort((a, b) => {
+            const pa = stopOrderBySlug.get(a.slug);
+            const pb = stopOrderBySlug.get(b.slug);
+            const aInRoute = pa != null;
+            const bInRoute = pb != null;
+
+            if (aInRoute && bInRoute) {
+                return pa - pb;
+            }
+            if (aInRoute) {
+                return -1;
+            }
+            if (bInRoute) {
+                return 1;
+            }
+
+            return (orderIndex.get(a.slug) ?? 0) - (orderIndex.get(b.slug) ?? 0);
+        });
+    }, [restaurants, stopOrderBySlug]);
+
+    const nearbyRestaurants = locationActive ? sortedRestaurants.slice(0, nearbyLimit) : [];
+    const otherRestaurants = locationActive ? sortedRestaurants.slice(nearbyLimit) : sortedRestaurants;
 
     const draftNumberedStops = draftRoute.stops
         .filter(s => s.restaurant.latitude != null && s.restaurant.longitude != null)
@@ -262,7 +331,11 @@ function DiscoverPage({
                     type="button"
                     onClick={() => {
                         setCuisineId('');
-                        router.get(exploreDiscoverUrl({ search, view: 'map' }), {}, { preserveState: true });
+                        router.get(
+                            exploreDiscoverUrl({ search, view: 'map', ...geoQuery() }),
+                            {},
+                            { preserveState: true },
+                        );
                     }}
                     className={cn(
                         'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition',
@@ -279,7 +352,12 @@ function DiscoverPage({
                         onClick={() => {
                             setCuisineId(c.id);
                             router.get(
-                                exploreDiscoverUrl({ search, cuisine_type_id: c.id, view: 'map' }),
+                                exploreDiscoverUrl({
+                                    search,
+                                    cuisine_type_id: c.id,
+                                    view: 'map',
+                                    ...geoQuery(),
+                                }),
                                 {},
                                 { preserveState: true },
                             );
@@ -298,18 +376,38 @@ function DiscoverPage({
         </>
     );
 
+    const renderRestaurantItems = (items: RestaurantListItemData[]) =>
+        items.map(r => (
+            <RestaurantListItem
+                key={r.id}
+                restaurant={r}
+                routePosition={stopOrderBySlug.get(r.slug) ?? null}
+                routeTotal={stopsCount}
+                isBusy={addingSlug === r.slug}
+                onToggleRoute={() => toggleRoute(r.slug)}
+            />
+        ));
+
     const restaurantList = (
         <div className="space-y-2.5">
-            {sortedRestaurants.map(r => (
-                <RestaurantListItem
-                    key={r.id}
-                    restaurant={r}
-                    routePosition={stopOrderBySlug.get(r.slug) ?? null}
-                    routeTotal={stopsCount}
-                    isBusy={addingSlug === r.slug}
-                    onToggleRoute={() => toggleRoute(r.slug)}
-                />
-            ))}
+            {locationActive ? (
+                <>
+                    {renderRestaurantItems(nearbyRestaurants)}
+                    {otherRestaurants.length > 0 && (
+                        <div className="flex items-center gap-2 pt-4 pb-1">
+                            <p className="text-xs font-bold uppercase tracking-wide text-gray-500">
+                                {t('explore.more_discoveries')}
+                            </p>
+                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
+                                {otherRestaurants.length}
+                            </span>
+                        </div>
+                    )}
+                    {renderRestaurantItems(otherRestaurants)}
+                </>
+            ) : (
+                renderRestaurantItems(otherRestaurants)
+            )}
             {restaurants.length === 0 && (
                 <p className="rounded-2xl bg-white p-10 text-center text-sm text-gray-500 ring-1 ring-gray-100">
                     {t('explore.no_restaurants')}
@@ -324,6 +422,7 @@ function DiscoverPage({
                 markers={markers}
                 path={stopsCount > 0 ? draftPath : []}
                 numberedStops={draftNumberedStops}
+                userLocation={userLocation}
                 center={mapCenter}
                 height="100%"
                 className="min-h-[280px] flex-1 md:min-h-0"
@@ -366,9 +465,18 @@ function DiscoverPage({
 
                 <div className="flex flex-col p-4 pb-32">
                     <div className="mb-3 flex items-center justify-between">
-                        <h2 className="text-sm font-bold text-gray-900">{t('explore.near_you')}</h2>
+                        <div>
+                            <h2 className="text-sm font-bold text-gray-900">{t('explore.near_you')}</h2>
+                            {locationActive && (
+                                <p className="text-[10px] font-medium text-gray-500">
+                                    {t('explore.near_you_subtitle', { count: nearbyRestaurants.length })}
+                                </p>
+                            )}
+                        </div>
                         <span className="rounded-full bg-orange-50 px-2 py-0.5 text-xs font-semibold text-brand-orange">
-                            {t('explore.places_count', { count: restaurants.length })}
+                            {locationActive
+                                ? t('explore.places_count', { count: nearbyRestaurants.length })
+                                : t('explore.places_count', { count: restaurants.length })}
                         </span>
                     </div>
                     {restaurantList}
@@ -407,11 +515,13 @@ function DiscoverPage({
                             <div>
                                 <h2 className="text-sm font-bold text-gray-900">{t('explore.near_you')}</h2>
                                 <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
-                                    {t('explore.discoveries_chiclayo')}
+                                    {locationActive
+                                        ? t('explore.near_you_subtitle', { count: nearbyRestaurants.length })
+                                        : t('explore.discoveries_chiclayo')}
                                 </p>
                             </div>
                             <span className="rounded-full bg-brand-orange px-2.5 py-1 text-xs font-bold text-white">
-                                {restaurants.length}
+                                {locationActive ? nearbyRestaurants.length : restaurants.length}
                             </span>
                         </div>
 

@@ -5,6 +5,8 @@ type DiscoverQuery = {
     cuisine_type_id?: number | '';
     price_range?: string;
     view?: 'map' | 'list';
+    lat?: number;
+    lng?: number;
 };
 
 /** URL de discover con query string explícito (evita rutas inválidas tipo /explore/view-list). */
@@ -22,6 +24,12 @@ export function exploreDiscoverUrl(params: DiscoverQuery = {}): string {
     }
     if (params.view) {
         query.view = params.view;
+    }
+    if (params.lat != null) {
+        query.lat = params.lat;
+    }
+    if (params.lng != null) {
+        query.lng = params.lng;
     }
 
     return exploreDiscover.url(Object.keys(query).length ? { query } : undefined);

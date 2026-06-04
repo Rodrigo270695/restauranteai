@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { login, logout, register } from '@/routes';
 import type { User as UserType } from '@/types';
 
-interface NavItem { labelKey: string; href: string; exact: boolean; soon?: boolean }
+interface NavItem { labelKey: string; href: string; exact: boolean; soon?: boolean; topBadge?: string }
 
 // ─── Base pública (sin sesión) ────────────────────────────────────────────────
 const BASE_NAV: NavItem[] = [
@@ -23,7 +23,7 @@ const PUBLIC_NAV: NavItem[] = [
 
 const TOURIST_NAV: NavItem[] = [
     { labelKey: 'nav.home',            href: '/',        exact: true },
-    { labelKey: 'explore.nav_explore', href: '/explore', exact: true },
+    { labelKey: 'explore.nav_explore', href: '/explore', exact: true, topBadge: 'IA' },
     ...BASE_NAV,
 ];
 
@@ -82,7 +82,7 @@ export function NavMobileMenu({ user }: NavMobileMenuProps) {
             >
                 {/* Links de navegación */}
                 <nav className="flex flex-col gap-1">
-                    {navItems.map(({ labelKey, href, exact, soon }) => {
+                    {navItems.map(({ labelKey, href, exact, soon, topBadge }) => {
                         const isActive = !soon && (exact ? url === href : url.startsWith(href));
 
                         if (soon) {
@@ -99,10 +99,15 @@ export function NavMobileMenu({ user }: NavMobileMenuProps) {
                             <Link key={labelKey} href={href}
                                 onClick={() => setOpen(false)}
                                 className={cn(
-                                    'rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                                    'relative rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                                     isActive ? 'bg-orange-50 text-brand-orange' : 'text-gray-700 hover:bg-gray-50',
                                 )}
                             >
+                                {topBadge && (
+                                    <span className="pointer-events-none absolute -top-1 left-3 rounded bg-brand-orange px-1 py-px text-[8px] font-bold leading-none tracking-wide text-white">
+                                        {topBadge}
+                                    </span>
+                                )}
                                 {t(labelKey)}
                             </Link>
                         );

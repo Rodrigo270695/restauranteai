@@ -102,6 +102,11 @@ export function RestaurantListItem({
                                 {restaurant.distance_km} km
                             </span>
                         )}
+                        {restaurant.hours && !canAddToRoute && (
+                            <span className="font-semibold text-red-600">
+                                {restaurant.hours.label}
+                            </span>
+                        )}
                     </div>
                 </div>
             </Link>

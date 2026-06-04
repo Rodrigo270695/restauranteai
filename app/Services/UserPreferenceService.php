@@ -6,6 +6,8 @@ use App\Models\CuisineType;
 use App\Models\TouristProfile;
 use App\Models\User;
 use App\Models\UserPreference;
+use App\Support\BudgetPreference;
+use App\Support\PriceRange;
 
 class UserPreferenceService
 {
@@ -54,7 +56,7 @@ class UserPreferenceService
             }
         }
 
-        $priceRange = $this->mapBudgetToPriceRange($profile->budget_preference);
+        $priceRange = BudgetPreference::singlePriceRange($profile->budget_preference);
 
         if ($cuisineTypeId === null && $priceRange === null) {
             return null;
@@ -85,12 +87,15 @@ class UserPreferenceService
 
     public function mapBudgetToPriceRange(?string $budget): ?string
     {
-        return match ($budget) {
-            'low' => 'economico',
-            'medium' => 'moderado',
-            'high' => 'premium',
-            default => null,
-        };
+        return BudgetPreference::singlePriceRange($budget);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function mapBudgetsToPriceRanges(mixed $budgets): array
+    {
+        return BudgetPreference::toPriceRanges($budgets);
     }
 
     public function mapPriceRangeToBudget(?string $priceRange): ?string
@@ -98,7 +103,7 @@ class UserPreferenceService
         return match ($priceRange) {
             'economico' => 'low',
             'moderado' => 'medium',
-            'premium' => 'high',
+            PriceRange::CARO, 'premium' => 'high',
             default => null,
         };
     }

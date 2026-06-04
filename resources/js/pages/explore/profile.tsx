@@ -17,6 +17,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
+import { PRICE_RANGES } from '@/lib/restaurant-price';
+import { type Budget, budgetsToPriceRanges, normalizeBudgets, toggleBudgetSelection } from '@/lib/tourist-budget';
 import TouristExploreLayout from '@/layouts/tourist-explore-layout';
 import { index as exploreIndex } from '@/routes/explore';
 import { update as updateProfile } from '@/routes/explore/profile';
@@ -31,12 +33,12 @@ interface ProfileData {
     city: string | null;
     bio: string | null;
     preferred_cuisines: string[];
-    budget_preference: 'low' | 'medium' | 'high' | null;
+    budget_preference: Budget[] | null;
 }
 
 type MlPreference = {
     ambiance_id: number | null;
-    price_range: 'economico' | 'moderado' | 'premium' | null;
+    price_range: 'economico' | 'moderado' | 'caro' | null;
     max_distance_km: number | null;
     party_type_ids: number[];
     dietary_option_ids: number[];
@@ -83,7 +85,11 @@ const SELECT_CLS = cn(
     'transition-all focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/20',
 );
 
-type Budget = 'low' | 'medium' | 'high';
+
+function syncPriceRangeFromBudgets(budgets: Budget[]): MlPreference['price_range'] | '' {
+    const ranges = budgetsToPriceRanges(budgets);
+    return ranges.length === 1 ? ranges[0] : '';
+}
 
 function catalogLabel(slug: string, fallback: string, prefix: string, t: (k: string) => string): string {
     const key = `${prefix}${slug}`;
@@ -123,7 +129,7 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
 
     const [city, setCity] = useState(profile?.city ?? '');
     const [bio, setBio] = useState(profile?.bio ?? '');
-    const [budget, setBudget] = useState<Budget | null>(profile?.budget_preference ?? null);
+    const [budgets, setBudgets] = useState<Budget[]>(normalizeBudgets(profile?.budget_preference ?? null));
     const [cuisines, setCuisines] = useState<string[]>(profile?.preferred_cuisines ?? []);
     const [ambianceId, setAmbianceId] = useState<number | ''>(mlPreference?.ambiance_id ?? '');
     const [priceRange, setPriceRange] = useState<MlPreference['price_range'] | ''>(
@@ -195,7 +201,7 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
             {
                 city: city || null,
                 bio: bio || null,
-                budget_preference: budget,
+                budget_preference: budgets.length > 0 ? budgets : null,
                 preferred_cuisines: cuisines,
                 ambiance_id: ambianceId || null,
                 price_range: priceRange || null,
@@ -215,11 +221,11 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
     const priceRanges =
         catalogs.priceRanges.length > 0
             ? catalogs.priceRanges
-            : [
-                  { value: 'economico', label: t('explore.budget_low'), name: 'economico' },
-                  { value: 'moderado', label: t('explore.budget_medium'), name: 'moderado' },
-                  { value: 'premium', label: t('explore.budget_high'), name: 'premium' },
-              ];
+            : PRICE_RANGES.map((range) => ({
+                  value: range.value,
+                  label: range.label,
+                  name: range.label,
+              }));
 
     return (
         <>
@@ -304,12 +310,15 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
                                         key={b.key}
                                         type="button"
                                         onClick={() => {
-                                            setBudget(b.key);
-                                            setPriceRange(b.price_range as MlPreference['price_range']);
+                                            setBudgets(prev => {
+                                                const next = toggleBudgetSelection(prev, b.key);
+                                                setPriceRange(syncPriceRangeFromBudgets(next));
+                                                return next;
+                                            });
                                         }}
                                         className={cn(
                                             'cursor-pointer rounded-xl border-2 p-3 text-center transition-all duration-150',
-                                            budget === b.key
+                                            budgets.includes(b.key)
                                                 ? 'border-brand-orange bg-orange-50 shadow-sm'
                                                 : 'border-gray-100 bg-gray-50 hover:border-orange-200 hover:bg-orange-50/40',
                                         )}
@@ -317,7 +326,7 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
                                         <p
                                             className={cn(
                                                 'text-sm font-semibold',
-                                                budget === b.key ? 'text-brand-orange' : 'text-gray-700',
+                                                budgets.includes(b.key) ? 'text-brand-orange' : 'text-gray-700',
                                             )}
                                         >
                                             {labels.label}

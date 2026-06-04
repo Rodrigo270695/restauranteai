@@ -7,14 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { AUTH_CARD_STYLE, AUTH_BTN_STYLE } from '@/lib/auth-styles';
+import { type Budget, normalizeBudgets, toggleBudgetSelection } from '@/lib/tourist-budget';
 import { store as storeProfile } from '@/routes/profile/setup';
 
 const SELECT_CLS = cn(
     'h-11 w-full appearance-none rounded-xl border border-orange-100 bg-white/80 px-4 text-sm text-gray-800',
     'transition-all focus:border-brand-orange focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-orange/20',
 );
-
-type Budget = 'low' | 'medium' | 'high';
 
 interface CuisineTypeOption {
     id: number;
@@ -38,7 +37,7 @@ interface Props {
     profile: {
         city: string | null;
         bio: string | null;
-        budget_preference: Budget | null;
+        budget_preference: Budget[] | null;
         preferred_cuisines: string[];
     } | null;
     cuisineTypes: CuisineTypeOption[];
@@ -57,7 +56,7 @@ export default function ProfileSetup({
 
     const [city, setCity] = useState(profile?.city ?? '');
     const [bio, setBio] = useState(profile?.bio ?? '');
-    const [budget, setBudget] = useState<Budget | null>(profile?.budget_preference ?? null);
+    const [budgets, setBudgets] = useState<Budget[]>(normalizeBudgets(profile?.budget_preference ?? null));
     const [cuisines, setCuisines] = useState<string[]>(profile?.preferred_cuisines ?? []);
     const [saving, setSaving] = useState(false);
     const [skipping, setSkipping] = useState(false);
@@ -77,7 +76,7 @@ export default function ProfileSetup({
             {
                 city: city || null,
                 bio: bio || null,
-                budget_preference: budget,
+                budget_preference: budgets.length > 0 ? budgets : null,
                 preferred_cuisines: cuisines,
             },
             { onFinish: () => setSaving(false) },
@@ -166,10 +165,10 @@ export default function ProfileSetup({
                                             <button
                                                 key={b.key}
                                                 type="button"
-                                                onClick={() => setBudget(b.key)}
+                                                onClick={() => setBudgets(prev => toggleBudgetSelection(prev, b.key))}
                                                 className={cn(
                                                     'cursor-pointer rounded-xl border-2 p-3 text-center transition-all duration-150',
-                                                    budget === b.key
+                                                    budgets.includes(b.key)
                                                         ? 'border-brand-orange bg-orange-50 shadow-sm'
                                                         : 'border-orange-100 bg-white hover:border-orange-200 hover:bg-orange-50/40',
                                                 )}
@@ -177,7 +176,7 @@ export default function ProfileSetup({
                                                 <p
                                                     className={cn(
                                                         'text-sm font-semibold',
-                                                        budget === b.key
+                                                        budgets.includes(b.key)
                                                             ? 'text-brand-orange'
                                                             : 'text-gray-700',
                                                     )}

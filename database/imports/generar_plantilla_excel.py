@@ -88,7 +88,7 @@ CATALOGOS = {
             "Tranquilo",
         }
     ),
-    "rango_precios": ["economico", "moderado", "premium"],
+    "rango_precios": ["economico", "moderado", "caro"],
     "momento_recomendado": ["Desayuno", "Almuerzo", "Cena", "Brunch", "Bar"],
     "servicios": sorted(
         {
@@ -239,7 +239,7 @@ def main() -> None:
         "2. Usa las listas desplegables donde aparecen (columnas con catálogo).",
         "3. Varios valores en una celda: separa con |  →  WiFi|Reservas|Delivery",
         "4. momento_recomendado y publico_objetivo: también con | si son varios",
-        "5. rango_precios: solo economico, moderado o premium (sin tildes)",
+        "5. rango_precios: solo economico, moderado o caro (sin tildes)",
         "6. dias: lun-dom = lunes a domingo",
         "7. latitud y longitud: necesarios para mapa y rutas IA",
         "8. Puedes copiar/pegar desde Google Sheets; conserva las columnas.",

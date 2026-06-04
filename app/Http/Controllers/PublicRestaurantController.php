@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Restaurant;
+use App\Support\PriceRange;
 use App\Support\PublicStorage;
 use App\Support\RestaurantHoursPresenter;
 use App\Support\RestaurantMenuPresenter;
@@ -34,12 +35,7 @@ class PublicRestaurantController extends Controller
                 'short_description' => $restaurant->short_description,
                 'address' => $restaurant->address,
                 'price_range' => $restaurant->price_range,
-                'price_range_label' => match ($restaurant->price_range) {
-                    'economico' => 'Económico',
-                    'moderado' => 'Moderado',
-                    'premium' => 'Premium',
-                    default => $restaurant->price_range,
-                },
+                'price_range_label' => PriceRange::label($restaurant->price_range),
                 'avg_price_per_person' => $restaurant->avg_price_per_person !== null
                     ? (float) $restaurant->avg_price_per_person
                     : null,

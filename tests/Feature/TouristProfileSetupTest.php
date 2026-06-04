@@ -66,9 +66,26 @@ test('tourist can save setup with real cuisine slugs and district', function () 
     $profile = TouristProfile::where('user_id', $user->id)->first();
     expect($profile->city)->toBe('Chiclayo');
     expect($profile->preferred_cuisines)->toBe(['criolla', 'ceviche']);
+    expect($profile->budget_preference)->toBe(['medium']);
     expect($profile->isCompleted())->toBeTrue();
 
     expect(UserPreference::where('user_id', $user->id)->value('price_range'))->toBe('moderado');
+});
+
+test('tourist can save setup with mixed budget preferences', function () {
+    $user = setupTourist();
+
+    $this->actingAs($user)
+        ->post(route('profile.setup.store'), [
+            'city' => 'Chiclayo',
+            'budget_preference' => ['medium', 'high'],
+            'preferred_cuisines' => ['criolla'],
+        ])
+        ->assertRedirect(route('explore.discover'));
+
+    $profile = TouristProfile::where('user_id', $user->id)->first();
+    expect($profile->budget_preference)->toBe(['medium', 'high']);
+    expect(UserPreference::where('user_id', $user->id)->value('price_range'))->toBeNull();
 });
 
 test('completed tourist is redirected away from setup', function () {

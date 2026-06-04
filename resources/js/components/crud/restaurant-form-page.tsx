@@ -26,6 +26,7 @@ import { AdminPanelBanner } from '@/components/layout/admin-panel-banner';
 import { useCan } from '@/hooks/use-can';
 import { useOwnerReadOnly } from '@/hooks/use-owner-read-only';
 import type { PanelContext } from '@/lib/scoped-app-path';
+import { PRICE_RANGES, avgPriceHintForRange, priceRangeLabel, validateAvgPriceForRange } from '@/lib/restaurant-price';
 import { cn } from '@/lib/utils';
 
 type Option = { id: number; name: string };
@@ -186,6 +187,13 @@ export function RestaurantFormPage({
         });
     }, [flash]);
 
+    useEffect(() => {
+        if (!form.errors.avg_price_per_person) return;
+        import('sonner').then(({ toast }) => {
+            toast.error(form.errors.avg_price_per_person);
+        });
+    }, [form.errors.avg_price_per_person]);
+
     const displayName = owner.business_name || restaurant.name || owner.name;
 
     const statBadges: StatBadge[] = [
@@ -218,8 +226,29 @@ export function RestaurantFormPage({
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         if (readOnly) return;
+
+        const validationError = validateAvgPriceForRange(
+            String(form.data.price_range),
+            form.data.avg_price_per_person,
+        );
+        if (validationError) {
+            import('sonner').then(({ toast }) => toast.error(validationError));
+            return;
+        }
+
         const putUrl = panel?.baseUrl ? `${panel.baseUrl}/profile` : '/app/restaurants';
-        form.put(putUrl, { preserveScroll: true });
+        form.put(putUrl, {
+            preserveScroll: true,
+            onError: (errors) => {
+                const message =
+                    errors.avg_price_per_person ??
+                    errors.price_range ??
+                    Object.values(errors)[0];
+                if (message) {
+                    import('sonner').then(({ toast }) => toast.error(String(message)));
+                }
+            },
+        });
     };
 
     return (
@@ -488,9 +517,11 @@ export function RestaurantFormPage({
                                     onChange={(e) => form.setData('price_range', e.target.value)}
                                     disabled={form.processing || readOnly}
                                 >
-                                    <option value="economico">Económico</option>
-                                    <option value="moderado">Moderado</option>
-                                    <option value="premium">Premium</option>
+                                    {PRICE_RANGES.map((option) => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
                                 </select>
                             </FormField>
                         </FieldSpan>
@@ -505,11 +536,18 @@ export function RestaurantFormPage({
                                     type="number"
                                     min={0}
                                     step="0.5"
+                                    placeholder={avgPriceHintForRange(String(form.data.price_range)) ?? undefined}
                                     value={String(form.data.avg_price_per_person)}
                                     onChange={(e) => form.setData('avg_price_per_person', e.target.value)}
                                     disabled={form.processing || readOnly}
                                     className="bg-white"
                                 />
+                                {avgPriceHintForRange(String(form.data.price_range)) && (
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        Rango {priceRangeLabel(String(form.data.price_range))}:{' '}
+                                        {avgPriceHintForRange(String(form.data.price_range))}
+                                    </p>
+                                )}
                             </FormField>
                         </FieldSpan>
                         <FieldSpan>

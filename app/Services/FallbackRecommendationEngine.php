@@ -6,6 +6,8 @@ use App\Models\RecommendedMoment;
 use App\Models\Restaurant;
 use App\Models\User;
 use App\Models\UserPreference;
+use App\Support\BudgetPreference;
+use App\Support\PriceRange;
 use App\Support\RestaurantHoursPresenter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -23,7 +25,7 @@ class FallbackRecommendationEngine
      * @param  array<string, mixed>  $context
      * @return Collection<int, array{restaurant_id: int, rank: int, score: float, algorithm: string}>
      */
-    public function recommend(User $user, array $context, int $topN = 8): Collection
+    public function recommend(User $user, array $context, int $topN = 10): Collection
     {
         $pref = $user->userPreferences()->latest('updated_at')->first();
 
@@ -41,8 +43,18 @@ class FallbackRecommendationEngine
 
         if ($pref?->price_range) {
             $query->where('price_range', $pref->price_range);
-        } elseif (! empty($context['budget'])) {
-            $query->where('price_range', $context['budget']);
+        } else {
+            $priceRanges = BudgetPreference::toPriceRanges(
+                $user->touristProfile?->budget_preference ?? [],
+            );
+
+            if ($priceRanges !== []) {
+                $query->whereIn('price_range', $priceRanges);
+            } elseif (! empty($context['budget'])) {
+                $query->where('price_range', $context['budget']);
+            } elseif (! empty($context['price_ranges']) && is_array($context['price_ranges'])) {
+                $query->whereIn('price_range', $context['price_ranges']);
+            }
         }
 
         if ($pref?->cuisine_type_id) {
@@ -72,7 +84,7 @@ class FallbackRecommendationEngine
             ->orderByDesc('is_featured')
             ->orderByDesc('avg_rating')
             ->orderByDesc('total_reviews')
-            ->limit(max($topN * 6, 24))
+            ->limit(max($topN * 6, 60))
             ->get();
 
         $preferredMomentSlugs = $momentIds !== []
@@ -124,11 +136,15 @@ class FallbackRecommendationEngine
     public static function contextFromUser(User $user, ?UserPreference $pref, array $overrides = []): array
     {
         $profile = $user->touristProfile;
+        $profileBudgets = BudgetPreference::normalize($profile?->budget_preference);
+        $profilePriceRanges = BudgetPreference::toPriceRanges($profileBudgets);
 
         return array_merge([
             'latitude' => $overrides['latitude'] ?? null,
             'longitude' => $overrides['longitude'] ?? null,
-            'budget' => $pref?->price_range ?? self::mapBudget($profile?->budget_preference),
+            'budget' => $pref?->price_range ?? BudgetPreference::singlePriceRange($profileBudgets),
+            'budgets' => $profileBudgets,
+            'price_ranges' => $profilePriceRanges,
             'max_distance_km' => $pref?->max_distance_km !== null ? (float) $pref->max_distance_km : 15,
             'cuisine_type_id' => $pref?->cuisine_type_id,
             'ambiance_id' => $pref?->ambiance_id,
@@ -145,12 +161,7 @@ class FallbackRecommendationEngine
 
     public static function mapBudget(?string $budget): ?string
     {
-        return match ($budget) {
-            'low' => 'economico',
-            'medium' => 'moderado',
-            'high' => 'premium',
-            default => null,
-        };
+        return BudgetPreference::singlePriceRange($budget);
     }
 
     public static function inferTimeSlot(?UserPreference $pref = null): string

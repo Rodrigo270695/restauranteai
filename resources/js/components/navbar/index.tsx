@@ -39,7 +39,7 @@ export function Navbar() {
                       : 'bg-transparent',
             )}
         >
-            <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+            <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between overflow-visible px-4 sm:px-6 lg:px-8">
 
                 {/* Logo */}
                 <NavLogo />

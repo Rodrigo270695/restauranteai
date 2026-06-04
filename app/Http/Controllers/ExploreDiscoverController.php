@@ -20,10 +20,15 @@ class ExploreDiscoverController extends Controller
         }
 
         $user = $request->user();
-        $userLat = $request->float('lat') ?: null;
-        $userLng = $request->float('lng') ?: null;
+        ['lat' => $userLat, 'lng' => $userLng] = $explore->parseUserCoordinates($request);
+        $locationActive = $userLat !== null && $userLng !== null;
+        $nearbyLimit = 30;
 
         $restaurants = $explore->publicQuery($request)->get();
+
+        if ($locationActive) {
+            $restaurants = $explore->orderWithNearbyFirst($restaurants, $userLat, $userLng, $nearbyLimit);
+        }
         $draftModel = $routes->draftFor($user);
         $pathPoints = count($draftModel->path_coordinates ?? []);
         if ($draftModel->stops()->count() >= 2 && $pathPoints <= $draftModel->stops()->count()) {
@@ -45,10 +50,16 @@ class ExploreDiscoverController extends Controller
                 'cuisine_type_id' => $request->integer('cuisine_type_id') ?: null,
                 'price_range' => $request->string('price_range')->value() ?: null,
                 'view' => $request->string('view')->value() === 'list' ? 'list' : 'map',
+                'lat' => $userLat,
+                'lng' => $userLng,
+                'location_active' => $locationActive,
             ],
+            'nearbyLimit' => $nearbyLimit,
             'draftRoute' => $draft,
             'draftStopSlugs' => $draftStopSlugs,
-            'mapCenter' => ['lat' => -6.7766, 'lng' => -79.8442],
+            'mapCenter' => $locationActive
+                ? ['lat' => $userLat, 'lng' => $userLng]
+                : ['lat' => -6.7766, 'lng' => -79.8442],
         ]);
     }
 }

@@ -7,6 +7,7 @@ use App\Models\CuisineType;
 use App\Models\Restaurant;
 use App\Models\User;
 use App\Services\RestaurantCuisineService;
+use App\Support\PriceRange;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -56,7 +57,7 @@ class RestaurantController extends Controller
             'cuisine_type_ids' => ['nullable', 'array'],
             'cuisine_type_ids.*' => ['integer', 'exists:cuisine_types,id'],
             'primary_cuisine_type_id' => ['nullable', 'integer', 'exists:cuisine_types,id'],
-            'price_range' => ['required', 'in:economico,moderado,premium'],
+            'price_range' => ['required', PriceRange::validationRule()],
             'is_active' => ['sometimes', 'boolean'],
             'is_verified' => ['sometimes', 'boolean'],
         ]);
@@ -84,7 +85,7 @@ class RestaurantController extends Controller
             'cuisine_type_ids' => ['nullable', 'array'],
             'cuisine_type_ids.*' => ['integer', 'exists:cuisine_types,id'],
             'primary_cuisine_type_id' => ['nullable', 'integer', 'exists:cuisine_types,id'],
-            'price_range' => ['sometimes', 'in:economico,moderado,premium'],
+            'price_range' => ['sometimes', PriceRange::validationRule()],
             'is_active' => ['sometimes', 'boolean'],
             'is_verified' => ['sometimes', 'boolean'],
             'is_featured' => ['sometimes', 'boolean'],

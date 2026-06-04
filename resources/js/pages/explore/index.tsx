@@ -15,6 +15,8 @@ import type { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
+import { type Budget, normalizeBudgets } from '@/lib/tourist-budget';
+import { priceRangeLabel } from '@/lib/restaurant-price';
 import { AiRouteGenerateButton } from '@/components/explore/ai-route-generate-button';
 import { RestaurantCard, type RestaurantCardData } from '@/components/explore/restaurant-card';
 import { exploreDiscoverUrl } from '@/lib/explore-discover-url';
@@ -27,7 +29,7 @@ interface TouristProfile {
     city: string | null;
     bio: string | null;
     preferred_cuisines: string[];
-    budget_preference: 'low' | 'medium' | 'high' | null;
+    budget_preference: Budget[] | null;
     completed: boolean;
 }
 
@@ -78,13 +80,33 @@ const DEFAULT_CUISINE_STYLE = {
 };
 
 // ─── Presupuesto legible ──────────────────────────────────────────────────────
-function BudgetBadge({ budget, t }: { budget: string; t: (k: string) => string }) {
-    const map: Record<string, { label: string; cls: string }> = {
+function BudgetBadges({
+    budgets,
+    t,
+}: {
+    budgets: Budget[] | Budget | null | undefined;
+    t: (k: string) => string;
+}) {
+    const list = normalizeBudgets(budgets ?? null);
+    if (list.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="flex flex-wrap gap-1.5">
+            {list.map(budget => (
+                <BudgetBadge key={budget} budget={budget} t={t} />
+            ))}
+        </div>
+    );
+}
+function BudgetBadge({ budget, t }: { budget: Budget; t: (k: string) => string }) {
+    const map: Record<Budget, { label: string; cls: string }> = {
         low:    { label: t('explore.budget_low'),    cls: 'bg-green-100 text-green-700' },
         medium: { label: t('explore.budget_medium'), cls: 'bg-amber-100 text-amber-700' },
         high:   { label: t('explore.budget_high'),   cls: 'bg-purple-100 text-purple-700' },
     };
-    const cfg = map[budget] ?? map['medium'];
+    const cfg = map[budget] ?? map.medium;
     return (
         <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-semibold', cfg.cls)}>
             {cfg.label}
@@ -281,10 +303,10 @@ export default function ExploreIndex({
                                     )}
 
                                     {/* Presupuesto */}
-                                    {profile?.budget_preference && (
+                                    {profile?.budget_preference && profile.budget_preference.length > 0 && (
                                         <div className="flex items-center gap-2">
                                             <span className="text-xs text-gray-400">{t('explore.budget_label')}:</span>
-                                            <BudgetBadge budget={profile.budget_preference} t={t} />
+                                            <BudgetBadges budgets={profile.budget_preference} t={t} />
                                         </div>
                                     )}
 
@@ -352,7 +374,9 @@ export default function ExploreIndex({
                                 <ul className="mt-2 space-y-1">
                                     {mlPreference.cuisine && <li>• {mlPreference.cuisine}</li>}
                                     {mlPreference.ambiance && <li>• {mlPreference.ambiance}</li>}
-                                    {mlPreference.price_range && <li>• {mlPreference.price_range}</li>}
+                                    {mlPreference.price_range && (
+                                        <li>• {priceRangeLabel(mlPreference.price_range)}</li>
+                                    )}
                                     {mlPreference.party_types?.map(p => (
                                         <li key={p}>• {p}</li>
                                     ))}

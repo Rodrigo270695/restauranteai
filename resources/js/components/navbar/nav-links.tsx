@@ -8,6 +8,7 @@ interface NavItem {
     href: string;
     exact: boolean;
     soon?: boolean;
+    topBadge?: string;
 }
 
 // ─── Base pública (sin sesión) ────────────────────────────────────────────────
@@ -25,7 +26,7 @@ const PUBLIC_NAV: NavItem[] = [
 
 const TOURIST_NAV: NavItem[] = [
     { labelKey: 'nav.home',            href: '/',        exact: true  },
-    { labelKey: 'explore.nav_explore', href: '/explore', exact: true  },
+    { labelKey: 'explore.nav_explore', href: '/explore', exact: true, topBadge: 'IA' },
     ...BASE_NAV,
 ];
 
@@ -60,8 +61,8 @@ export function NavLinks({ scrolled = false }: NavLinksProps) {
     const items = getNavItems(roles);
 
     return (
-        <nav className="hidden items-center gap-6 md:flex">
-            {items.map(({ labelKey, href, exact, soon }) => {
+        <nav className="hidden items-center gap-6 overflow-visible md:flex">
+            {items.map(({ labelKey, href, exact, soon, topBadge }) => {
                 const isActive = soon
                     ? false
                     : exact
@@ -87,7 +88,7 @@ export function NavLinks({ scrolled = false }: NavLinksProps) {
                         key={labelKey}
                         href={href}
                         className={cn(
-                            'relative pb-1 text-sm font-medium transition-all duration-200',
+                            'relative inline-flex items-center pb-1 text-sm font-medium transition-all duration-200',
                             'after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:rounded-full after:transition-transform after:duration-200',
                             isActive
                                 ? 'font-semibold text-brand-orange after:scale-x-100 after:bg-brand-orange'
@@ -96,6 +97,11 @@ export function NavLinks({ scrolled = false }: NavLinksProps) {
                                   : 'text-gray-700 after:scale-x-0 after:bg-brand-orange hover:text-gray-900 hover:after:scale-x-100',
                         )}
                     >
+                        {topBadge && (
+                            <span className="pointer-events-none absolute -top-2.5 left-1/2 -translate-x-1/2 rounded bg-brand-orange px-1 py-px text-[8px] font-bold leading-none tracking-wide text-white">
+                                {topBadge}
+                            </span>
+                        )}
                         {t(labelKey)}
                     </Link>
                 );

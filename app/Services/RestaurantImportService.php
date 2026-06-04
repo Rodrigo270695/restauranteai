@@ -13,7 +13,7 @@ use App\Models\RestaurantProfile;
 use App\Models\RestaurantSchedule;
 use App\Models\Service;
 use App\Models\User;
-use App\Support\RestaurantImport\DistrictResolver;
+use App\Support\PriceRange;
 use App\Support\RestaurantImport\SpreadsheetReader;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -133,7 +133,7 @@ class RestaurantImportService
                 throw new RuntimeException('Distrito no encontrado');
             }
 
-            $priceRange = $this->normalizePriceRange($row['precio'] ?? null);
+            $priceRange = PriceRange::normalize($row['precio'] ?? null);
             $ambiance = $this->resolveAmbiance($this->splitPipe($row['ambiente'] ?? null)[0] ?? null);
 
             $existing = Restaurant::query()
@@ -159,7 +159,7 @@ class RestaurantImportService
                     'longitude' => $this->normalizeCoordinate($row['longitud'] ?? null),
                     'phone' => $this->truncate($this->stringOrNull($row['telefono'] ?? null), 20),
                     'price_range' => $priceRange,
-                    'avg_price_per_person' => $this->avgPriceForRange($priceRange),
+                    'avg_price_per_person' => PriceRange::avgPrice($priceRange),
                     'is_active' => true,
                     'is_verified' => true,
                     'verified_at' => now(),
@@ -241,38 +241,6 @@ class RestaurantImportService
             fn ($p) => trim($p),
             preg_split('/\s*\|\s*/', (string) $value) ?: [],
         )));
-    }
-
-    private function normalizePriceRange(mixed $value): string
-    {
-        $raw = str($value ?? '')->ascii()->lower()->trim()->toString();
-
-        if ($raw === '') {
-            return 'moderado';
-        }
-
-        if (str_contains($raw, 'econ') || $raw === 'bajo' || $raw === '1') {
-            return 'economico';
-        }
-
-        if (str_contains($raw, 'prem') || str_contains($raw, 'alto') || $raw === '3') {
-            return 'premium';
-        }
-
-        if (in_array($raw, ['economico', 'moderado', 'premium'], true)) {
-            return $raw;
-        }
-
-        return 'moderado';
-    }
-
-    private function avgPriceForRange(string $range): float
-    {
-        return match ($range) {
-            'economico' => 25.0,
-            'premium' => 85.0,
-            default => 45.0,
-        };
     }
 
     private function resolveAmbiance(?string $name): ?Ambiance

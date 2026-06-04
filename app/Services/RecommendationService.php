@@ -53,10 +53,12 @@ class RecommendationService
      */
     private function generate(User $user, array $context, int $topN, $pref): array
     {
+        $fetchN = min(max($topN * 3, 30), 50);
+
         $payload = [
             'user_id' => $user->id,
             'context' => $this->mlContextPayload($context, $pref),
-            'top_n' => $topN,
+            'top_n' => $fetchN,
             'exclude_restaurant_ids' => [],
         ];
 
@@ -119,7 +121,7 @@ class RecommendationService
                 $this->explore->formatCard($restaurant, $context['latitude'] ?? null, $context['longitude'] ?? null),
                 [
                     'rank' => $rank,
-                    'recommendation_score' => (int) round($row['score'] * 100),
+                    'recommendation_score' => $this->displayRecommendationScore((float) $row['score']),
                 ],
             );
 
@@ -149,6 +151,8 @@ class RecommendationService
             'latitude' => $context['latitude'] ?? null,
             'longitude' => $context['longitude'] ?? null,
             'budget' => $context['budget'] ?? null,
+            'price_ranges' => array_values($context['price_ranges'] ?? []),
+            'budgets' => array_values($context['budgets'] ?? []),
             'party_type_ids' => $context['party_type_ids'] ?? [],
             'time_slot' => $context['time_slot'] ?? FallbackRecommendationEngine::inferTimeSlot($pref),
             'max_distance_km' => (float) ($context['max_distance_km'] ?? 15),
@@ -166,6 +170,12 @@ class RecommendationService
     public function bustCacheForUser(User $user): void
     {
         Cache::increment($this->cacheVersionKey($user->id));
+    }
+
+    /** Convierte el score bruto del motor (0–1) a porcentaje visible (0–100). */
+    private function displayRecommendationScore(float $score): int
+    {
+        return min(100, (int) round(max(0, $score) * 1000));
     }
 
     private function cacheVersionKey(int $userId): string

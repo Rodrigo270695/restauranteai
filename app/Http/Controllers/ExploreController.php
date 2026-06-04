@@ -11,6 +11,7 @@ use App\Models\RecommendedMoment;
 use App\Models\RestaurantEnvironment;
 use App\Models\TouristProfile;
 use App\Models\UserPreference;
+use App\Support\BudgetPreference;
 use App\Services\RecommendationService;
 use App\Services\RestaurantExploreService;
 use App\Services\UserPreferenceService;
@@ -98,10 +99,12 @@ class ExploreController extends Controller
             ? $this->normalizePreferredCuisineSlugs($validated['preferred_cuisines'])
             : null;
 
+        $budgetPreference = BudgetPreference::normalize($validated['budget_preference'] ?? null);
+
         $touristData = array_filter([
             'city' => $validated['city'] ?? null,
             'bio' => $validated['bio'] ?? null,
-            'budget_preference' => $validated['budget_preference'] ?? null,
+            'budget_preference' => $budgetPreference !== [] ? $budgetPreference : null,
             'preferred_cuisines' => $preferredSlugs,
         ], fn ($v) => $v !== null);
 
@@ -111,7 +114,7 @@ class ExploreController extends Controller
         );
 
         $priceRange = $validated['price_range']
-            ?? $this->preferences->mapBudgetToPriceRange($validated['budget_preference'] ?? null);
+            ?? BudgetPreference::singlePriceRange($budgetPreference);
 
         $cuisineTypeId = $validated['cuisine_type_id']
             ?? $this->preferences->primaryCuisineTypeIdFromSlugs($preferredSlugs ?? []);
@@ -160,7 +163,7 @@ class ExploreController extends Controller
             'city' => $profile->city,
             'bio' => $profile->bio,
             'preferred_cuisines' => $this->normalizePreferredCuisineSlugs($profile->preferred_cuisines ?? []),
-            'budget_preference' => $profile->budget_preference,
+            'budget_preference' => BudgetPreference::normalize($profile->budget_preference),
             'completed' => $profile->isCompleted(),
         ];
     }

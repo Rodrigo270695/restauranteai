@@ -20,6 +20,7 @@ class TouristProfile extends Model
 
     protected $casts = [
         'preferred_cuisines' => 'array',
+        'budget_preference' => 'array',
         'birth_date'         => 'date',
         'completed_at'       => 'datetime',
     ];

@@ -45,6 +45,15 @@ final class RestaurantHoursPresenter
         return $this->forRestaurant($restaurant, $now)['is_open'] === true;
     }
 
+    /** Coincide con la UI: abiertos ahora o sin horario publicado (se pueden agregar a la ruta). */
+    public function isAvailableForRouteNow(Restaurant $restaurant, ?CarbonInterface $now = null): bool
+    {
+        $restaurant->loadMissing('schedules');
+        $status = $this->forSchedules($restaurant->schedules, $now);
+
+        return $status['is_open'] || $status['label'] === 'Horario no disponible';
+    }
+
     public function assertOpenForVisit(Restaurant $restaurant, ?CarbonInterface $now = null): void
     {
         $restaurant->loadMissing('schedules');
