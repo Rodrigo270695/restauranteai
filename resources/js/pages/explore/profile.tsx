@@ -17,8 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
-import { PRICE_RANGES } from '@/lib/restaurant-price';
-import { type Budget, budgetsToPriceRanges, normalizeBudgets, toggleBudgetSelection } from '@/lib/tourist-budget';
+import { type Budget, normalizeBudgets, toggleBudgetSelection } from '@/lib/tourist-budget';
 import TouristExploreLayout from '@/layouts/tourist-explore-layout';
 import { index as exploreIndex } from '@/routes/explore';
 import { update as updateProfile } from '@/routes/explore/profile';
@@ -38,7 +37,6 @@ interface ProfileData {
 
 type MlPreference = {
     ambiance_id: number | null;
-    price_range: 'economico' | 'moderado' | 'caro' | null;
     max_distance_km: number | null;
     party_type_ids: number[];
     dietary_option_ids: number[];
@@ -55,7 +53,6 @@ type BudgetOption = { key: 'low' | 'medium' | 'high'; price_range: string };
 type CatalogItem = { id: number; name: string };
 type ServiceOption = { id: number; name: string; slug: string };
 type LanguageOption = { id: number; name: string; code: string };
-type PriceRangeOption = { value: string; label: string; name: string };
 
 interface Props {
     profile: ProfileData | null;
@@ -65,7 +62,6 @@ interface Props {
         ambiances: CatalogItem[];
         districts: DistrictOption[];
         budgetOptions: BudgetOption[];
-        priceRanges: PriceRangeOption[];
         services: ServiceOption[];
         languages: LanguageOption[];
         partyTypes: CuisineTypeOption[];
@@ -85,11 +81,6 @@ const SELECT_CLS = cn(
     'transition-all focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/20',
 );
 
-
-function syncPriceRangeFromBudgets(budgets: Budget[]): MlPreference['price_range'] | '' {
-    const ranges = budgetsToPriceRanges(budgets);
-    return ranges.length === 1 ? ranges[0] : '';
-}
 
 function catalogLabel(slug: string, fallback: string, prefix: string, t: (k: string) => string): string {
     const key = `${prefix}${slug}`;
@@ -132,9 +123,6 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
     const [budgets, setBudgets] = useState<Budget[]>(normalizeBudgets(profile?.budget_preference ?? null));
     const [cuisines, setCuisines] = useState<string[]>(profile?.preferred_cuisines ?? []);
     const [ambianceId, setAmbianceId] = useState<number | ''>(mlPreference?.ambiance_id ?? '');
-    const [priceRange, setPriceRange] = useState<MlPreference['price_range'] | ''>(
-        mlPreference?.price_range ?? '',
-    );
     const [maxDistance, setMaxDistance] = useState(mlPreference?.max_distance_km?.toString() ?? '');
     const [partyTypeIds, setPartyTypeIds] = useState<number[]>(mlPreference?.party_type_ids ?? []);
     const [dietaryOptionIds, setDietaryOptionIds] = useState<number[]>(
@@ -204,7 +192,6 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
                 budget_preference: budgets.length > 0 ? budgets : null,
                 preferred_cuisines: cuisines,
                 ambiance_id: ambianceId || null,
-                price_range: priceRange || null,
                 max_distance_km: maxDistance ? Number(maxDistance) : null,
                 party_type_ids: partyTypeIds,
                 dietary_option_ids: dietaryOptionIds,
@@ -217,15 +204,6 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
             { onFinish: () => setSaving(false) },
         );
     };
-
-    const priceRanges =
-        catalogs.priceRanges.length > 0
-            ? catalogs.priceRanges
-            : PRICE_RANGES.map((range) => ({
-                  value: range.value,
-                  label: range.label,
-                  name: range.label,
-              }));
 
     return (
         <>
@@ -309,13 +287,7 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
                                     <button
                                         key={b.key}
                                         type="button"
-                                        onClick={() => {
-                                            setBudgets(prev => {
-                                                const next = toggleBudgetSelection(prev, b.key);
-                                                setPriceRange(syncPriceRangeFromBudgets(next));
-                                                return next;
-                                            });
-                                        }}
+                                        onClick={() => setBudgets(prev => toggleBudgetSelection(prev, b.key))}
                                         className={cn(
                                             'cursor-pointer rounded-xl border-2 p-3 text-center transition-all duration-150',
                                             budgets.includes(b.key)
@@ -421,33 +393,6 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
                                         </option>
                                     ))}
                                 </select>
-                            </div>
-
-                            <div>
-                                <Label className="text-xs text-gray-600">
-                                    {t('explore.ml_price_range')}
-                                </Label>
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                    {priceRanges.map(p => (
-                                        <button
-                                            key={p.value}
-                                            type="button"
-                                            onClick={() =>
-                                                setPriceRange(
-                                                    p.value as MlPreference['price_range'],
-                                                )
-                                            }
-                                            className={cn(
-                                                'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium',
-                                                priceRange === p.value
-                                                    ? 'border-brand-orange bg-brand-orange text-white'
-                                                    : 'border-gray-200 bg-white text-gray-700',
-                                            )}
-                                        >
-                                            {p.label}
-                                        </button>
-                                    ))}
-                                </div>
                             </div>
 
                             <div>
