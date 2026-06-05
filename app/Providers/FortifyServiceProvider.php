@@ -67,7 +67,7 @@ class FortifyServiceProvider extends ServiceProvider
                         return redirect()->route('owner.pending');
                     }
                     if ($profile->needsPostApprovalOnboarding()) {
-                        return redirect()->route('profile.edit');
+                        return redirect()->route('app.restaurants');
                     }
 
                     return redirect()->route('dashboard');
@@ -105,7 +105,7 @@ class FortifyServiceProvider extends ServiceProvider
                         return redirect()->route('owner.pending');
                     }
                     if ($profile->needsPostApprovalOnboarding()) {
-                        return redirect()->route('profile.edit');
+                        return redirect()->route('app.restaurants');
                     }
 
                     return redirect()->route('dashboard');

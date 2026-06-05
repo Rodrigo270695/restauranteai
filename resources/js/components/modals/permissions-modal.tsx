@@ -256,6 +256,8 @@ const PERMISSION_TREE: Record<string, PermTreeModule> = {
                 label: 'Reseñas',
                 permissions: {
                     'reviews.view': 'Ver reseñas de mi local',
+                    'reservations.view': 'Ver reservas de turistas',
+                    'reservations.manage': 'Confirmar o rechazar reservas',
                 },
             },
             analytics: {

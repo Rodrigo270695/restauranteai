@@ -27,6 +27,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExploreController;
 use App\Http\Controllers\ExploreDiscoverController;
 use App\Http\Controllers\ExploreRecommendationController;
+use App\Http\Controllers\ExploreReservationController;
+use App\Http\Controllers\ExploreReviewController;
 use App\Http\Controllers\ExploreRestaurantController;
 use App\Http\Controllers\ExploreRestaurantInteractionController;
 use App\Http\Controllers\ExploreRouteRecommendationController;
@@ -60,6 +62,9 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
         Route::middleware(['restaurant.owner.context', 'restaurant.owner.mutate'])->group(function () {
             Route::get('restaurants', [AppRestaurantController::class, 'index'])->name('restaurants');
             Route::put('restaurants', [AppRestaurantController::class, 'update'])->name('restaurants.update');
+            Route::post('restaurants/locations', [AppRestaurantController::class, 'storeLocation'])->name('restaurants.locations.store');
+            Route::post('restaurants/switch', [AppRestaurantController::class, 'switchLocation'])->name('restaurants.switch');
+            Route::post('restaurants/geocode', [AppRestaurantController::class, 'geocodeAddress'])->name('restaurants.geocode');
 
             Route::get('schedules', [ScheduleController::class, 'index'])->name('schedules');
             Route::put('schedules', [ScheduleController::class, 'sync'])->name('schedules.sync');
@@ -89,6 +94,10 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
             Route::get('reviews', [ReviewController::class, 'index'])->name('reviews');
             Route::put('reviews/{review}/respond', [ReviewController::class, 'respond'])->name('reviews.respond');
 
+            Route::get('reservations', [\App\Http\Controllers\App\ReservationController::class, 'index'])->name('reservations');
+            Route::post('reservations/{reservation}/confirm', [\App\Http\Controllers\App\ReservationController::class, 'confirm'])->name('reservations.confirm');
+            Route::post('reservations/{reservation}/reject', [\App\Http\Controllers\App\ReservationController::class, 'reject'])->name('reservations.reject');
+
             Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics');
         });
 
@@ -97,6 +106,10 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
 
             Route::get('reviews', [AdminReviewController::class, 'index'])->name('reviews');
             Route::put('reviews/{review}/respond', [AdminReviewController::class, 'respond'])->name('reviews.respond');
+
+            Route::get('reservations', [\App\Http\Controllers\Admin\AdminReservationController::class, 'index'])->name('reservations');
+            Route::post('reservations/{reservation}/confirm', [\App\Http\Controllers\Admin\AdminReservationController::class, 'confirm'])->name('reservations.confirm');
+            Route::post('reservations/{reservation}/reject', [\App\Http\Controllers\Admin\AdminReservationController::class, 'reject'])->name('reservations.reject');
 
             Route::get('analytics', [AdminAnalyticsController::class, 'index'])->name('analytics');
 
@@ -122,6 +135,7 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
 
                 Route::get('profile', [AppRestaurantController::class, 'indexForRestaurant'])->name('profile');
                 Route::put('profile', [AppRestaurantController::class, 'update'])->name('profile.update');
+                Route::post('geocode', [AppRestaurantController::class, 'geocodeAddress'])->name('geocode');
 
                 Route::get('schedules', [ScheduleController::class, 'indexForRestaurant'])->name('schedules');
                 Route::put('schedules', [ScheduleController::class, 'sync'])->name('schedules.sync');
@@ -149,6 +163,10 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
                 Route::delete('promotions/{promotion}', [PromotionController::class, 'destroy'])->name('promotions.destroy');
 
                 Route::get('analytics', [AnalyticsController::class, 'indexForRestaurant'])->name('analytics');
+
+                Route::get('reservations', [\App\Http\Controllers\App\ReservationController::class, 'indexForRestaurant'])->name('reservations');
+                Route::post('reservations/{reservation}/confirm', [\App\Http\Controllers\App\ReservationController::class, 'confirmForRestaurant'])->name('reservations.confirm');
+                Route::post('reservations/{reservation}/reject', [\App\Http\Controllers\App\ReservationController::class, 'rejectForRestaurant'])->name('reservations.reject');
             });
 
             Route::get('business-requests', [BusinessRequestController::class, 'index'])->name('business-requests');
@@ -203,6 +221,16 @@ Route::middleware(['auth', 'verified'])->prefix('explore')->name('explore.')->gr
     Route::get('/restaurants/{restaurant:slug}', [ExploreRestaurantController::class, 'show'])->name('restaurants.show');
     Route::post('/restaurants/{restaurant:slug}/interactions', [ExploreRestaurantInteractionController::class, 'store'])
         ->name('restaurants.interactions');
+    Route::post('/restaurants/{restaurant:slug}/reviews', [ExploreReviewController::class, 'store'])
+        ->name('restaurants.reviews');
+    Route::post('/routes/{route:slug}/stops/{restaurant:slug}/reservations', [ExploreReservationController::class, 'store'])
+        ->name('routes.reservations.store');
+    Route::post('/reservations/{reservation}/confirm', [ExploreReservationController::class, 'confirm'])
+        ->name('reservations.confirm');
+    Route::post('/reservations/{reservation}/visited', [ExploreReservationController::class, 'markVisited'])
+        ->name('reservations.visited');
+    Route::post('/reservations/{reservation}/cancel', [ExploreReservationController::class, 'cancel'])
+        ->name('reservations.cancel');
     Route::get('/profile', [ExploreController::class, 'profile'])->name('profile');
     Route::post('/profile', [ExploreController::class, 'updateProfile'])->name('profile.update');
     Route::get('/tam-survey', [TamSurveyController::class, 'show'])->name('tam-survey');

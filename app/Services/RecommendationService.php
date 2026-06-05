@@ -14,7 +14,6 @@ class RecommendationService
 {
     public function __construct(
         private MlRecommendationClient $mlClient,
-        private FallbackRecommendationEngine $fallback,
         private RestaurantExploreService $explore,
         private RestaurantHoursPresenter $hours,
     ) {}
@@ -25,6 +24,10 @@ class RecommendationService
      */
     public function forUser(User $user, array $contextOverrides = [], int $topN = 0, bool $fresh = false): array
     {
+        if (! $this->mlClient->isEnabled() || ! $this->mlClient->isHealthy()) {
+            return $this->unavailableResponse();
+        }
+
         $topN = $topN > 0 ? $topN : (int) config('recommendations.default_top_n');
         $pref = $user->userPreferences()->latest('updated_at')->first();
         $context = FallbackRecommendationEngine::contextFromUser($user, $pref, $contextOverrides);
@@ -41,17 +44,24 @@ class RecommendationService
             Cache::forget($cacheKey);
         }
 
-        return Cache::remember(
-            $cacheKey,
-            (int) config('recommendations.cache_ttl_seconds'),
-            fn () => $this->generate($user, $context, $topN, $pref)
-        );
+        $cached = Cache::get($cacheKey);
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        $result = $this->generate($user, $context, $topN, $pref);
+
+        if ($result['meta']['algorithm'] !== 'unavailable') {
+            Cache::put($cacheKey, $result, (int) config('recommendations.cache_ttl_seconds'));
+        }
+
+        return $result;
     }
 
     /**
      * @return array{items: list<array<string, mixed>>, meta: array<string, mixed>}
      */
-    private function generate(User $user, array $context, int $topN, $pref): array
+    private function generate(User $user, array $context, int $topN, ?UserPreference $pref): array
     {
         $fetchN = min(max($topN * 3, 30), 50);
 
@@ -63,22 +73,29 @@ class RecommendationService
         ];
 
         $mlResponse = $this->mlClient->recommend($payload);
-        $algorithm = 'hybrid';
-        $coldStart = false;
-        $scored = collect();
 
-        if ($mlResponse && ! empty($mlResponse['recommendations'])) {
-            $algorithm = (string) ($mlResponse['algorithm'] ?? 'hybrid');
-            $coldStart = (bool) ($mlResponse['cold_start'] ?? false);
-            $scored = collect($mlResponse['recommendations'])->map(fn (array $row) => [
-                'restaurant_id' => (int) $row['restaurant_id'],
-                'rank' => (int) $row['rank'],
-                'score' => (float) $row['score'],
-            ]);
-        } else {
-            $scored = $this->fallback->recommend($user, $context, $topN);
-            $algorithm = 'php_fallback';
-            $coldStart = true;
+        if ($mlResponse === null) {
+            return $this->unavailableResponse();
+        }
+
+        $algorithm = (string) ($mlResponse['algorithm'] ?? 'hybrid');
+        $coldStart = (bool) ($mlResponse['cold_start'] ?? false);
+        $scored = collect($mlResponse['recommendations'] ?? [])->map(fn (array $row) => [
+            'restaurant_id' => (int) $row['restaurant_id'],
+            'rank' => (int) $row['rank'],
+            'score' => (float) $row['score'],
+        ]);
+
+        if ($scored->isEmpty()) {
+            return [
+                'items' => [],
+                'meta' => [
+                    'algorithm' => $algorithm,
+                    'cold_start' => $coldStart,
+                    'ml_available' => true,
+                    'request_id' => null,
+                ],
+            ];
         }
 
         $request = RecommendationRequest::create([
@@ -135,8 +152,24 @@ class RecommendationService
             'meta' => [
                 'algorithm' => $algorithm,
                 'cold_start' => $coldStart,
-                'ml_available' => $this->mlClient->isHealthy(),
+                'ml_available' => true,
                 'request_id' => $request->id,
+            ],
+        ];
+    }
+
+    /**
+     * @return array{items: list<array<string, mixed>>, meta: array<string, mixed>}
+     */
+    private function unavailableResponse(): array
+    {
+        return [
+            'items' => [],
+            'meta' => [
+                'algorithm' => 'unavailable',
+                'cold_start' => false,
+                'ml_available' => false,
+                'request_id' => null,
             ],
         ];
     }

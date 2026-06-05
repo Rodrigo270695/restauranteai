@@ -56,26 +56,35 @@ final class RestaurantHoursPresenter
 
     public function assertOpenForVisit(Restaurant $restaurant, ?CarbonInterface $now = null): void
     {
+        $this->assertOpenAt($restaurant, $now, 'restaurant', forRoute: true);
+    }
+
+    public function assertOpenAt(
+        Restaurant $restaurant,
+        ?CarbonInterface $when = null,
+        string $field = 'reserved_for',
+        bool $forRoute = false,
+    ): void {
         $restaurant->loadMissing('schedules');
 
         if ($restaurant->schedules->isEmpty()) {
             return;
         }
 
-        $status = $this->forRestaurant($restaurant, $now);
+        $status = $this->forRestaurant($restaurant, $when);
 
         if ($status['is_open']) {
             return;
         }
 
         $detail = $status['label'] ?? 'Cerrado';
-        $message = str_starts_with($detail, 'Abre')
-            ? $detail.'. No puedes agregarlo a tu ruta en este momento.'
-            : 'Este local está cerrado ('.$detail.').';
+        $message = $forRoute
+            ? (str_starts_with($detail, 'Abre')
+                ? $detail.'. No puedes agregarlo a tu ruta en este momento.'
+                : 'Este local está cerrado ('.$detail.').')
+            : 'El local estará cerrado a esa hora ('.$detail.').';
 
-        throw ValidationException::withMessages([
-            'restaurant' => $message,
-        ]);
+        throw ValidationException::withMessages([$field => $message]);
     }
 
     public function forSchedules(Collection $schedules, ?CarbonInterface $now = null): array

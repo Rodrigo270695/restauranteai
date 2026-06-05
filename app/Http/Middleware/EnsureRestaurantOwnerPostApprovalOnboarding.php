@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Dueño aprobado: hasta marcar post_approval_completed_at solo puede usar perfil (y cerrar sesión).
+ * Dueño aprobado: hasta completar el primer local solo puede usar configuración y datos del local.
  */
 class EnsureRestaurantOwnerPostApprovalOnboarding
 {
@@ -15,6 +15,11 @@ class EnsureRestaurantOwnerPostApprovalOnboarding
         'profile.edit',
         'profile.update',
         'profile.restaurant.update',
+        'app.restaurants',
+        'app.restaurants.update',
+        'app.restaurants.locations.store',
+        'app.restaurants.switch',
+        'app.restaurants.geocode',
         'logout',
     ];
 
@@ -38,6 +43,6 @@ class EnsureRestaurantOwnerPostApprovalOnboarding
             return $next($request);
         }
 
-        return redirect()->route('profile.edit');
+        return redirect()->route('app.restaurants');
     }
 }

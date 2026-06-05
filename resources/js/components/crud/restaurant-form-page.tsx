@@ -22,7 +22,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { OwnerRestaurantsBar, type OwnedRestaurantItem } from '@/components/app/owner/owner-restaurants-bar';
 import { AdminPanelBanner } from '@/components/layout/admin-panel-banner';
+import { RestaurantLocationPicker } from '@/components/shared/restaurant-location-picker';
 import { useCan } from '@/hooks/use-can';
 import { useOwnerReadOnly } from '@/hooks/use-owner-read-only';
 import type { PanelContext } from '@/lib/scoped-app-path';
@@ -64,6 +66,9 @@ type Props = {
         avg_rating: number;
         total_reviews: number;
     };
+    ownedRestaurants?: OwnedRestaurantItem[];
+    activeRestaurantId?: number;
+    mapDefaults?: { lat: number; lng: number };
     panel?: PanelContext;
 };
 
@@ -148,6 +153,9 @@ export function RestaurantFormPage({
     recommendedMoments,
     audienceSelection,
     stats,
+    ownedRestaurants = [],
+    activeRestaurantId,
+    mapDefaults = { lat: -6.7766, lng: -79.8442 },
     panel,
 }: Props) {
     const can = useCan();
@@ -161,6 +169,8 @@ export function RestaurantFormPage({
         short_description: restaurant.short_description ?? '',
         description: restaurant.description ?? '',
         address: restaurant.address ?? '',
+        latitude: (restaurant.latitude as number | null) ?? null,
+        longitude: (restaurant.longitude as number | null) ?? null,
         district_id: restaurant.district_id ?? ('' as number | ''),
         cuisine_type_ids: cuisineSelection.ids ?? [],
         primary_cuisine_type_id: cuisineSelection.primary_id,
@@ -357,9 +367,17 @@ export function RestaurantFormPage({
                         </FieldSpan>
                     </FormSection>
 
+                    {!panel && activeRestaurantId != null && (
+                        <OwnerRestaurantsBar
+                            restaurants={ownedRestaurants}
+                            activeRestaurantId={activeRestaurantId}
+                            readOnly={readOnly}
+                        />
+                    )}
+
                     <FormSection
                         title="Ubicación"
-                        description="Departamento, provincia y distrito en cascada (datos INEI)."
+                        description="Distrito, dirección y punto en el mapa (visible para turistas en explorar y rutas)."
                         icon={<MapPin className="size-4" />}
                         palette={SECTION.location}
                     >
@@ -388,6 +406,25 @@ export function RestaurantFormPage({
                                     className="bg-white"
                                 />
                             </FormField>
+                        </FieldSpan>
+                        <FieldSpan full>
+                            <RestaurantLocationPicker
+                                latitude={form.data.latitude as number | null}
+                                longitude={form.data.longitude as number | null}
+                                address={String(form.data.address)}
+                                defaultCenter={mapDefaults}
+                                disabled={form.processing || readOnly}
+                                geocodeUrl={panel?.baseUrl ? `${panel.baseUrl}/geocode` : '/app/restaurants/geocode'}
+                                onChange={({ latitude, longitude }) => {
+                                    form.setData('latitude', latitude);
+                                    form.setData('longitude', longitude);
+                                }}
+                            />
+                            {(form.errors.latitude || form.errors.longitude) && (
+                                <p className="mt-1 text-xs text-red-600">
+                                    {form.errors.latitude ?? form.errors.longitude}
+                                </p>
+                            )}
                         </FieldSpan>
                     </FormSection>
 

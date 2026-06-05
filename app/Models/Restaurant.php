@@ -31,6 +31,8 @@ class Restaurant extends Model
             'verified_at' => 'datetime',
             'avg_rating' => 'decimal:2',
             'avg_price_per_person' => 'decimal:2',
+            'latitude' => 'float',
+            'longitude' => 'float',
         ];
     }
 
@@ -130,5 +132,13 @@ class Restaurant extends Model
     public function recommendedMoments(): BelongsToMany
     {
         return $this->belongsToMany(RecommendedMoment::class, 'restaurant_recommended_moment');
+    }
+
+    /** Listo para mapa y exploración turística. */
+    public function isExploreReady(): bool
+    {
+        return $this->latitude !== null
+            && $this->longitude !== null
+            && trim($this->name) !== '';
     }
 }

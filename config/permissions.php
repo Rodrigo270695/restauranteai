@@ -209,6 +209,13 @@ return [
                     'reviews.view' => 'Ver reseñas de mi local',
                 ],
             ],
+            'reservations' => [
+                'label' => 'Reservas',
+                'permissions' => [
+                    'reservations.view' => 'Ver reservas de turistas',
+                    'reservations.manage' => 'Confirmar o rechazar reservas',
+                ],
+            ],
             'analytics' => [
                 'label' => 'Estadísticas',
                 'permissions' => [

@@ -61,6 +61,30 @@ class UserInteractionService
         return $latest === 'save';
     }
 
+    /** @return list<int> */
+    public function favoritedRestaurantIds(User $user): array
+    {
+        $latestByRestaurant = [];
+
+        UserInteraction::query()
+            ->where('user_id', $user->id)
+            ->whereNotNull('restaurant_id')
+            ->whereIn('interaction_type', ['save', 'unsave'])
+            ->orderByDesc('id')
+            ->get(['restaurant_id', 'interaction_type'])
+            ->each(function (UserInteraction $row) use (&$latestByRestaurant) {
+                $id = (int) $row->restaurant_id;
+                if (! array_key_exists($id, $latestByRestaurant)) {
+                    $latestByRestaurant[$id] = $row->interaction_type;
+                }
+            });
+
+        return array_keys(array_filter(
+            $latestByRestaurant,
+            fn (string $type) => $type === 'save',
+        ));
+    }
+
     public function markRecommendationEngagement(User $user, Restaurant $restaurant, ?int $requestId = null): void
     {
         $query = Recommendation::query()

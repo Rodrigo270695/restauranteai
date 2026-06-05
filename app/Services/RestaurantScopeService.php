@@ -11,6 +11,8 @@ class RestaurantScopeService
 {
     public const ACTING_SESSION_KEY = 'acting_restaurant_id';
 
+    public const ACTIVE_SESSION_KEY = 'owner_active_restaurant_id';
+
     /** Panel del dueño (o suplantación activa). */
     public function forOwnerPanel(Request $request): Restaurant
     {
@@ -26,7 +28,7 @@ class RestaurantScopeService
 
         abort_unless($user->hasRole('restaurant_owner'), 403);
 
-        return $this->resolveOwnedRestaurant($user);
+        return $this->resolveOwnedRestaurant($user, $request);
     }
 
     /** Gestión admin sobre un restaurante concreto (ruta con {restaurant}). */
@@ -73,11 +75,21 @@ class RestaurantScopeService
     }
 
     /** Dueño: obtiene su restaurante (crea borrador si no existe). */
-    public function resolveOwnedRestaurant(User $user): Restaurant
+    public function resolveOwnedRestaurant(User $user, ?Request $request = null): Restaurant
     {
         abort_if($user->hasRole('super_admin'), 403, 'El super administrador debe usar suplantación de restaurante.');
 
-        $existing = $user->restaurants()->first();
+        if ($request?->session()->has(self::ACTIVE_SESSION_KEY)) {
+            $selected = $user->restaurants()
+                ->where('id', $request->session()->get(self::ACTIVE_SESSION_KEY))
+                ->first();
+
+            if ($selected) {
+                return $selected;
+            }
+        }
+
+        $existing = $user->restaurants()->orderBy('id')->first();
 
         if ($existing) {
             return $existing;
@@ -90,6 +102,52 @@ class RestaurantScopeService
             'slug' => Str::slug($businessName.'-'.$user->id),
             'is_active' => false,
         ]);
+    }
+
+    /** @return \Illuminate\Support\Collection<int, Restaurant> */
+    public function ownedRestaurants(User $user): \Illuminate\Support\Collection
+    {
+        return $user->restaurants()->orderBy('name')->get();
+    }
+
+    public function createOwnedRestaurant(User $user, string $name, Request $request): Restaurant
+    {
+        abort_unless($user->hasRole('restaurant_owner'), 403);
+
+        $restaurant = $user->restaurants()->create([
+            'name' => $name,
+            'slug' => Str::slug($name.'-'.$user->id.'-'.Str::random(4)),
+            'is_active' => false,
+        ]);
+
+        $request->session()->put(self::ACTIVE_SESSION_KEY, $restaurant->id);
+
+        return $restaurant;
+    }
+
+    public function switchActiveRestaurant(User $user, int $restaurantId, Request $request): Restaurant
+    {
+        abort_unless($user->hasRole('restaurant_owner'), 403);
+
+        $restaurant = $user->restaurants()->whereKey($restaurantId)->firstOrFail();
+        $request->session()->put(self::ACTIVE_SESSION_KEY, $restaurant->id);
+
+        return $restaurant;
+    }
+
+    /** @return array<string, mixed> */
+    public function formatOwnedListItem(Restaurant $restaurant): array
+    {
+        return [
+            'id' => $restaurant->id,
+            'name' => $restaurant->name,
+            'slug' => $restaurant->slug,
+            'address' => $restaurant->address,
+            'latitude' => $restaurant->latitude !== null ? (float) $restaurant->latitude : null,
+            'longitude' => $restaurant->longitude !== null ? (float) $restaurant->longitude : null,
+            'has_location' => $restaurant->latitude !== null && $restaurant->longitude !== null,
+            'is_active' => (bool) $restaurant->is_active,
+        ];
     }
 
     /** @return array{name: string, business_name: string|null} */

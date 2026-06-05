@@ -92,6 +92,12 @@ class RestaurantProfile extends Model
      */
     public function isProfileComplete(): bool
     {
+        $this->loadMissing('user.restaurants');
+
+        if ($this->user?->restaurants->contains(fn (Restaurant $r) => $r->isExploreReady())) {
+            return true;
+        }
+
         $description = trim((string) ($this->description ?? ''));
         if ($description !== '') {
             return true;

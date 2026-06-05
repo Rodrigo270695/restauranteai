@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
     BarChart3,
     BookOpen,
+    CalendarDays,
     ChefHat,
     Globe2,
     ImageIcon,
@@ -51,11 +52,13 @@ export const APP_HREF = {
     dishes: '/app/dishes',
     promotions: '/app/promotions',
     reviews: '/app/reviews',
+    reservations: '/app/reservations',
     analytics: '/app/analytics',
     adminRoles: '/app/admin/roles',
     adminUsers: '/app/admin/users',
     adminRestaurants: '/app/admin/restaurants',
     adminReviews: '/app/admin/reviews',
+    adminReservations: '/app/admin/reservations',
     adminAnalytics: '/app/admin/analytics',
     adminGeography: '/app/admin/geography',
     adminCuisineTypes: '/app/admin/cuisine-types',
@@ -116,6 +119,12 @@ export const sidebarNavModules: SidebarNavModule[] = [
         roles: ['restaurant_owner'],
         items: [
             { title: 'Reseñas', href: APP_HREF.reviews, icon: MessageSquareText, permission: 'reviews.view' },
+            {
+                title: 'Reservas',
+                href: APP_HREF.reservations,
+                icon: CalendarDays,
+                permission: 'reservations.view',
+            },
         ],
     },
     {
@@ -137,6 +146,12 @@ export const sidebarNavModules: SidebarNavModule[] = [
             { title: 'Usuarios', href: APP_HREF.adminUsers, icon: Users, permission: 'users.view' },
             { title: 'Restaurantes', href: APP_HREF.adminRestaurants, icon: Wine, permission: 'restaurants.view' },
             { title: 'Reseñas (plataforma)', href: APP_HREF.adminReviews, icon: MessageSquareText, permission: 'reviews.view' },
+            {
+                title: 'Reservas (plataforma)',
+                href: APP_HREF.adminReservations,
+                icon: CalendarDays,
+                permission: 'reservations.view',
+            },
             { title: 'Estadísticas global', href: APP_HREF.adminAnalytics, icon: BarChart3, permission: 'view_analytics' },
         ],
     },

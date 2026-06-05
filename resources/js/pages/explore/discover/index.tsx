@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Calendar, Filter, Route, Search, UtensilsCrossed } from 'lucide-react';
+import { Calendar, Filter, Heart, Route, Search, UtensilsCrossed } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserGeolocation } from '@/hooks/use-user-geolocation';
@@ -14,12 +14,14 @@ import TouristExploreLayout from '@/layouts/tourist-explore-layout';
 import { index as exploreRoutes, publish as publishRoute } from '@/routes/explore/routes';
 
 type DraftRoute = {
+    slug: string;
     stops_count: number;
     total_distance_km?: number | null;
     estimated_minutes?: number | null;
     path_coordinates?: [number, number][];
     stops: Array<{
         position: number;
+        reservation: { status: string } | null;
         restaurant: { name: string; slug: string; latitude?: number | null; longitude?: number | null };
     }>;
 };
@@ -31,6 +33,7 @@ type Props = {
     filters: {
         search?: string;
         cuisine_type_id?: number | null;
+        favorites_only?: boolean;
         price_range?: string | null;
         view: 'map' | 'list';
         lat?: number | null;
@@ -38,6 +41,7 @@ type Props = {
         location_active?: boolean;
     };
     nearbyLimit?: number;
+    favoritesCount?: number;
     draftRoute: DraftRoute;
     draftStopSlugs: string[];
     mapCenter: { lat: number; lng: number };
@@ -86,6 +90,14 @@ function DraftRoutePanel({
                     <p className="mt-0.5 line-clamp-2 text-xs text-gray-600">
                         {draftRoute.stops.map(s => s.restaurant.name).join(' → ')}
                     </p>
+                    {draftRoute.stops.some(s => s.reservation) && (
+                        <p className="mt-1 text-[11px] text-gray-500">
+                            {t('explore.reservation_draft_summary', {
+                                booked: draftRoute.stops.filter(s => s.reservation).length,
+                                total: stopsCount,
+                            })}
+                        </p>
+                    )}
                     {draftRoute.total_distance_km != null && (
                         <p className="mt-1 text-[11px] font-medium text-brand-orange">
                             {t('explore.route_summary', {
@@ -151,6 +163,7 @@ function DiscoverPage({
     draftStopSlugs,
     mapCenter,
     nearbyLimit = 30,
+    favoritesCount = 0,
 }: Props) {
     const { t } = useTranslation();
     const { flash } = usePage().props as { flash?: { type?: string; message?: string } };
@@ -167,6 +180,7 @@ function DiscoverPage({
                 exploreDiscoverUrl({
                     search: filters.search || undefined,
                     cuisine_type_id: filters.cuisine_type_id || undefined,
+                    favorites_only: filters.favorites_only,
                     view: 'map',
                     lat,
                     lng,
@@ -175,7 +189,7 @@ function DiscoverPage({
                 { preserveState: true, preserveScroll: true, replace: true },
             );
         },
-        [filters.search, filters.cuisine_type_id],
+        [filters.search, filters.cuisine_type_id, filters.favorites_only],
     );
 
     const { coords: userLocation } = useUserGeolocation({
@@ -201,19 +215,44 @@ function DiscoverPage({
     const [routeName, setRouteName] = useState('Ruta gastronómica Chiclayo');
     const [routeDate, setRouteDate] = useState(new Date().toISOString().slice(0, 10));
     const [addingSlug, setAddingSlug] = useState<string | null>(null);
+    const [favoriteSlug, setFavoriteSlug] = useState<string | null>(null);
 
+    const favoritesOnly = filters.favorites_only === true;
     const locationActive = filters.location_active === true;
 
+    const discoverParams = (extra?: {
+        search?: string;
+        cuisine_type_id?: number | '';
+        favorites_only?: boolean;
+    }) => ({
+        search: (extra?.search ?? search) || undefined,
+        cuisine_type_id: (extra?.cuisine_type_id ?? cuisineId) || undefined,
+        favorites_only: extra?.favorites_only ?? favoritesOnly,
+        view: 'map' as const,
+        ...geoQuery(),
+    });
+
     const applyFilters = () => {
-        router.get(
-            exploreDiscoverUrl({
-                search: search || undefined,
-                cuisine_type_id: cuisineId || undefined,
-                view: 'map',
-                ...geoQuery(),
-            }),
-            {},
-            { preserveState: true, replace: true },
+        router.get(exploreDiscoverUrl(discoverParams()), {}, { preserveState: true, replace: true });
+    };
+
+    const toggleFavorite = (slug: string, currentlyFavorited: boolean) => {
+        setFavoriteSlug(slug);
+        router.post(
+            `/explore/restaurants/${slug}/interactions`,
+            { interaction_type: currentlyFavorited ? 'unsave' : 'save' },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    import('sonner').then(({ toast }) =>
+                        toast.success(
+                            t(currentlyFavorited ? 'explore.unfavorited_toast' : 'explore.favorited_toast'),
+                        ),
+                    );
+                    router.reload({ only: ['restaurants', 'markers', 'filters', 'favoritesCount'] });
+                },
+                onFinish: () => setFavoriteSlug(null),
+            },
         );
     };
 
@@ -332,18 +371,49 @@ function DiscoverPage({
                     onClick={() => {
                         setCuisineId('');
                         router.get(
-                            exploreDiscoverUrl({ search, view: 'map', ...geoQuery() }),
+                            exploreDiscoverUrl(discoverParams({ cuisine_type_id: '', favorites_only: false })),
                             {},
                             { preserveState: true },
                         );
                     }}
                     className={cn(
                         'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition',
-                        !cuisineId ? 'bg-brand-orange text-white' : 'bg-white text-gray-600 ring-1 ring-gray-200',
+                        !cuisineId && !favoritesOnly
+                            ? 'bg-brand-orange text-white'
+                            : 'bg-white text-gray-600 ring-1 ring-gray-200',
                     )}
                 >
                     <UtensilsCrossed className="mr-1 inline size-3" />
                     {t('explore.filter_all')}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => {
+                        router.get(
+                            exploreDiscoverUrl(discoverParams({ favorites_only: !favoritesOnly })),
+                            {},
+                            { preserveState: true },
+                        );
+                    }}
+                    className={cn(
+                        'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition',
+                        favoritesOnly
+                            ? 'bg-brand-orange text-white'
+                            : 'bg-white text-gray-600 ring-1 ring-gray-200',
+                    )}
+                >
+                    <Heart className={cn('mr-1 inline size-3', favoritesOnly && 'fill-white')} />
+                    {t('explore.filter_favorites')}
+                    {favoritesCount > 0 && (
+                        <span
+                            className={cn(
+                                'ml-1 rounded-full px-1.5 py-px text-[10px] font-bold',
+                                favoritesOnly ? 'bg-white/25 text-white' : 'bg-orange-100 text-brand-orange',
+                            )}
+                        >
+                            {favoritesCount}
+                        </span>
+                    )}
                 </button>
                 {cuisineTypes.map(c => (
                     <button
@@ -352,12 +422,7 @@ function DiscoverPage({
                         onClick={() => {
                             setCuisineId(c.id);
                             router.get(
-                                exploreDiscoverUrl({
-                                    search,
-                                    cuisine_type_id: c.id,
-                                    view: 'map',
-                                    ...geoQuery(),
-                                }),
+                                exploreDiscoverUrl(discoverParams({ cuisine_type_id: c.id })),
                                 {},
                                 { preserveState: true },
                             );
@@ -385,6 +450,8 @@ function DiscoverPage({
                 routeTotal={stopsCount}
                 isBusy={addingSlug === r.slug}
                 onToggleRoute={() => toggleRoute(r.slug)}
+                onToggleFavorite={() => toggleFavorite(r.slug, r.is_favorited === true)}
+                favoriteBusy={favoriteSlug === r.slug}
             />
         ));
 
@@ -410,7 +477,7 @@ function DiscoverPage({
             )}
             {restaurants.length === 0 && (
                 <p className="rounded-2xl bg-white p-10 text-center text-sm text-gray-500 ring-1 ring-gray-100">
-                    {t('explore.no_restaurants')}
+                    {favoritesOnly ? t('explore.favorites_empty') : t('explore.no_restaurants')}
                 </p>
             )}
         </div>
@@ -466,17 +533,25 @@ function DiscoverPage({
                 <div className="flex flex-col p-4 pb-32">
                     <div className="mb-3 flex items-center justify-between">
                         <div>
-                            <h2 className="text-sm font-bold text-gray-900">{t('explore.near_you')}</h2>
-                            {locationActive && (
+                            <h2 className="text-sm font-bold text-gray-900">
+                                {favoritesOnly ? t('explore.filter_favorites') : t('explore.near_you')}
+                            </h2>
+                            {(favoritesOnly || locationActive) && (
                                 <p className="text-[10px] font-medium text-gray-500">
-                                    {t('explore.near_you_subtitle', { count: nearbyRestaurants.length })}
+                                    {favoritesOnly
+                                        ? t('explore.favorites_list_subtitle', { count: favoritesCount })
+                                        : t('explore.near_you_subtitle', { count: nearbyRestaurants.length })}
                                 </p>
                             )}
                         </div>
                         <span className="rounded-full bg-orange-50 px-2 py-0.5 text-xs font-semibold text-brand-orange">
-                            {locationActive
-                                ? t('explore.places_count', { count: nearbyRestaurants.length })
-                                : t('explore.places_count', { count: restaurants.length })}
+                            {t('explore.places_count', {
+                                count: favoritesOnly
+                                    ? restaurants.length
+                                    : locationActive
+                                      ? nearbyRestaurants.length
+                                      : restaurants.length,
+                            })}
                         </span>
                     </div>
                     {restaurantList}
@@ -513,15 +588,23 @@ function DiscoverPage({
                     <aside className="flex w-[min(100%,420px)] shrink-0 flex-col border-r border-orange-100 bg-[#FFFCF8] lg:w-[440px]">
                         <div className="flex shrink-0 items-center justify-between border-b border-orange-50 bg-white/80 px-4 py-3 backdrop-blur-sm">
                             <div>
-                                <h2 className="text-sm font-bold text-gray-900">{t('explore.near_you')}</h2>
+                                <h2 className="text-sm font-bold text-gray-900">
+                                    {favoritesOnly ? t('explore.filter_favorites') : t('explore.near_you')}
+                                </h2>
                                 <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
-                                    {locationActive
-                                        ? t('explore.near_you_subtitle', { count: nearbyRestaurants.length })
-                                        : t('explore.discoveries_chiclayo')}
+                                    {favoritesOnly
+                                        ? t('explore.favorites_list_subtitle', { count: favoritesCount })
+                                        : locationActive
+                                          ? t('explore.near_you_subtitle', { count: nearbyRestaurants.length })
+                                          : t('explore.discoveries_chiclayo')}
                                 </p>
                             </div>
                             <span className="rounded-full bg-brand-orange px-2.5 py-1 text-xs font-bold text-white">
-                                {locationActive ? nearbyRestaurants.length : restaurants.length}
+                                {favoritesOnly
+                                    ? restaurants.length
+                                    : locationActive
+                                      ? nearbyRestaurants.length
+                                      : restaurants.length}
                             </span>
                         </div>
 

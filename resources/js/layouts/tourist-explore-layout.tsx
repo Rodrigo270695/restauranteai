@@ -1,11 +1,11 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Map, Route, User } from 'lucide-react';
+import { Heart, Map, Route, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '@/components/common/language-switcher';
 import { useFlashToast } from '@/hooks/use-flash-toast';
 import { useLanguageSync } from '@/hooks/use-language-sync';
 import { cn } from '@/lib/utils';
-import { exploreDiscoverUrl } from '@/lib/explore-discover-url';
+import { exploreDiscoverUrl, exploreFavoritesDiscoverUrl } from '@/lib/explore-discover-url';
 import { BrandLogo } from '@/components/common/brand-logo';
 import { home } from '@/routes';
 import { index as exploreRoutes } from '@/routes/explore/routes';
@@ -21,6 +21,7 @@ const NAV = [
         labelKey: 'explore.nav_explore',
         topBadgeKey: 'explore.near_you',
     },
+    { key: 'favorites', href: () => exploreFavoritesDiscoverUrl(), icon: Heart, labelKey: 'explore.nav_favorites' },
     { key: 'routes', href: () => exploreRoutes.url(), icon: Route, labelKey: 'explore.nav_routes' },
     { key: 'profile', href: () => exploreProfile.url(), icon: User, labelKey: 'explore.my_profile' },
 ] as const;
@@ -31,8 +32,19 @@ export default function TouristExploreLayout({ children, wide = false }: Props) 
     const { t } = useTranslation();
     const { url } = usePage();
 
-    const isActive = (href: string) => {
+    const isActive = (href: string, key?: string) => {
         const path = url.split('?')[0];
+        const query = url.includes('?') ? url.split('?')[1] : '';
+
+        if (key === 'favorites') {
+            return path === '/explore/discover' && query.includes('favorites_only=1');
+        }
+        if (key === 'explore') {
+            return (
+                (path === '/explore' || path === '/explore/discover' || path.startsWith('/explore/restaurants'))
+                && !query.includes('favorites_only=1')
+            );
+        }
         if (href.startsWith('/explore') && (href === '/explore' || href.startsWith('/explore?'))) {
             return path === '/explore' || path === '/explore/discover' || path.startsWith('/explore/restaurants');
         }
@@ -61,7 +73,7 @@ export default function TouristExploreLayout({ children, wide = false }: Props) 
                                     href={href}
                                     className={cn(
                                         'relative inline-flex items-center gap-1.5 rounded-full px-3 pb-1.5 pt-2.5 text-sm font-medium transition',
-                                        isActive(href)
+                                        isActive(href, item.key)
                                             ? 'bg-brand-orange text-white shadow-sm'
                                             : 'text-gray-600 hover:bg-orange-50',
                                     )}
@@ -70,7 +82,7 @@ export default function TouristExploreLayout({ children, wide = false }: Props) 
                                         <span
                                             className={cn(
                                                 'pointer-events-none absolute -top-1 left-1/2 max-w-[5.5rem] -translate-x-1/2 truncate rounded px-1.5 py-px text-[7px] font-bold uppercase leading-none tracking-wide',
-                                                isActive(href)
+                                                isActive(href, item.key)
                                                     ? 'bg-white/95 text-brand-orange'
                                                     : 'bg-brand-orange text-white',
                                             )}
@@ -105,7 +117,7 @@ export default function TouristExploreLayout({ children, wide = false }: Props) 
                     {NAV.map(item => {
                         const Icon = item.icon;
                         const href = item.href();
-                        const active = isActive(href);
+                        const active = isActive(href, item.key);
                         const topBadgeKey = 'topBadgeKey' in item ? item.topBadgeKey : undefined;
 
                         return (

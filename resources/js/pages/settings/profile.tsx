@@ -33,7 +33,7 @@ export default function Profile({ mustVerifyEmail, status, restaurantProfile }: 
                 {restaurantProfile && (
                     <RestaurantProfileForm
                         restaurantProfile={restaurantProfile}
-                        saved={status === 'restaurant-updated'}
+                        needsOnboarding={status === 'complete-local'}
                     />
                 )}
             </div>

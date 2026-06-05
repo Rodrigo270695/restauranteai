@@ -19,6 +19,7 @@ import {
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import {
+    APP_HREF,
     dashboardNavItem,
     type AppRole,
     type SidebarNavLeaf,
@@ -37,8 +38,11 @@ type PagePropsWithAuth = {
 function moduleHasActiveItem(
     mod: SidebarNavModule & { visibleItems: SidebarNavLeaf[] },
     isCurrentUrl: (href: string, current?: string, startsWith?: boolean) => boolean,
+    actingRestaurant: { id: number; name: string } | null | undefined,
 ): boolean {
-    return mod.visibleItems.some((item) => isCurrentUrl(item.href, undefined, true));
+    return mod.visibleItems.some((item) =>
+        isCurrentUrl(resolveNavHref(item, actingRestaurant), undefined, true),
+    );
 }
 
 function itemMatchesPath(itemHref: string, pathname: string): boolean {
@@ -117,6 +121,9 @@ function filterModules(
             if (isOwnerOnlyModule(m) && isSuperAdmin && !isActing && !isOwner) {
                 return false;
             }
+            if (isSuperAdminOnlyModule(m) && isActing) {
+                return false;
+            }
             return moduleIsReachable(m, roleSet, permSet, isActing);
         })
         .map((m) => ({
@@ -129,11 +136,24 @@ function filterModules(
         .filter((m) => m.visibleItems.length > 0);
 }
 
+/** En suplantación, las reservas del menú dueño apuntan al local activo. */
+function resolveNavHref(
+    item: SidebarNavLeaf,
+    actingRestaurant: { id: number; name: string } | null | undefined,
+): string {
+    if (actingRestaurant && item.href === APP_HREF.reservations) {
+        return `/app/admin/restaurants/${actingRestaurant.id}/reservations`;
+    }
+
+    return item.href;
+}
+
 export function NavSidebarModules({ roles }: { roles: string[] }) {
     const { currentUrl, isCurrentUrl } = useCurrentUrl();
     const page = usePage<PagePropsWithAuth>();
     const permissions = page.props.auth?.permissions ?? [];
-    const isActing = !!page.props.actingRestaurant;
+    const actingRestaurant = page.props.actingRestaurant;
+    const isActing = !!actingRestaurant;
     const permSet = useMemo(() => new Set(permissions), [permissions]);
     const modules = useMemo(() => filterModules(roles, permissions, isActing), [roles, permissions, isActing]);
 
@@ -146,14 +166,16 @@ export function NavSidebarModules({ roles }: { roles: string[] }) {
         setOpenMap((prev) => {
             const next = { ...prev };
             for (const mod of modules) {
-                const hit = mod.visibleItems.some((item) => itemMatchesPath(item.href, currentUrl));
+                const hit = mod.visibleItems.some((item) =>
+                    itemMatchesPath(resolveNavHref(item, actingRestaurant), currentUrl),
+                );
                 if (hit) {
                     next[mod.id] = true;
                 }
             }
             return next;
         });
-    }, [currentUrl, modules]);
+    }, [currentUrl, modules, actingRestaurant]);
 
     const DashboardIcon = dashboardNavItem.icon;
 
@@ -192,7 +214,7 @@ export function NavSidebarModules({ roles }: { roles: string[] }) {
                     {modules.map((mod) => {
                         const ModuleIcon = mod.icon;
                         const isOpen = openMap[mod.id] ?? false;
-                        const hasActiveChild = moduleHasActiveItem(mod, isCurrentUrl);
+                        const hasActiveChild = moduleHasActiveItem(mod, isCurrentUrl, actingRestaurant);
 
                         return (
                             <Collapsible
@@ -245,13 +267,17 @@ export function NavSidebarModules({ roles }: { roles: string[] }) {
                                                 <SidebarMenuSub className="mx-0 flex min-w-0 translate-x-0 flex-col gap-0.5 border-0 px-0 py-0">
                                                     {mod.visibleItems.map((item) => {
                                                         const ItemIcon = item.icon;
+                                                        const itemHref = resolveNavHref(
+                                                            item,
+                                                            actingRestaurant,
+                                                        );
                                                         const active = isCurrentUrl(
-                                                            item.href,
+                                                            itemHref,
                                                             undefined,
                                                             true,
                                                         );
                                                         return (
-                                                            <SidebarMenuSubItem key={item.href}>
+                                                            <SidebarMenuSubItem key={itemHref}>
                                                                 <SidebarMenuSubButton
                                                                     asChild
                                                                     isActive={active}
@@ -263,7 +289,7 @@ export function NavSidebarModules({ roles }: { roles: string[] }) {
                                                                     )}
                                                                 >
                                                                     <Link
-                                                                        href={item.href}
+                                                                        href={itemHref}
                                                                         prefetch
                                                                         className="flex items-center gap-2.5"
                                                                     >

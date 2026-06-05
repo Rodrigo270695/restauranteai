@@ -11,7 +11,6 @@ interface NavItem { labelKey: string; href: string; exact: boolean; soon?: boole
 // ─── Base pública (sin sesión) ────────────────────────────────────────────────
 const BASE_NAV: NavItem[] = [
     { labelKey: 'nav.restaurants', href: '/restaurantes-cercanos', exact: false },
-    { labelKey: 'nav.favorites',   href: '#', exact: false, soon: true },
     { labelKey: 'nav.contact',     href: '/contacto', exact: true },
 ];
 
@@ -24,6 +23,7 @@ const PUBLIC_NAV: NavItem[] = [
 const TOURIST_NAV: NavItem[] = [
     { labelKey: 'nav.home',            href: '/',        exact: true },
     { labelKey: 'explore.nav_explore', href: '/explore', exact: true, topBadge: 'IA' },
+    { labelKey: 'nav.favorites',       href: '/explore/discover?favorites_only=1', exact: false },
     ...BASE_NAV,
 ];
 
@@ -83,7 +83,13 @@ export function NavMobileMenu({ user }: NavMobileMenuProps) {
                 {/* Links de navegación */}
                 <nav className="flex flex-col gap-1">
                     {navItems.map(({ labelKey, href, exact, soon, topBadge }) => {
-                        const isActive = !soon && (exact ? url === href : url.startsWith(href));
+                        const isActive = !soon && (
+                            labelKey === 'nav.favorites'
+                                ? url.includes('favorites_only=1')
+                                : exact
+                                  ? url === href
+                                  : url.startsWith(href.split('?')[0])
+                        );
 
                         if (soon) {
                             return (

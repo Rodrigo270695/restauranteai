@@ -37,6 +37,12 @@ class RouteRecommendationService
         $rankedIds = collect($payload['items'])->pluck('id')->all();
 
         if ($rankedIds === []) {
+            if (($payload['meta']['ml_available'] ?? true) === false) {
+                throw ValidationException::withMessages([
+                    'route' => 'El servicio de recomendaciones con IA no está disponible. Inténtalo más tarde.',
+                ]);
+            }
+
             throw ValidationException::withMessages([
                 'route' => 'No encontramos locales para armar una ruta. Completa tu perfil o actualiza las recomendaciones.',
             ]);

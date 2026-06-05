@@ -32,6 +32,8 @@ class PermissionTree
             'manage_dishes',
             'manage_promotions',
             'reviews.view',
+            'reservations.view',
+            'reservations.manage',
             'view_analytics',
         ];
     }

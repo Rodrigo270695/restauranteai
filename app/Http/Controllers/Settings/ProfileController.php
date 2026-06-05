@@ -15,10 +15,14 @@ class ProfileController extends Controller
 {
     public function edit(Request $request): Response
     {
+        $profile = $request->user()->restaurantProfile;
+
         return Inertia::render('settings/profile', [
             'mustVerifyEmail'   => $request->user() instanceof MustVerifyEmail,
-            'status'            => $request->session()->get('status'),
-            'restaurantProfile' => $request->user()->restaurantProfile,
+            'status'            => $request->session()->get('status') ?? (
+                $profile?->needsPostApprovalOnboarding() ? 'complete-local' : null
+            ),
+            'restaurantProfile' => $profile,
         ]);
     }
 

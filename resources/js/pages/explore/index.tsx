@@ -48,7 +48,7 @@ interface RecommendationMeta {
     algorithm: string;
     cold_start: boolean;
     ml_available: boolean;
-    request_id: number;
+    request_id: number | null;
 }
 
 interface CuisineTypeItem {
@@ -223,16 +223,29 @@ export default function ExploreIndex({
                                 </div>
                                 <div className="flex items-center gap-2">
                                     {recommendationMeta && (
-                                        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-medium text-gray-600">
+                                        <span
+                                            className={cn(
+                                                'rounded-full px-2.5 py-1 text-[10px] font-medium',
+                                                recommendationMeta.ml_available
+                                                    ? 'bg-green-50 text-green-700'
+                                                    : 'bg-red-50 text-red-700',
+                                            )}
+                                        >
                                             {recommendationMeta.ml_available
                                                 ? t('explore.ml_engine_active')
-                                                : t('explore.ml_engine_fallback')}
+                                                : t('explore.ml_engine_unavailable')}
                                         </span>
                                     )}
                                     <button
                                         type="button"
+                                        disabled={recommendationMeta?.ml_available === false}
                                         onClick={() => router.post(exploreRecommend.url())}
-                                        className="flex cursor-pointer items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-brand-orange transition hover:bg-orange-100"
+                                        className={cn(
+                                            'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition',
+                                            recommendationMeta?.ml_available === false
+                                                ? 'cursor-not-allowed bg-gray-100 text-gray-400'
+                                                : 'cursor-pointer bg-orange-50 text-brand-orange hover:bg-orange-100',
+                                        )}
                                     >
                                         <Sparkles className="h-3 w-3" />
                                         {t('explore.refresh_recommendations')}
@@ -252,15 +265,35 @@ export default function ExploreIndex({
                                     ))}
                                 </div>
                             ) : (
-                                <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50/60 p-5 text-center">
-                                    <Sparkles className="mx-auto mb-2 h-6 w-6 text-brand-orange opacity-60" />
-                                    <p className="text-sm font-medium text-gray-700">{t('explore.no_recommendations')}</p>
-                                    <Link
-                                        href={exploreProfile.url()}
-                                        className="mt-3 inline-flex text-xs font-semibold text-brand-orange hover:underline"
-                                    >
-                                        {t('explore.complete_profile_btn')}
-                                    </Link>
+                                <div
+                                    className={cn(
+                                        'rounded-2xl border border-dashed p-5 text-center',
+                                        recommendationMeta?.ml_available === false
+                                            ? 'border-red-200 bg-red-50/60'
+                                            : 'border-orange-200 bg-orange-50/60',
+                                    )}
+                                >
+                                    <Sparkles
+                                        className={cn(
+                                            'mx-auto mb-2 h-6 w-6 opacity-60',
+                                            recommendationMeta?.ml_available === false
+                                                ? 'text-red-500'
+                                                : 'text-brand-orange',
+                                        )}
+                                    />
+                                    <p className="text-sm font-medium text-gray-700">
+                                        {recommendationMeta?.ml_available === false
+                                            ? t('explore.ml_recommendations_unavailable')
+                                            : t('explore.no_recommendations')}
+                                    </p>
+                                    {recommendationMeta?.ml_available !== false && (
+                                        <Link
+                                            href={exploreProfile.url()}
+                                            className="mt-3 inline-flex text-xs font-semibold text-brand-orange hover:underline"
+                                        >
+                                            {t('explore.complete_profile_btn')}
+                                        </Link>
+                                    )}
                                 </div>
                             )}
 

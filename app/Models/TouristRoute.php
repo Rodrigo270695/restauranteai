@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Str;
 
 class TouristRoute extends Model
@@ -62,5 +63,22 @@ class TouristRoute extends Model
     public function stops(): HasMany
     {
         return $this->hasMany(TouristRouteStop::class)->orderBy('position');
+    }
+
+    public function restaurants(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Restaurant::class,
+            TouristRouteStop::class,
+            'tourist_route_id',
+            'id',
+            'id',
+            'restaurant_id',
+        );
+    }
+
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(RestaurantReservation::class, 'tourist_route_id');
     }
 }

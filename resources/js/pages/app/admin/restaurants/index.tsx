@@ -20,6 +20,9 @@ import { appBreadcrumbs } from '@/lib/app-breadcrumbs';
 type Row = {
     id: number;
     name: string;
+    address?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
     price_range: string;
     is_active: boolean;
     is_verified: boolean;
@@ -52,6 +55,9 @@ function Page({ items, owners, cuisineTypes, filters, stats }: Props) {
     const form = useForm<RestaurantFormData>({
         owner_id: '',
         name: '',
+        address: '',
+        latitude: null,
+        longitude: null,
         cuisine_type_ids: [],
         primary_cuisine_type_id: null,
         price_range: 'moderado',
@@ -76,6 +82,9 @@ function Page({ items, owners, cuisineTypes, filters, stats }: Props) {
         form.setData({
             owner_id: '',
             name: r.name,
+            address: r.address ?? '',
+            latitude: r.latitude ?? null,
+            longitude: r.longitude ?? null,
             cuisine_type_ids: types.length
                 ? types.map(t => t.id)
                 : primary
@@ -115,6 +124,16 @@ function Page({ items, owners, cuisineTypes, filters, stats }: Props) {
             key: 'owner',
             header: 'Dueño',
             cell: (r) => r.owner?.name ?? '—',
+        },
+        {
+            key: 'map',
+            header: 'Mapa',
+            cell: (r) =>
+                r.latitude != null && r.longitude != null ? (
+                    <span className="text-xs font-medium text-emerald-700">Ubicado</span>
+                ) : (
+                    <span className="text-xs text-amber-700">Sin pin</span>
+                ),
         },
         {
             key: 'cuisine',

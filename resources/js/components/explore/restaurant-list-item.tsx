@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Clock, MapPin, Minus, Plus, Star } from 'lucide-react';
+import { Clock, Heart, MapPin, Minus, Plus, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CuisineBadges, type CuisineBadge } from '@/components/explore/cuisine-badges';
 import type { RestaurantHoursData } from '@/components/explore/restaurant-hours-status';
@@ -19,6 +19,7 @@ export type RestaurantListItemData = {
     distance_km?: number | null;
     cuisines: CuisineBadge[];
     hours?: RestaurantHoursData | null;
+    is_favorited?: boolean;
 };
 
 type Props = {
@@ -27,6 +28,8 @@ type Props = {
     routeTotal?: number;
     isBusy?: boolean;
     onToggleRoute?: () => void;
+    onToggleFavorite?: () => void;
+    favoriteBusy?: boolean;
 };
 
 export function RestaurantListItem({
@@ -35,6 +38,8 @@ export function RestaurantListItem({
     routeTotal = 0,
     isBusy = false,
     onToggleRoute,
+    onToggleFavorite,
+    favoriteBusy = false,
 }: Props) {
     const { t } = useTranslation();
     const inRoute = routePosition != null && routePosition > 0;
@@ -44,6 +49,7 @@ export function RestaurantListItem({
         || restaurant.hours.is_open;
     const isStart = routePosition === 1;
     const isEnd = routeTotal > 1 && routePosition === routeTotal;
+    const favorited = restaurant.is_favorited === true;
 
     return (
         <article
@@ -111,35 +117,58 @@ export function RestaurantListItem({
                 </div>
             </Link>
 
-            {onToggleRoute && (
-                <button
-                    type="button"
-                    title={
-                        inRoute
-                            ? t('explore.remove_from_route')
-                            : canAddToRoute
-                              ? t('explore.add_to_route')
-                              : t('explore.closed_no_route')
-                    }
-                    disabled={isBusy || (!inRoute && !canAddToRoute)}
-                    onClick={e => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onToggleRoute();
-                    }}
-                    className={cn(
-                        'flex size-10 shrink-0 self-center items-center justify-center rounded-xl shadow-md transition',
-                        inRoute
-                            ? 'bg-white text-brand-orange-dark ring-2 ring-orange-200 hover:bg-orange-50'
-                            : canAddToRoute
-                              ? 'bg-brand-orange text-white hover:scale-105 active:scale-95'
-                              : 'cursor-not-allowed bg-gray-200 text-gray-400',
-                        isBusy && 'opacity-60',
-                    )}
-                >
-                    {inRoute ? <Minus className="size-5" /> : <Plus className="size-5" />}
-                </button>
-            )}
+            <div className="flex shrink-0 flex-col items-center justify-center gap-1.5 self-center">
+                {onToggleFavorite && (
+                    <button
+                        type="button"
+                        title={favorited ? t('explore.unfavorite') : t('explore.favorite')}
+                        disabled={favoriteBusy}
+                        onClick={e => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onToggleFavorite();
+                        }}
+                        className={cn(
+                            'flex size-9 cursor-pointer items-center justify-center rounded-xl ring-1 transition',
+                            favorited
+                                ? 'bg-orange-50 text-brand-orange ring-orange-200'
+                                : 'bg-white text-gray-400 ring-gray-200 hover:bg-orange-50 hover:text-brand-orange',
+                            favoriteBusy && 'opacity-60',
+                        )}
+                    >
+                        <Heart className={cn('size-4', favorited && 'fill-brand-orange')} />
+                    </button>
+                )}
+                {onToggleRoute && (
+                    <button
+                        type="button"
+                        title={
+                            inRoute
+                                ? t('explore.remove_from_route')
+                                : canAddToRoute
+                                  ? t('explore.add_to_route')
+                                  : t('explore.closed_no_route')
+                        }
+                        disabled={isBusy || (!inRoute && !canAddToRoute)}
+                        onClick={e => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onToggleRoute();
+                        }}
+                        className={cn(
+                            'flex size-9 cursor-pointer items-center justify-center rounded-xl shadow-md transition',
+                            inRoute
+                                ? 'bg-white text-brand-orange-dark ring-2 ring-orange-200 hover:bg-orange-50'
+                                : canAddToRoute
+                                  ? 'bg-brand-orange text-white hover:scale-105 active:scale-95'
+                                  : 'cursor-not-allowed bg-gray-200 text-gray-400',
+                            isBusy && 'opacity-60',
+                        )}
+                    >
+                        {inRoute ? <Minus className="size-4" /> : <Plus className="size-4" />}
+                    </button>
+                )}
+            </div>
         </article>
     );
 }

@@ -12,7 +12,7 @@
  *   />
  */
 
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, type LucideIcon } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -39,7 +39,23 @@ export type ConfirmModalProps = {
     isProcessing?: boolean;
     /** Variante del botón de confirmación */
     variant?: 'destructive' | 'brand';
+    /** Estilo del icono: advertencia (eliminar) o éxito (confirmar acción) */
+    tone?: 'warning' | 'success';
+    cancelLabel?: string;
 };
+
+const TONE_STYLES = {
+    warning: {
+        Icon: AlertTriangle as LucideIcon,
+        wrap: 'bg-destructive/10',
+        icon: 'text-destructive',
+    },
+    success: {
+        Icon: CheckCircle2 as LucideIcon,
+        wrap: 'bg-emerald-100',
+        icon: 'text-emerald-600',
+    },
+} as const;
 
 // ─── componente ───────────────────────────────────────────────────────────────
 
@@ -53,17 +69,20 @@ export function ConfirmModal({
     confirmLabel = 'Sí, eliminar',
     isProcessing = false,
     variant = 'destructive',
+    tone = 'warning',
+    cancelLabel = 'Cancelar',
 }: ConfirmModalProps) {
+    const { Icon, wrap, icon } = TONE_STYLES[tone];
+
     return (
         <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
             <DialogContent
                 className="gap-0 p-0 sm:max-w-md"
                 onInteractOutside={(e) => e.preventDefault()}
             >
-                {/* Cabecera con icono de advertencia */}
                 <DialogHeader className="px-6 pt-6 pb-5">
-                    <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-destructive/10">
-                        <AlertTriangle className="size-5 text-destructive" />
+                    <div className={cn('mb-3 flex h-11 w-11 items-center justify-center rounded-full', wrap)}>
+                        <Icon className={cn('size-5', icon)} />
                     </div>
                     <DialogTitle className="text-base font-semibold">{title}</DialogTitle>
                     <DialogDescription className="text-sm leading-relaxed">
@@ -93,7 +112,7 @@ export function ConfirmModal({
                         disabled={isProcessing}
                         className="cursor-pointer"
                     >
-                        Cancelar
+                        {cancelLabel}
                     </Button>
                     <Button
                         type="button"

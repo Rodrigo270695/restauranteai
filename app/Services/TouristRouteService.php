@@ -16,6 +16,7 @@ class TouristRouteService
         private GeoDistanceService $geo,
         private StreetRoutingService $streetRouting,
         private RestaurantHoursPresenter $hours,
+        private RestaurantReservationService $reservations,
     ) {}
 
     public function draftFor(User $user): TouristRoute
@@ -167,7 +168,7 @@ class TouristRouteService
     }
 
     /** @return array<string, mixed> */
-    public function formatRoute(TouristRoute $route): array
+    public function formatRoute(TouristRoute $route, ?User $user = null): array
     {
         $route->loadMissing(['stops.restaurant.cuisineTypes', 'stops.restaurant.cuisineType', 'stops.restaurant.district']);
 
@@ -184,14 +185,20 @@ class TouristRouteService
             'total_distance_km' => $route->total_distance_km !== null ? (float) $route->total_distance_km : null,
             'estimated_minutes' => $route->estimated_minutes,
             'path_coordinates' => $route->path_coordinates ?? [],
-            'stops' => $route->stops->sortBy('position')->values()->map(function (TouristRouteStop $stop, int $index) {
+            'stops' => $route->stops->sortBy('position')->values()->map(function (TouristRouteStop $stop, int $index) use ($user) {
                 $r = $stop->restaurant;
                 $cuisines = $r->cuisineTypes->isNotEmpty()
                     ? $r->cuisineTypes
                     : ($r->cuisineType ? collect([$r->cuisineType]) : collect());
 
+                $reservation = $user
+                    ? $this->reservations->reservationForStop($user, $stop)
+                    : null;
+
                 return [
+                    'stop_id' => $stop->id,
                     'position' => $index + 1,
+                    'reservation' => $this->reservations->formatReservation($reservation, $user),
                     'restaurant' => [
                         'id' => $r->id,
                         'name' => $r->name,

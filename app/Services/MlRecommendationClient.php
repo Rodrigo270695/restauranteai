@@ -14,7 +14,7 @@ class MlRecommendationClient
      */
     public function recommend(array $payload): ?array
     {
-        if (! config('recommendations.use_ml_service')) {
+        if (! $this->isEnabled()) {
             return null;
         }
 
@@ -47,6 +47,10 @@ class MlRecommendationClient
 
     public function isHealthy(): bool
     {
+        if (! $this->isEnabled()) {
+            return false;
+        }
+
         try {
             $url = rtrim((string) config('recommendations.ml_service_url'), '/').'/api/v1/health';
             $response = Http::timeout(3)->get($url);
@@ -57,12 +61,17 @@ class MlRecommendationClient
         }
     }
 
+    public function isEnabled(): bool
+    {
+        return (bool) config('recommendations.use_ml_service');
+    }
+
     /**
      * @param  array<string, mixed>  $payload
      */
     public function feedback(array $payload): void
     {
-        if (! config('recommendations.use_ml_service')) {
+        if (! $this->isEnabled()) {
             return;
         }
 
@@ -85,7 +94,7 @@ class MlRecommendationClient
      */
     public function train(): ?array
     {
-        if (! config('recommendations.use_ml_service')) {
+        if (! $this->isEnabled()) {
             return null;
         }
 

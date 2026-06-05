@@ -3,6 +3,7 @@ import { discover as exploreDiscover } from '@/routes/explore';
 type DiscoverQuery = {
     search?: string;
     cuisine_type_id?: number | '';
+    favorites_only?: boolean;
     price_range?: string;
     view?: 'map' | 'list';
     lat?: number;
@@ -19,6 +20,9 @@ export function exploreDiscoverUrl(params: DiscoverQuery = {}): string {
     if (params.cuisine_type_id) {
         query.cuisine_type_id = params.cuisine_type_id;
     }
+    if (params.favorites_only) {
+        query.favorites_only = '1';
+    }
     if (params.price_range) {
         query.price_range = params.price_range;
     }
@@ -33,4 +37,9 @@ export function exploreDiscoverUrl(params: DiscoverQuery = {}): string {
     }
 
     return exploreDiscover.url(Object.keys(query).length ? { query } : undefined);
+}
+
+/** Discover filtrado solo a favoritos del turista. */
+export function exploreFavoritesDiscoverUrl(params: Omit<DiscoverQuery, 'favorites_only'> = {}): string {
+    return exploreDiscoverUrl({ ...params, favorites_only: true });
 }

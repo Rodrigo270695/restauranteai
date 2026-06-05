@@ -16,6 +16,11 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
+    config([
+        'recommendations.use_ml_service' => true,
+        'recommendations.ml_service_url' => 'http://127.0.0.1:8001',
+        'recommendations.ml_api_key' => 'test-key',
+    ]);
 });
 
 function routeTourist(): User
@@ -64,6 +69,7 @@ test('tourist can generate ai route draft and land on discover map', function ()
     $r3 = routeRestaurant('ruta-c', -6.780, -79.850);
 
     Http::fake([
+        'http://127.0.0.1:8001/api/v1/health' => Http::response(['status' => 'ok']),
         'http://127.0.0.1:8001/api/v1/recommend' => Http::response([
             'algorithm' => 'hybrid',
             'cold_start' => false,
@@ -78,7 +84,7 @@ test('tourist can generate ai route draft and land on discover map', function ()
     TouristProfile::create([
         'user_id' => $user->id,
         'preferred_cuisines' => ['criolla'],
-        'budget_preference' => 'medium',
+        'budget_preference' => ['medium'],
         'completed' => true,
     ]);
 

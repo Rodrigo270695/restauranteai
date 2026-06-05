@@ -14,7 +14,6 @@ interface NavItem {
 // ─── Base pública (sin sesión) ────────────────────────────────────────────────
 const BASE_NAV: NavItem[] = [
     { labelKey: 'nav.restaurants', href: '/restaurantes-cercanos', exact: false },
-    { labelKey: 'nav.favorites',   href: '#', exact: false, soon: true },
     { labelKey: 'nav.contact',     href: '/contacto', exact: true },
 ];
 
@@ -27,6 +26,7 @@ const PUBLIC_NAV: NavItem[] = [
 const TOURIST_NAV: NavItem[] = [
     { labelKey: 'nav.home',            href: '/',        exact: true  },
     { labelKey: 'explore.nav_explore', href: '/explore', exact: true, topBadge: 'IA' },
+    { labelKey: 'nav.favorites',       href: '/explore/discover?favorites_only=1', exact: false },
     ...BASE_NAV,
 ];
 
@@ -65,9 +65,11 @@ export function NavLinks({ scrolled = false }: NavLinksProps) {
             {items.map(({ labelKey, href, exact, soon, topBadge }) => {
                 const isActive = soon
                     ? false
-                    : exact
-                      ? url === href
-                      : url.startsWith(href);
+                    : labelKey === 'nav.favorites'
+                      ? url.includes('favorites_only=1')
+                      : exact
+                        ? url === href
+                        : url.startsWith(href.split('?')[0]);
 
                 if (soon) {
                     return (

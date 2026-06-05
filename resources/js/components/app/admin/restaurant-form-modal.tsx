@@ -4,6 +4,7 @@ import type { InertiaFormProps } from '@inertiajs/react';
 
 import { FormField, ResourceModal } from '@/components/modals/resource-modal';
 import { CuisineTypeMultiSelect } from '@/components/shared/cuisine-type-multi-select';
+import { RestaurantLocationPicker } from '@/components/shared/restaurant-location-picker';
 import { Input } from '@/components/ui/input';
 import { PRICE_RANGES } from '@/lib/restaurant-price';
 import { cn } from '@/lib/utils';
@@ -11,6 +12,9 @@ import { cn } from '@/lib/utils';
 export type RestaurantFormData = {
     owner_id: string;
     name: string;
+    address: string;
+    latitude: number | null;
+    longitude: number | null;
     cuisine_type_ids: number[];
     primary_cuisine_type_id: number | null;
     price_range: string;
@@ -63,7 +67,7 @@ export function RestaurantFormModal({
             onSubmit={onSubmit}
             isProcessing={form.processing}
             submitLabel={isEdit ? 'Guardar cambios' : 'Crear restaurante'}
-            size="md"
+            size="lg"
         >
             {!isEdit && (
                 <FormField label="Dueño del local" htmlFor="restaurant-owner" error={form.errors.owner_id} required>
@@ -115,6 +119,29 @@ export function RestaurantFormModal({
                     disabled={form.processing}
                 />
             </FormField>
+
+            <FormField label="Dirección" htmlFor="restaurant-address" error={form.errors.address}>
+                <Input
+                    id="restaurant-address"
+                    placeholder="Av. Balta 123, Chiclayo"
+                    value={form.data.address}
+                    onChange={e => form.setData('address', e.target.value)}
+                    disabled={form.processing}
+                />
+            </FormField>
+
+            <RestaurantLocationPicker
+                latitude={form.data.latitude}
+                longitude={form.data.longitude}
+                address={form.data.address}
+                defaultCenter={{ lat: -6.7766, lng: -79.8442 }}
+                disabled={form.processing}
+                geocodeUrl="/app/restaurants/geocode"
+                onChange={({ latitude, longitude }) => {
+                    form.setData('latitude', latitude);
+                    form.setData('longitude', longitude);
+                }}
+            />
 
             <FormField label="Rango de precios" htmlFor="restaurant-price" error={form.errors.price_range}>
                 <select

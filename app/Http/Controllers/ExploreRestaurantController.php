@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Restaurant;
 use App\Services\RestaurantExploreService;
+use App\Services\RestaurantReservationService;
 use App\Services\TouristRouteService;
 use App\Services\UserInteractionService;
 use App\Support\PublicStorage;
@@ -21,6 +22,7 @@ class ExploreRestaurantController extends Controller
         RestaurantExploreService $explore,
         RestaurantHoursPresenter $hours,
         TouristRouteService $routes,
+        RestaurantReservationService $reservations,
         UserInteractionService $interactions,
     ): mixed {
         if (! $request->user()?->hasRole('tourist')) {
@@ -40,6 +42,9 @@ class ExploreRestaurantController extends Controller
         $user = $request->user();
         $draft = $routes->draftFor($user);
         $inRoute = $draft->stops()->where('restaurant_id', $restaurant->id)->exists();
+        $stop = $inRoute
+            ? $draft->stops()->where('restaurant_id', $restaurant->id)->first()
+            : null;
 
         $interactions->recordViewOnce($user, $restaurant);
 
@@ -82,6 +87,18 @@ class ExploreRestaurantController extends Controller
             'inRoute' => $inRoute,
             'draftStopsCount' => $draft->stops_count,
             'isFavorited' => $interactions->isFavorited($user, $restaurant),
+            'canReview' => $reservations->canUserReview($user, $restaurant),
+            'hasReview' => $reservations->userHasReview($user, $restaurant),
+            'routeContext' => $stop ? [
+                'route_id' => $draft->id,
+                'route_slug' => $draft->slug,
+                'route_status' => $draft->status,
+                'stop_id' => $stop->id,
+                'reservation' => $reservations->formatReservation(
+                    $reservations->reservationForStop($user, $stop),
+                    $user,
+                ),
+            ] : null,
         ]);
     }
 }

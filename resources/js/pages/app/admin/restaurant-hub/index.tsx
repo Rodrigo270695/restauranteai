@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import {
     ArrowLeft,
     BarChart3,
+    CalendarDays,
     ChefHat,
     ImageIcon,
     Languages,
@@ -41,7 +42,14 @@ type Restaurant = {
 
 type Props = {
     restaurant: Restaurant;
-    counts: { dishes: number; promotions: number; images: number; reviews: number };
+    counts: {
+        dishes: number;
+        promotions: number;
+        images: number;
+        reviews: number;
+        reservations: number;
+        reservations_pending: number;
+    };
     baseUrl: string;
 };
 
@@ -194,6 +202,15 @@ function Page({ restaurant, counts, baseUrl }: Props) {
             palette: STAT_COLORS.orange,
             count: counts.promotions,
             countLabel: 'promos',
+        },
+        {
+            label: 'Reservas',
+            description: 'Solicitudes de turistas',
+            href: '/reservations',
+            icon: CalendarDays,
+            palette: STAT_COLORS.blue,
+            count: counts.reservations_pending > 0 ? counts.reservations_pending : counts.reservations,
+            countLabel: counts.reservations_pending > 0 ? 'pendientes' : 'total',
         },
         {
             label: 'Estadísticas',

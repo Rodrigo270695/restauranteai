@@ -54,6 +54,9 @@ class RestaurantController extends Controller
         $data = $request->validate([
             'owner_id' => ['required', 'exists:users,id'],
             'name' => ['required', 'string', 'max:150'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'cuisine_type_ids' => ['nullable', 'array'],
             'cuisine_type_ids.*' => ['integer', 'exists:cuisine_types,id'],
             'primary_cuisine_type_id' => ['nullable', 'integer', 'exists:cuisine_types,id'],
@@ -82,6 +85,9 @@ class RestaurantController extends Controller
 
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:150'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'cuisine_type_ids' => ['nullable', 'array'],
             'cuisine_type_ids.*' => ['integer', 'exists:cuisine_types,id'],
             'primary_cuisine_type_id' => ['nullable', 'integer', 'exists:cuisine_types,id'],

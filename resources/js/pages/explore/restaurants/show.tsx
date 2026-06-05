@@ -2,6 +2,8 @@ import { Head, router } from '@inertiajs/react';
 import { ArrowLeft, Heart, MapPin, Navigation, Plus, Star, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { RestaurantReviewModal } from '@/components/explore/restaurant-review-modal';
+import { RouteStopReservation, type RouteReservation } from '@/components/explore/route-stop-reservation';
 import { CuisineBadges } from '@/components/explore/cuisine-badges';
 import { RestaurantHoursStatus, type RestaurantHoursData } from '@/components/explore/restaurant-hours-status';
 import { RestaurantMenu, type RestaurantMenuData } from '@/components/explore/restaurant-menu';
@@ -32,11 +34,26 @@ type Props = {
     inRoute: boolean;
     draftStopsCount: number;
     isFavorited: boolean;
+    canReview: boolean;
+    hasReview: boolean;
+    routeContext: {
+        route_slug: string;
+        reservation: RouteReservation | null;
+    } | null;
 };
 
-function RestaurantShow({ restaurant, inRoute, draftStopsCount, isFavorited: initialFavorited }: Props) {
+function RestaurantShow({
+    restaurant,
+    inRoute,
+    draftStopsCount,
+    isFavorited: initialFavorited,
+    canReview,
+    hasReview,
+    routeContext,
+}: Props) {
     const { t } = useTranslation();
     const [favorited, setFavorited] = useState(initialFavorited);
+    const [reviewOpen, setReviewOpen] = useState(false);
     const interactionsUrl = `/explore/restaurants/${restaurant.slug}/interactions`;
 
     const mapsUrl =
@@ -124,6 +141,43 @@ function RestaurantShow({ restaurant, inRoute, draftStopsCount, isFavorited: ini
                     </p>
 
                     <RestaurantMenu menu={restaurant.menu} />
+
+                    {routeContext && (
+                        <RouteStopReservation
+                            routeSlug={routeContext.route_slug}
+                            restaurantSlug={restaurant.slug}
+                            reservation={routeContext.reservation}
+                            onReviewClick={() => setReviewOpen(true)}
+                        />
+                    )}
+
+                    {hasReview && (
+                        <p className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">
+                            {t('explore.review_thanks')}
+                        </p>
+                    )}
+
+                    {canReview && (
+                        <Button
+                            type="button"
+                            className="w-full cursor-pointer rounded-xl bg-brand-orange text-white shadow-sm"
+                            onClick={() => setReviewOpen(true)}
+                        >
+                            <Star className="mr-2 size-4 fill-white" />
+                            {t('explore.review_write')}
+                        </Button>
+                    )}
+
+                    <RestaurantReviewModal
+                        open={reviewOpen}
+                        onOpenChange={setReviewOpen}
+                        restaurantSlug={restaurant.slug}
+                        restaurantName={restaurant.name}
+                    />
+
+                    {inRoute && !routeContext?.reservation && !canReview && !hasReview && (
+                        <p className="text-xs text-gray-500">{t('explore.review_requires_visit')}</p>
+                    )}
                 </div>
 
                 <div className="fixed bottom-20 left-0 right-0 border-t border-orange-100 bg-white p-4 md:bottom-0">

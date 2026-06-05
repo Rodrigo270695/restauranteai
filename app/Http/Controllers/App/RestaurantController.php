@@ -12,10 +12,12 @@ use App\Models\PartyType;
 use App\Models\RecommendedMoment;
 use App\Models\Restaurant;
 use App\Models\RestaurantEnvironment;
+use App\Services\AddressGeocoderService;
 use App\Services\RestaurantCuisineService;
 use App\Services\RestaurantScopeService;
 use App\Support\OwnerPanel;
 use App\Support\PriceRange;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -27,11 +29,25 @@ class RestaurantController extends Controller
 
     public function index(Request $request, RestaurantScopeService $scope): Response
     {
-        return $this->indexForRestaurant($request, $scope->forOwnerPanel($request), false);
+        $restaurant = $scope->forOwnerPanel($request);
+        $user = $request->user();
+
+        return $this->indexForRestaurant(
+            $request,
+            $restaurant,
+            $scope,
+            false,
+            $user ? $scope->ownedRestaurants($user) : collect(),
+        );
     }
 
-    public function indexForRestaurant(Request $request, Restaurant $restaurant, bool $admin = true): Response
-    {
+    public function indexForRestaurant(
+        Request $request,
+        Restaurant $restaurant,
+        RestaurantScopeService $scope,
+        bool $admin = true,
+        ?\Illuminate\Support\Collection $ownedRestaurants = null,
+    ): Response {
         if ($admin) {
             abort_unless(app(RestaurantScopeService::class)->canManageAsAdmin($request->user(), $restaurant), 403);
         }
@@ -58,9 +74,16 @@ class RestaurantController extends Controller
 
         $district = $restaurant->district;
 
+        $owned = $ownedRestaurants ?? collect();
+
         return Inertia::render('app/restaurants', [
             ...OwnerPanel::props($restaurant, $admin),
             'restaurant' => $restaurant,
+            'ownedRestaurants' => $owned
+                ->map(fn (Restaurant $r) => $scope->formatOwnedListItem($r))
+                ->values(),
+            'activeRestaurantId' => $restaurant->id,
+            'mapDefaults' => ['lat' => -6.7766, 'lng' => -79.8442],
             'geoSelection' => [
                 'department_id' => $district?->province?->department_id,
                 'province_id' => $district?->province_id,
@@ -110,6 +133,8 @@ class RestaurantController extends Controller
             'short_description' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'address' => ['nullable', 'string', 'max:255'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'district_id' => ['nullable', 'exists:districts,id'],
             'cuisine_type_ids' => ['nullable', 'array'],
             'cuisine_type_ids.*' => ['integer', 'exists:cuisine_types,id'],
@@ -185,6 +210,75 @@ class RestaurantController extends Controller
         $restaurant->restaurantEnvironments()->sync($validEnvironmentIds);
         $restaurant->recommendedMoments()->sync($validMomentIds);
 
+        $this->maybeCompleteOwnerOnboarding($request->user(), $restaurant);
+
         return back()->with('success', 'Datos del local actualizados.');
+    }
+
+    private function maybeCompleteOwnerOnboarding(?\App\Models\User $user, Restaurant $restaurant): void
+    {
+        if (! $user?->hasRole('restaurant_owner')) {
+            return;
+        }
+
+        $profile = $user->restaurantProfile;
+        if (! $profile?->needsPostApprovalOnboarding() || ! $restaurant->isExploreReady()) {
+            return;
+        }
+
+        $profile->update(['post_approval_completed_at' => now()]);
+    }
+
+    public function storeLocation(Request $request, RestaurantScopeService $scope): RedirectResponse
+    {
+        abort_unless($request->user()?->hasRole('restaurant_owner'), 403);
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+        ]);
+
+        $scope->createOwnedRestaurant($request->user(), $data['name'], $request);
+
+        return redirect()
+            ->route('app.restaurants')
+            ->with('success', 'Nuevo local creado. Completa su ubicación en el mapa.');
+    }
+
+    public function switchLocation(Request $request, RestaurantScopeService $scope): RedirectResponse
+    {
+        abort_unless($request->user()?->hasRole('restaurant_owner'), 403);
+
+        $data = $request->validate([
+            'restaurant_id' => ['required', 'integer'],
+        ]);
+
+        $scope->switchActiveRestaurant($request->user(), (int) $data['restaurant_id'], $request);
+
+        return redirect()
+            ->route('app.restaurants')
+            ->with('success', 'Cambiaste al local seleccionado.');
+    }
+
+    public function geocodeAddress(Request $request, AddressGeocoderService $geocoder): JsonResponse
+    {
+        abort_unless(
+            $request->user()?->can('manage_own_restaurant')
+            || $request->user()?->can('restaurants.edit'),
+            403,
+        );
+
+        $data = $request->validate([
+            'address' => ['required', 'string', 'max:255'],
+        ]);
+
+        $coords = $geocoder->geocode($data['address']);
+
+        if (! $coords) {
+            return response()->json([
+                'message' => 'No encontramos esa dirección. Marca el punto en el mapa.',
+            ], 422);
+        }
+
+        return response()->json($coords);
     }
 }

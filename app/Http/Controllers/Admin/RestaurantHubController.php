@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Restaurant;
+use App\Models\RestaurantReservation;
 use App\Services\RestaurantScopeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -46,6 +47,11 @@ class RestaurantHubController extends Controller
                 'promotions' => $restaurant->promotions()->count(),
                 'images' => $restaurant->images()->count(),
                 'reviews' => $restaurant->reviews()->where('is_visible', true)->count(),
+                'reservations' => RestaurantReservation::query()->where('restaurant_id', $restaurant->id)->count(),
+                'reservations_pending' => RestaurantReservation::query()
+                    ->where('restaurant_id', $restaurant->id)
+                    ->where('status', 'pending')
+                    ->count(),
             ],
             'baseUrl' => "/app/admin/restaurants/{$restaurant->id}",
         ]);
@@ -59,7 +65,7 @@ class RestaurantHubController extends Controller
         $scope->startActing($request, $restaurant);
 
         return redirect()
-            ->route('app.restaurants')
+            ->route('app.admin.restaurants.manage.reservations', $restaurant)
             ->with('success', "Viendo el panel como: {$restaurant->name}");
     }
 

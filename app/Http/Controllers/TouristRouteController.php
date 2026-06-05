@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Restaurant;
+use App\Models\RestaurantReservation;
 use App\Models\TouristRoute;
 use App\Services\TouristRouteService;
 use App\Services\UserInteractionService;
@@ -17,24 +18,31 @@ class TouristRouteController extends Controller
         $this->ensureTourist($request);
         $userId = $request->user()->id;
 
-        $activeRoutes = TouristRoute::query()
+        $listQuery = fn () => TouristRoute::query()
             ->where('user_id', $userId)
             ->where('status', 'active')
+            ->with(['stops' => fn ($q) => $q->orderBy('position')->with('restaurant:id,name')])
+            ->withCount([
+                'reservations as visited_count' => fn ($q) => $q->where(
+                    'status',
+                    RestaurantReservation::STATUS_VISITED,
+                ),
+            ]);
+
+        $activeRoutes = $listQuery()
             ->whereNull('completed_at')
             ->latest('route_date')
             ->latest()
             ->get()
             ->map(fn (TouristRoute $r) => $this->routeListItem($r));
 
-        $historyRoutes = TouristRoute::query()
-            ->where('user_id', $userId)
-            ->where('status', 'active')
+        $historyRoutes = $listQuery()
             ->whereNotNull('completed_at')
             ->latest('completed_at')
             ->get()
             ->map(fn (TouristRoute $r) => $this->routeListItem($r));
 
-        $draft = $service->formatRoute($service->draftFor($request->user()));
+        $draft = $service->formatRoute($service->draftFor($request->user()), $request->user());
 
         return Inertia::render('explore/routes/index', [
             'activeRoutes' => $activeRoutes,
@@ -55,7 +63,7 @@ class TouristRouteController extends Controller
         }
 
         return Inertia::render('explore/routes/show', [
-            'route' => $service->formatRoute($route),
+            'route' => $service->formatRoute($route, $request->user()),
             'mapCenter' => ['lat' => -6.7766, 'lng' => -79.8442],
         ]);
     }
@@ -132,6 +140,8 @@ class TouristRouteController extends Controller
             'name' => $r->name,
             'slug' => $r->slug,
             'stops_count' => $r->stops_count,
+            'visited_count' => (int) ($r->visited_count ?? 0),
+            'stop_previews' => $r->stops->map(fn ($s) => $s->restaurant->name)->values()->all(),
             'total_distance_km' => $r->total_distance_km !== null ? (float) $r->total_distance_km : null,
             'estimated_minutes' => $r->estimated_minutes,
             'route_date' => $r->route_date?->toDateString(),

@@ -121,13 +121,14 @@ test('tourist portal shows recommendations from ml service', function () {
         ->assertInertia(fn ($page) => $page
             ->component('explore/index')
             ->has('recommendations', 1)
-            ->where('recommendationMeta.algorithm', 'hybrid'));
+            ->where('recommendationMeta.algorithm', 'hybrid')
+            ->where('recommendationMeta.ml_available', true));
 
     expect(RecommendationRequest::count())->toBe(1);
     expect(Recommendation::count())->toBe(1);
 });
 
-test('tourist portal falls back when ml service is down', function () {
+test('tourist portal shows nothing when ml service is down', function () {
     $user = recTourist();
     recRestaurant();
 
@@ -141,6 +142,30 @@ test('tourist portal falls back when ml service is down', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('explore/index')
-            ->has('recommendations')
-            ->where('recommendationMeta.algorithm', 'php_fallback'));
+            ->has('recommendations', 0)
+            ->where('recommendationMeta.algorithm', 'unavailable')
+            ->where('recommendationMeta.ml_available', false));
+
+    expect(RecommendationRequest::count())->toBe(0);
+    expect(Recommendation::count())->toBe(0);
+});
+
+test('tourist portal shows nothing when ml health passes but recommend fails', function () {
+    $user = recTourist();
+    recRestaurant();
+
+    Http::fake([
+        'http://127.0.0.1:8001/api/v1/health' => Http::response(['status' => 'ok']),
+        'http://127.0.0.1:8001/api/v1/recommend' => Http::response([], 503),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('explore.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('recommendations', 0)
+            ->where('recommendationMeta.algorithm', 'unavailable')
+            ->where('recommendationMeta.ml_available', false));
+
+    expect(RecommendationRequest::count())->toBe(0);
 });
