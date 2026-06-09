@@ -16,6 +16,7 @@ import { ExplorePageHeader } from '@/components/explore/explore-page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { exploreDiscoverUrl } from '@/lib/explore-discover-url';
+import { formatPeruDateOnly, peruLocale } from '@/lib/peru-datetime';
 import { cn } from '@/lib/utils';
 import TouristExploreLayout from '@/layouts/tourist-explore-layout';
 import { show as routeShow, publish as publishRoute, destroy as destroyRoute } from '@/routes/explore/routes';
@@ -46,10 +47,7 @@ type Props = {
 function formatDate(iso: string | null, locale: string) {
     if (!iso) return '—';
     try {
-        return new Date(iso + (iso.length === 10 ? 'T12:00:00' : '')).toLocaleDateString(
-            locale === 'en' ? 'en-US' : 'es-PE',
-            { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' },
-        );
+        return formatPeruDateOnly(iso.length === 10 ? iso : iso.slice(0, 10), peruLocale(locale));
     } catch {
         return iso;
     }

@@ -5,6 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import {
+    defaultPeruDateTimeLocal,
+    formatPeruDateTimeMedium,
+    peruLocale,
+} from '@/lib/peru-datetime';
 
 export type RouteReservation = {
     id: number;
@@ -12,6 +17,7 @@ export type RouteReservation = {
     reserved_for: string;
     party_size: number;
     note?: string | null;
+    visited_at?: string | null;
     can_confirm?: boolean;
     awaiting_restaurant?: boolean;
     can_mark_visited: boolean;
@@ -26,6 +32,10 @@ type Props = {
     className?: string;
     variant?: 'default' | 'panel';
     onReviewClick?: () => void;
+    /** Se invoca justo al pulsar "Ya visité" (antes del POST). */
+    onBeforeMarkVisited?: () => void;
+    /** Se invoca tras marcar la visita con éxito (p. ej. abrir modal de reseña). */
+    onMarkedVisited?: () => void;
 };
 
 function statusLabel(status: RouteReservation['status'], t: (k: string) => string): string {
@@ -52,10 +62,7 @@ function statusClass(status: RouteReservation['status']): string {
 }
 
 function defaultDateTimeLocal(): string {
-    const d = new Date();
-    d.setHours(d.getHours() + 2, 0, 0, 0);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return defaultPeruDateTimeLocal();
 }
 
 export function RouteStopReservation({
@@ -65,6 +72,8 @@ export function RouteStopReservation({
     className,
     variant = 'default',
     onReviewClick,
+    onBeforeMarkVisited,
+    onMarkedVisited,
 }: Props) {
     const { t, i18n } = useTranslation();
     const [showForm, setShowForm] = useState(false);
@@ -79,11 +88,7 @@ export function RouteStopReservation({
 
     const storeUrl = `/explore/routes/${routeSlug}/stops/${restaurantSlug}/reservations`;
 
-    const formatDate = (iso: string) =>
-        new Date(iso).toLocaleString(i18n.language === 'en' ? 'en-US' : 'es-PE', {
-            dateStyle: 'medium',
-            timeStyle: 'short',
-        });
+    const formatDate = (iso: string) => formatPeruDateTimeMedium(iso, peruLocale(i18n.language));
 
     useEffect(() => {
         if (!flash?.success) return;
@@ -91,10 +96,17 @@ export function RouteStopReservation({
         setShowForm(false);
     }, [flash?.success]);
 
-    const post = (url: string, data: Record<string, unknown> = {}) => {
+    const post = (
+        url: string,
+        data: Record<string, unknown> = {},
+        options?: { onSuccess?: () => void },
+    ) => {
         router.post(url, data, {
             preserveScroll: true,
-            onSuccess: () => setShowForm(false),
+            onSuccess: () => {
+                setShowForm(false);
+                options?.onSuccess?.();
+            },
             onError: errors => {
                 const msg =
                     Object.values(errors).flat().join(' ') ||
@@ -284,7 +296,12 @@ export function RouteStopReservation({
                     <Button
                         type="button"
                         className="h-11 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700"
-                        onClick={() => post(`/explore/reservations/${reservation.id}/visited`)}
+                        onClick={() => {
+                            onBeforeMarkVisited?.();
+                            post(`/explore/reservations/${reservation.id}/visited`, {}, {
+                                onSuccess: onMarkedVisited,
+                            });
+                        }}
                     >
                         <MapPinCheck className="mr-2 size-4" />
                         {t('explore.reservation_mark_visited')}

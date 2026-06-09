@@ -50,23 +50,23 @@ type Props = {
 function DraftRoutePanel({
     draftRoute,
     stopsCount,
-    showPublish,
-    setShowPublish,
     routeName,
     setRouteName,
     routeDate,
     setRouteDate,
+    isPublishing,
+    onPublish,
     t,
     className,
 }: {
     draftRoute: DraftRoute;
     stopsCount: number;
-    showPublish: boolean;
-    setShowPublish: (v: boolean) => void;
     routeName: string;
     setRouteName: (v: string) => void;
     routeDate: string;
     setRouteDate: (v: string) => void;
+    isPublishing: boolean;
+    onPublish: () => void;
     t: (key: string, opts?: Record<string, unknown>) => string;
     className?: string;
 }) {
@@ -110,46 +110,45 @@ function DraftRoutePanel({
                 </div>
             </div>
 
-            {!showPublish ? (
-                <div className="mt-3 flex gap-2">
-                    <Button
-                        className="flex-1 rounded-xl bg-brand-orange text-white hover:bg-brand-orange-dark"
-                        onClick={() => setShowPublish(true)}
-                    >
-                        {t('explore.save_route')}
-                    </Button>
-                    <Button variant="outline" className="rounded-xl bg-white" asChild>
-                        <Link href={exploreRoutes.url()}>{t('explore.nav_routes')}</Link>
-                    </Button>
-                </div>
-            ) : (
-                <form
-                    className="mt-3 space-y-2"
-                    onSubmit={e => {
-                        e.preventDefault();
-                        router.post(publishRoute.url(), { name: routeName, route_date: routeDate });
-                    }}
-                >
+            <form
+                className="mt-3 space-y-2"
+                onSubmit={e => {
+                    e.preventDefault();
+                    onPublish();
+                }}
+            >
+                <div className="flex flex-col gap-2 sm:flex-row">
                     <Input
                         value={routeName}
                         onChange={e => setRouteName(e.target.value)}
                         placeholder={t('explore.route_name_placeholder')}
-                        className="rounded-xl bg-white"
+                        className="rounded-xl bg-white sm:flex-1"
+                        disabled={isPublishing}
                     />
-                    <div className="relative">
+                    <div className="relative sm:w-40">
                         <Calendar className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
                         <Input
                             type="date"
                             value={routeDate}
                             onChange={e => setRouteDate(e.target.value)}
                             className="rounded-xl bg-white pl-10"
+                            disabled={isPublishing}
                         />
                     </div>
-                    <Button type="submit" className="w-full rounded-xl bg-brand-orange text-white">
-                        {t('explore.publish_route')}
+                </div>
+                <div className="flex gap-2">
+                    <Button
+                        type="submit"
+                        disabled={isPublishing || !routeName.trim()}
+                        className="flex-1 rounded-xl bg-brand-orange text-white hover:bg-brand-orange-dark"
+                    >
+                        {isPublishing ? t('explore.route_publishing') : t('explore.publish_route')}
                     </Button>
-                </form>
-            )}
+                    <Button variant="outline" className="rounded-xl bg-white px-3" asChild disabled={isPublishing}>
+                        <Link href={exploreRoutes.url()}>{t('explore.nav_routes')}</Link>
+                    </Button>
+                </div>
+            </form>
         </div>
     );
 }
@@ -211,11 +210,14 @@ function DiscoverPage({
 
     const [search, setSearch] = useState(filters.search ?? '');
     const [cuisineId, setCuisineId] = useState<number | ''>(filters.cuisine_type_id ?? '');
-    const [showPublish, setShowPublish] = useState(false);
     const [routeName, setRouteName] = useState('Ruta gastronómica Chiclayo');
     const [routeDate, setRouteDate] = useState(new Date().toISOString().slice(0, 10));
+    const [isPublishing, setIsPublishing] = useState(false);
     const [addingSlug, setAddingSlug] = useState<string | null>(null);
     const [favoriteSlug, setFavoriteSlug] = useState<string | null>(null);
+    const [optimisticDraft, setOptimisticDraft] = useState<DraftRoute | null>(null);
+
+    const activeDraft = optimisticDraft ?? draftRoute;
 
     const favoritesOnly = filters.favorites_only === true;
     const locationActive = filters.location_active === true;
@@ -256,11 +258,11 @@ function DiscoverPage({
         );
     };
 
-    const stopsCount = draftRoute.stops_count;
+    const stopsCount = activeDraft.stops_count;
 
     const stopOrderBySlug = useMemo(
-        () => new Map(draftRoute.stops.map(s => [s.restaurant.slug, s.position])),
-        [draftRoute.stops],
+        () => new Map(activeDraft.stops.map(s => [s.restaurant.slug, s.position])),
+        [activeDraft.stops],
     );
 
     const sortedRestaurants = useMemo(() => {
@@ -289,7 +291,7 @@ function DiscoverPage({
     const nearbyRestaurants = locationActive ? sortedRestaurants.slice(0, nearbyLimit) : [];
     const otherRestaurants = locationActive ? sortedRestaurants.slice(nearbyLimit) : sortedRestaurants;
 
-    const draftNumberedStops = draftRoute.stops
+    const draftNumberedStops = activeDraft.stops
         .filter(s => s.restaurant.latitude != null && s.restaurant.longitude != null)
         .map(s => ({
             position: s.position,
@@ -298,7 +300,15 @@ function DiscoverPage({
             name: s.restaurant.name,
         }));
 
-    const draftPath = (draftRoute.path_coordinates ?? []) as [number, number][];
+    const draftPath = (activeDraft.path_coordinates ?? []) as [number, number][];
+
+    const routeVisitOptions = {
+        preserveScroll: true,
+        only: ['draftRoute', 'draftStopSlugs'] as string[],
+        onSuccess: () => setOptimisticDraft(null),
+        onError: () => setOptimisticDraft(null),
+        onFinish: () => setAddingSlug(null),
+    };
 
     const toggleRoute = (slug: string) => {
         const inRoute = stopOrderBySlug.has(slug);
@@ -317,27 +327,64 @@ function DiscoverPage({
         setAddingSlug(slug);
 
         if (inRoute) {
-            router.delete(`/explore/routes/stops/${slug}`, {
-                preserveScroll: true,
-                onFinish: () => setAddingSlug(null),
+            const stops = activeDraft.stops
+                .filter(s => s.restaurant.slug !== slug)
+                .map((s, index) => ({ ...s, position: index + 1 }));
+            setOptimisticDraft({
+                ...activeDraft,
+                stops_count: stops.length,
+                stops,
+                path_coordinates: stops.length >= 2 ? activeDraft.path_coordinates : [],
             });
-        } else {
-            router.post(`/explore/routes/stops/${slug}`, {}, {
-                preserveScroll: true,
-                onFinish: () => setAddingSlug(null),
+            router.delete(`/explore/routes/stops/${slug}`, routeVisitOptions);
+        } else if (target) {
+            const lat = (target as RestaurantListItemData & { latitude?: number | null }).latitude;
+            const lng = (target as RestaurantListItemData & { longitude?: number | null }).longitude;
+            const stops = [
+                ...activeDraft.stops,
+                {
+                    position: activeDraft.stops.length + 1,
+                    reservation: null,
+                    restaurant: {
+                        name: target.name,
+                        slug: target.slug,
+                        latitude: lat ?? null,
+                        longitude: lng ?? null,
+                    },
+                },
+            ];
+            setOptimisticDraft({
+                ...activeDraft,
+                stops_count: stops.length,
+                stops,
+                path_coordinates: stops.length >= 2 ? activeDraft.path_coordinates : [],
             });
+            router.post(`/explore/routes/stops/${slug}`, {}, routeVisitOptions);
         }
     };
 
+    const publishDraftRoute = () => {
+        if (!routeName.trim() || isPublishing) {
+            return;
+        }
+
+        setIsPublishing(true);
+        router.post(
+            publishRoute.url(),
+            { name: routeName.trim(), route_date: routeDate },
+            { onFinish: () => setIsPublishing(false) },
+        );
+    };
+
     const draftPanelProps = {
-        draftRoute,
+        draftRoute: activeDraft,
         stopsCount,
-        showPublish,
-        setShowPublish,
         routeName,
         setRouteName,
         routeDate,
         setRouteDate,
+        isPublishing,
+        onPublish: publishDraftRoute,
         t,
     };
 
@@ -377,7 +424,7 @@ function DiscoverPage({
                         );
                     }}
                     className={cn(
-                        'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition',
+                        'shrink-0 cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-semibold transition',
                         !cuisineId && !favoritesOnly
                             ? 'bg-brand-orange text-white'
                             : 'bg-white text-gray-600 ring-1 ring-gray-200',
@@ -396,7 +443,7 @@ function DiscoverPage({
                         );
                     }}
                     className={cn(
-                        'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition',
+                        'shrink-0 cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-semibold transition',
                         favoritesOnly
                             ? 'bg-brand-orange text-white'
                             : 'bg-white text-gray-600 ring-1 ring-gray-200',
@@ -428,7 +475,7 @@ function DiscoverPage({
                             );
                         }}
                         className={cn(
-                            'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition',
+                            'shrink-0 cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-semibold transition',
                             cuisineId === c.id
                                 ? 'bg-brand-orange text-white'
                                 : 'bg-white text-gray-600 ring-1 ring-gray-200',
@@ -621,12 +668,12 @@ function DiscoverPage({
                             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                                 {t('explore.map_panel_title')}
                             </p>
-                            {stopsCount > 0 && draftRoute.total_distance_km != null && (
+                            {stopsCount > 0 && activeDraft.total_distance_km != null && (
                                 <p className="text-xs font-medium text-brand-orange">
                                     {t('explore.route_summary', {
                                         count: stopsCount,
-                                        km: draftRoute.total_distance_km,
-                                        min: draftRoute.estimated_minutes ?? '—',
+                                        km: activeDraft.total_distance_km,
+                                        min: activeDraft.estimated_minutes ?? '—',
                                     })}
                                 </p>
                             )}

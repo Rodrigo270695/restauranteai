@@ -120,6 +120,7 @@
         "remove_from_route": "Remove from route",
         "route_draft": "Your route ({{count}} stops)",
         "save_route": "Save route",
+        "route_publishing": "Publishing…",
         "publish_route": "Publish and view map",
         "route_name_placeholder": "Route name",
         "routes_subtitle": "Food trails you created",

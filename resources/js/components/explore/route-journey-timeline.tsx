@@ -14,6 +14,11 @@ import { RouteStopReservation, type RouteReservation } from '@/components/explor
 import { CuisineBadges } from '@/components/explore/cuisine-badges';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import {
+    formatPeruDateTimeShort,
+    formatPeruReservationDateTime,
+    peruLocale,
+} from '@/lib/peru-datetime';
 import { show as restaurantShow } from '@/routes/explore/restaurants';
 
 export type JourneyStop = {
@@ -195,21 +200,10 @@ function VisitedDetail({
     i18n: { language: string };
     onWriteReview: () => void;
 }) {
-    const locale = i18n.language === 'en' ? 'en-US' : 'es-PE';
-    const reservedLabel = new Date(reservation.reserved_for).toLocaleString(locale, {
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
+    const locale = peruLocale(i18n.language);
+    const reservedLabel = formatPeruReservationDateTime(reservation.reserved_for, locale);
     const visitedLabel = reservation.visited_at
-        ? new Date(reservation.visited_at).toLocaleString(locale, {
-              day: 'numeric',
-              month: 'short',
-              hour: '2-digit',
-              minute: '2-digit',
-          })
+        ? formatPeruDateTimeShort(reservation.visited_at, locale)
         : null;
 
     return (
@@ -291,6 +285,7 @@ export function RouteJourneyTimeline({ routeSlug, stops, isCompleted }: Props) {
 
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [reviewOpen, setReviewOpen] = useState(false);
+    const [reviewTarget, setReviewTarget] = useState<{ slug: string; name: string } | null>(null);
     const activeId = selectedId ?? firstOpenId ?? null;
 
     const selected = stops.find(s => s.stop_id === activeId) ?? stops[0];
@@ -308,13 +303,28 @@ export function RouteJourneyTimeline({ routeSlug, stops, isCompleted }: Props) {
     const canReviewSelected =
         selected.reservation?.can_review === true && getStopPhase(selected.reservation) === 'visited';
 
+    const openReviewForStop = (stop: JourneyStop) => {
+        setReviewTarget({ slug: stop.restaurant.slug, name: stop.restaurant.name });
+        setReviewOpen(true);
+    };
+
+    const pinStopForVisit = (stop: JourneyStop) => {
+        setSelectedId(stop.stop_id);
+        setReviewTarget({ slug: stop.restaurant.slug, name: stop.restaurant.name });
+    };
+
     return (
         <section className="space-y-4">
             <RestaurantReviewModal
                 open={reviewOpen}
-                onOpenChange={setReviewOpen}
-                restaurantSlug={selected.restaurant.slug}
-                restaurantName={selected.restaurant.name}
+                onOpenChange={open => {
+                    setReviewOpen(open);
+                    if (!open) {
+                        setReviewTarget(null);
+                    }
+                }}
+                restaurantSlug={reviewTarget?.slug ?? selected.restaurant.slug}
+                restaurantName={reviewTarget?.name ?? selected.restaurant.name}
                 reloadOnly={['route']}
             />
             <div className="flex items-end justify-between gap-2 px-1">
@@ -389,7 +399,7 @@ export function RouteJourneyTimeline({ routeSlug, stops, isCompleted }: Props) {
                             restaurant={selected.restaurant}
                             t={t}
                             i18n={i18n}
-                            onWriteReview={() => setReviewOpen(true)}
+                            onWriteReview={() => openReviewForStop(selected)}
                         />
                     ) : !isCompleted ? (
                         <RouteStopReservation
@@ -398,8 +408,10 @@ export function RouteJourneyTimeline({ routeSlug, stops, isCompleted }: Props) {
                             reservation={selected.reservation}
                             variant="panel"
                             onReviewClick={
-                                canReviewSelected ? () => setReviewOpen(true) : undefined
+                                canReviewSelected ? () => openReviewForStop(selected) : undefined
                             }
+                            onBeforeMarkVisited={() => pinStopForVisit(selected)}
+                            onMarkedVisited={() => setReviewOpen(true)}
                         />
                     ) : selected.reservation ? (
                         <VisitedDetail
@@ -407,7 +419,7 @@ export function RouteJourneyTimeline({ routeSlug, stops, isCompleted }: Props) {
                             restaurant={selected.restaurant}
                             t={t}
                             i18n={i18n}
-                            onWriteReview={() => setReviewOpen(true)}
+                            onWriteReview={() => openReviewForStop(selected)}
                         />
                     ) : (
                         <p className="text-center text-sm text-gray-500">{t('explore.timeline_no_reservation')}</p>

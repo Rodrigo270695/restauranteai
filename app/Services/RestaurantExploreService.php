@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Ambiance;
 use App\Models\CuisineType;
+use App\Models\District;
 use App\Models\Restaurant;
 use App\Support\PriceRange;
 use App\Support\PublicStorage;
@@ -189,7 +190,7 @@ class RestaurantExploreService
             ->sortBy([
                 fn (Restaurant $r) => $this->hours->isAvailableForRouteNow($r) ? 0 : 1,
                 fn (Restaurant $r) => $r->is_featured ? 0 : 1,
-                fn (Restaurant $r) => - (float) $r->avg_rating,
+                fn (Restaurant $r) => -(float) $r->avg_rating,
                 fn (Restaurant $r) => $r->name,
             ])
             ->values();
@@ -278,6 +279,42 @@ class RestaurantExploreService
             ]);
     }
 
+    /**
+     * Marcadores limitados para el mapa de discover (evita cientos de pins).
+     *
+     * @param  list<int>  $alwaysIncludeIds
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function mapMarkersForDiscover(
+        Collection $restaurants,
+        int $limit = 30,
+        ?float $userLat = null,
+        ?float $userLng = null,
+        array $alwaysIncludeIds = [],
+    ): Collection {
+        $withCoords = $restaurants->filter(fn (Restaurant $r) => $r->latitude && $r->longitude);
+
+        if ($withCoords->isEmpty()) {
+            return collect();
+        }
+
+        $ranked = ($userLat !== null && $userLng !== null)
+            ? $this->rankByProximityPreference($withCoords, $userLat, $userLng)
+            : $withCoords->sortBy([
+                fn (Restaurant $r) => $r->is_featured ? 0 : 1,
+                fn (Restaurant $r) => -(float) $r->avg_rating,
+                fn (Restaurant $r) => $r->name,
+            ])->values();
+
+        $picked = $ranked->take($limit);
+        $pickedIds = $picked->pluck('id')->all();
+
+        $extra = $withCoords
+            ->filter(fn (Restaurant $r) => in_array($r->id, $alwaysIncludeIds, true) && ! in_array($r->id, $pickedIds, true));
+
+        return $this->mapMarkers($picked->concat($extra)->values());
+    }
+
     public function isRestaurantOpen(Restaurant $restaurant): bool
     {
         return $this->hours->isOpen($restaurant);
@@ -352,7 +389,7 @@ class RestaurantExploreService
     /** Distritos Lambayeque con al menos un restaurante público. */
     public function districtsWithRestaurants(): Collection
     {
-        return \App\Models\District::query()
+        return District::query()
             ->whereHas('province.department', fn ($q) => $q->where('code', '14'))
             ->whereHas('restaurants', fn (Builder $r) => $this->publicRestaurantScope($r))
             ->orderBy('name')

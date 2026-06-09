@@ -3,10 +3,12 @@
 namespace App\Services;
 
 use App\Models\Restaurant;
+use App\Models\RestaurantReservation;
 use App\Models\TouristRoute;
 use App\Models\TouristRouteStop;
 use App\Models\User;
 use App\Support\RestaurantHoursPresenter;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -81,7 +83,7 @@ class TouristRouteService
             'position' => $position,
         ]);
 
-        return $this->refreshMetrics($route);
+        return $this->syncDraftMetrics($route);
     }
 
     public function removeStop(User $user, Restaurant $restaurant): TouristRoute
@@ -90,7 +92,7 @@ class TouristRouteService
         $route->stops()->where('restaurant_id', $restaurant->id)->delete();
         $this->reorderStops($route);
 
-        return $this->refreshMetrics($route);
+        return $this->syncDraftMetrics($route);
     }
 
     public function publish(User $user, string $name, ?string $description = null, ?string $routeDate = null): TouristRoute
@@ -112,7 +114,7 @@ class TouristRouteService
             'completed_at' => null,
         ]);
 
-        $fresh = $this->refreshMetrics($route);
+        $fresh = $this->syncDraftMetrics($route);
 
         TouristRoute::create([
             'user_id' => $user->id,
@@ -133,11 +135,47 @@ class TouristRouteService
         return $route->fresh();
     }
 
+    /** Métricas rápidas para borrador (sin OSRM); el mapa refina la ruta en el cliente. */
+    public function syncDraftMetrics(TouristRoute $route): TouristRoute
+    {
+        $points = $this->stopCoordinatePoints($route);
+
+        $stats = $this->geo->pathStats($points);
+
+        $route->update([
+            'stops_count' => count($points),
+            'total_distance_km' => $stats['distance_km'],
+            'estimated_minutes' => $stats['estimated_minutes'],
+            'path_coordinates' => $stats['path'],
+        ]);
+
+        return $route->fresh(['stops.restaurant.cuisineTypes', 'stops.restaurant.cuisineType', 'stops.restaurant.district']);
+    }
+
     public function refreshMetrics(TouristRoute $route): TouristRoute
     {
-        $route->load(['stops.restaurant.cuisineTypes', 'stops.restaurant.cuisineType', 'stops.restaurant.district']);
+        $points = $this->stopCoordinatePoints($route);
 
-        $points = $route->stops
+        $stats = $this->streetRouting->routeStatsWithFallback($points);
+
+        $route->update([
+            'stops_count' => count($points),
+            'total_distance_km' => $stats['distance_km'],
+            'estimated_minutes' => $stats['estimated_minutes'],
+            'path_coordinates' => $stats['path'],
+        ]);
+
+        return $route->fresh(['stops.restaurant.cuisineTypes', 'stops.restaurant.cuisineType', 'stops.restaurant.district']);
+    }
+
+    /**
+     * @return array<int, array{lat: float, lng: float}>
+     */
+    private function stopCoordinatePoints(TouristRoute $route): array
+    {
+        $route->loadMissing(['stops.restaurant']);
+
+        return $route->stops
             ->sortBy('position')
             ->map(fn (TouristRouteStop $stop) => $stop->restaurant)
             ->filter(fn (?Restaurant $r) => $r && $r->latitude && $r->longitude)
@@ -147,17 +185,6 @@ class TouristRouteService
             ])
             ->values()
             ->all();
-
-        $stats = $this->streetRouting->routeStatsWithFallback($points);
-
-        $route->update([
-            'stops_count' => $route->stops()->count(),
-            'total_distance_km' => $stats['distance_km'],
-            'estimated_minutes' => $stats['estimated_minutes'],
-            'path_coordinates' => $stats['path'],
-        ]);
-
-        return $route->fresh(['stops.restaurant.cuisineTypes', 'stops.restaurant.district']);
     }
 
     private function reorderStops(TouristRoute $route): void
@@ -171,6 +198,8 @@ class TouristRouteService
     public function formatRoute(TouristRoute $route, ?User $user = null): array
     {
         $route->loadMissing(['stops.restaurant.cuisineTypes', 'stops.restaurant.cuisineType', 'stops.restaurant.district']);
+
+        $reservationsByStopId = $this->reservationsForStops($user, $route);
 
         return [
             'id' => $route->id,
@@ -192,7 +221,7 @@ class TouristRouteService
                     : ($r->cuisineType ? collect([$r->cuisineType]) : collect());
 
                 $reservation = $user
-                    ? $this->reservations->reservationForStop($user, $stop)
+                    ? $reservationsByStopId->get($stop->id)
                     : null;
 
                 return [
@@ -216,5 +245,28 @@ class TouristRouteService
                 ];
             })->all(),
         ];
+    }
+
+    /** @return Collection<int, RestaurantReservation> */
+    private function reservationsForStops(?User $user, TouristRoute $route): Collection
+    {
+        if (! $user || $route->stops->isEmpty()) {
+            return collect();
+        }
+
+        $stopIds = $route->stops->pluck('id')->all();
+
+        return RestaurantReservation::query()
+            ->where('user_id', $user->id)
+            ->whereIn('tourist_route_stop_id', $stopIds)
+            ->whereIn('status', [
+                RestaurantReservation::STATUS_PENDING,
+                RestaurantReservation::STATUS_CONFIRMED,
+                RestaurantReservation::STATUS_VISITED,
+            ])
+            ->orderByDesc('id')
+            ->get()
+            ->unique('tourist_route_stop_id')
+            ->keyBy('tourist_route_stop_id');
     }
 }

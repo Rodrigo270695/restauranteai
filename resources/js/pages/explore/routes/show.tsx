@@ -8,6 +8,7 @@ import { RouteJourneyTimeline } from '@/components/explore/route-journey-timelin
 import type { RouteReservation } from '@/components/explore/route-stop-reservation';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { formatPeruDateOnly, peruLocale } from '@/lib/peru-datetime';
 import TouristExploreLayout from '@/layouts/tourist-explore-layout';
 import { index as routesIndex } from '@/routes/explore/routes';
 
@@ -66,10 +67,7 @@ function RouteShow({ route: routeData, mapCenter }: Props) {
             : null;
 
     const dateLabel = routeData.route_date
-        ? new Date(routeData.route_date + 'T12:00:00').toLocaleDateString(
-              i18n.language === 'en' ? 'en-US' : 'es-PE',
-              { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' },
-          )
+        ? formatPeruDateOnly(routeData.route_date, peruLocale(i18n.language))
         : null;
 
     const visitedCount = routeData.stops.filter(s => s.reservation?.status === 'visited').length;

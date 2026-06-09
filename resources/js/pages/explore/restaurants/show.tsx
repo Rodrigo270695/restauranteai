@@ -148,6 +148,7 @@ function RestaurantShow({
                             restaurantSlug={restaurant.slug}
                             reservation={routeContext.reservation}
                             onReviewClick={() => setReviewOpen(true)}
+                            onMarkedVisited={() => setReviewOpen(true)}
                         />
                     )}
 

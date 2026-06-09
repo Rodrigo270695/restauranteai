@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import L from 'leaflet';
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet';
@@ -50,14 +50,21 @@ function orderStopIcon(position: number, total: number) {
 
 function FitBounds({ points }: { points: [number, number][] }) {
     const map = useMap();
+    const pointsKey = useMemo(() => points.map(p => `${p[0].toFixed(5)},${p[1].toFixed(5)}`).join('|'), [points]);
+    const lastKeyRef = useRef('');
+
     useEffect(() => {
-        if (points.length < 1) return;
+        if (points.length < 1 || pointsKey === lastKeyRef.current) {
+            return;
+        }
+        lastKeyRef.current = pointsKey;
+
         if (points.length === 1) {
             map.setView(points[0], 15);
             return;
         }
         map.fitBounds(L.latLngBounds(points), { padding: [52, 52], maxZoom: 16 });
-    }, [map, points]);
+    }, [map, points, pointsKey]);
 
     return null;
 }
@@ -120,19 +127,35 @@ export function ExploreRouteMap({
     const hasAccessRoute = Boolean(userLocation && totalStops >= 1 && accessPath && accessPath.length >= 2);
     const displayMarkers = hideMarkersWhenRouted && totalStops > 0 ? [] : markers;
 
-    const allPoints = useMemo(() => {
-        const pts: [number, number][] = [];
-        if (accessPath?.length) accessPath.forEach(p => pts.push(p));
-        if (mainPath.length) mainPath.forEach(p => pts.push(p));
-        if (userLocation) pts.push([userLocation.lat, userLocation.lng]);
-        numberedStops.forEach(s => pts.push([s.lat, s.lng]));
-        displayMarkers.forEach(m => pts.push([m.lat, m.lng]));
+    const fitPoints = useMemo((): [number, number][] => {
+        if (totalStops > 0) {
+            const pts: [number, number][] = [];
+            if (userLocation) {
+                pts.push([userLocation.lat, userLocation.lng]);
+            }
+            numberedStops.forEach(s => pts.push([s.lat, s.lng]));
+            return pts;
+        }
+
+        if (displayMarkers.length > 40) {
+            return userLocation
+                ? [[userLocation.lat, userLocation.lng]]
+                : center
+                  ? [[center.lat, center.lng]]
+                  : [CHICLAYO];
+        }
+
+        const pts: [number, number][] = displayMarkers.map(m => [m.lat, m.lng]);
+        if (userLocation) {
+            pts.push([userLocation.lat, userLocation.lng]);
+        }
+
         return pts;
-    }, [accessPath, mainPath, userLocation, numberedStops, displayMarkers]);
+    }, [totalStops, numberedStops, userLocation, displayMarkers, center]);
 
     const mapCenter: [number, number] = center
         ? [center.lat, center.lng]
-        : allPoints[0] ?? CHICLAYO;
+        : fitPoints[0] ?? CHICLAYO;
 
     const useFluidHeight = height === '100%';
 
@@ -150,7 +173,7 @@ export function ExploreRouteMap({
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
-                    <FitBounds points={allPoints} />
+                    <FitBounds points={fitPoints} />
 
                     {displayMarkers.map(m => (
                         <Marker key={m.id} position={[m.lat, m.lng]} icon={pinIcon}>

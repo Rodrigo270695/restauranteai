@@ -10,6 +10,7 @@ use App\Models\TouristRouteStop;
 use App\Models\User;
 use App\Support\RestaurantHoursPresenter;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -66,7 +67,7 @@ class RestaurantReservationService
 
         $reservation->update([
             'status' => RestaurantReservation::STATUS_CONFIRMED,
-            'confirmed_at' => now(),
+            'confirmed_at' => now(RestaurantHoursPresenter::TZ),
         ]);
 
         return $reservation->fresh();
@@ -79,7 +80,7 @@ class RestaurantReservationService
 
         $reservation->update([
             'status' => RestaurantReservation::STATUS_CONFIRMED,
-            'confirmed_at' => now(),
+            'confirmed_at' => now(RestaurantHoursPresenter::TZ),
         ]);
 
         return $reservation->fresh();
@@ -102,7 +103,7 @@ class RestaurantReservationService
 
         $reservation->update([
             'status' => RestaurantReservation::STATUS_VISITED,
-            'visited_at' => now(),
+            'visited_at' => now(RestaurantHoursPresenter::TZ),
         ]);
 
         return $reservation->fresh();
@@ -218,11 +219,11 @@ class RestaurantReservationService
         return [
             'id' => $reservation->id,
             'status' => $reservation->status,
-            'reserved_for' => $reservation->reserved_for->toIso8601String(),
+            'reserved_for' => $this->formatDateTimeForClient($reservation->reserved_for),
             'party_size' => $reservation->party_size,
             'note' => $reservation->note,
-            'confirmed_at' => $reservation->confirmed_at?->toIso8601String(),
-            'visited_at' => $reservation->visited_at?->toIso8601String(),
+            'confirmed_at' => $this->formatDateTimeForClient($reservation->confirmed_at),
+            'visited_at' => $this->formatDateTimeForClient($reservation->visited_at),
             'can_confirm' => false,
             'awaiting_restaurant' => $reservation->isPending(),
             'can_mark_visited' => $reservation->isConfirmed(),
@@ -239,12 +240,12 @@ class RestaurantReservationService
         return [
             'id' => $reservation->id,
             'status' => $reservation->status,
-            'reserved_for' => $reservation->reserved_for->translatedFormat('d M Y, H:i'),
+            'reserved_for' => $reservation->reserved_for->timezone(RestaurantHoursPresenter::TZ)->translatedFormat('d M Y, H:i'),
             'party_size' => $reservation->party_size,
             'note' => $reservation->note,
-            'created_at' => $reservation->created_at?->translatedFormat('d M Y, H:i'),
-            'confirmed_at' => $reservation->confirmed_at?->translatedFormat('d M Y, H:i'),
-            'visited_at' => $reservation->visited_at?->translatedFormat('d M Y, H:i'),
+            'created_at' => $reservation->created_at?->timezone(RestaurantHoursPresenter::TZ)->translatedFormat('d M Y, H:i'),
+            'confirmed_at' => $reservation->confirmed_at?->timezone(RestaurantHoursPresenter::TZ)->translatedFormat('d M Y, H:i'),
+            'visited_at' => $reservation->visited_at?->timezone(RestaurantHoursPresenter::TZ)->translatedFormat('d M Y, H:i'),
             'guest_name' => $reservation->user?->name ?? 'Turista',
             'guest_email' => $reservation->user?->email,
             'can_confirm' => $reservation->isPending(),
@@ -255,5 +256,14 @@ class RestaurantReservationService
     private function assertTouristOwner(User $user, RestaurantReservation $reservation): void
     {
         abort_unless($reservation->user_id === $user->id, 403);
+    }
+
+    private function formatDateTimeForClient(?CarbonInterface $dateTime): ?string
+    {
+        if ($dateTime === null) {
+            return null;
+        }
+
+        return $dateTime->timezone(RestaurantHoursPresenter::TZ)->toIso8601String();
     }
 }

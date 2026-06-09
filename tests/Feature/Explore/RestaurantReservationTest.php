@@ -11,6 +11,7 @@ use App\Models\RestaurantSchedule;
 use App\Models\Review;
 use App\Models\TouristRoute;
 use App\Models\User;
+use App\Services\RestaurantReservationService;
 use App\Support\RestaurantHoursPresenter;
 use Carbon\Carbon;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -149,11 +150,30 @@ test('tourist reservation flow enables review after visit', function () {
     expect(Review::query()->where('user_id', $user->id)->where('restaurant_id', $restaurant->id)->exists())->toBeTrue();
     expect((float) $restaurant->fresh()->avg_rating)->toBe(5.0);
 
-    $formatted = app(\App\Services\RestaurantReservationService::class)
+    $formatted = app(RestaurantReservationService::class)
         ->formatReservation($reservation->fresh(), $user);
 
     expect($formatted['has_review'])->toBeTrue()
         ->and($formatted['can_review'])->toBeFalse();
+});
+
+test('reservation datetimes are exposed in America Lima timezone', function () {
+    $user = reservationTourist();
+    $restaurant = reservationRestaurant();
+    $route = activeRouteWithStop($user, $restaurant);
+
+    $this->actingAs($user)
+        ->post(route('explore.routes.reservations.store', [$route->slug, $restaurant->slug]), [
+            'reserved_for' => '2026-06-09T18:00',
+            'party_size' => 2,
+        ])
+        ->assertRedirect();
+
+    $reservation = RestaurantReservation::query()->firstOrFail();
+    $formatted = app(RestaurantReservationService::class)
+        ->formatReservation($reservation, $user);
+
+    expect($formatted['reserved_for'])->toBe('2026-06-09T18:00:00-05:00');
 });
 
 test('tourist cannot review without visited reservation', function () {

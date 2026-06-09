@@ -120,6 +120,7 @@
         "remove_from_route": "Quitar de ruta",
         "route_draft": "Tu ruta ({{count}} paradas)",
         "save_route": "Guardar ruta",
+        "route_publishing": "Publicando…",
         "publish_route": "Publicar y ver mapa",
         "route_name_placeholder": "Nombre de tu ruta",
         "routes_subtitle": "Recorridos gastronómicos que creaste",

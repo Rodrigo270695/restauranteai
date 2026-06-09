@@ -57,11 +57,6 @@ class TouristRouteController extends Controller
         abort_unless($route->user_id === $request->user()->id, 403);
         abort_unless($route->status === 'active', 404);
 
-        $pathPoints = count($route->path_coordinates ?? []);
-        if ($route->stops_count >= 2 && $pathPoints <= $route->stops_count) {
-            $route = $service->refreshMetrics($route);
-        }
-
         return Inertia::render('explore/routes/show', [
             'route' => $service->formatRoute($route, $request->user()),
             'mapCenter' => ['lat' => -6.7766, 'lng' => -79.8442],

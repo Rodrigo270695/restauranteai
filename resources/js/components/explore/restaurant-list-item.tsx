@@ -74,7 +74,10 @@ export function RestaurantListItem({
                 </div>
             )}
 
-            <Link href={restaurantShow.url(restaurant.slug)} className="flex min-w-0 flex-1 gap-3">
+            <Link
+                href={restaurantShow.url(restaurant.slug)}
+                className="flex min-w-0 flex-1 cursor-pointer gap-3"
+            >
                 <div className="relative size-[4.5rem] shrink-0 overflow-hidden rounded-xl bg-gray-100">
                     {restaurant.cover_url ? (
                         <img src={restaurant.cover_url} alt="" className="size-full object-cover transition group-hover:scale-105" />
@@ -129,7 +132,7 @@ export function RestaurantListItem({
                             onToggleFavorite();
                         }}
                         className={cn(
-                            'flex size-9 cursor-pointer items-center justify-center rounded-xl ring-1 transition',
+                            'flex size-9 cursor-pointer items-center justify-center rounded-xl ring-1 transition disabled:cursor-not-allowed',
                             favorited
                                 ? 'bg-orange-50 text-brand-orange ring-orange-200'
                                 : 'bg-white text-gray-400 ring-gray-200 hover:bg-orange-50 hover:text-brand-orange',
@@ -156,7 +159,7 @@ export function RestaurantListItem({
                             onToggleRoute();
                         }}
                         className={cn(
-                            'flex size-9 cursor-pointer items-center justify-center rounded-xl shadow-md transition',
+                            'flex size-9 cursor-pointer items-center justify-center rounded-xl shadow-md transition disabled:cursor-not-allowed',
                             inRoute
                                 ? 'bg-white text-brand-orange-dark ring-2 ring-orange-200 hover:bg-orange-50'
                                 : canAddToRoute

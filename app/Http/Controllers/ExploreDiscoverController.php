@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\TouristRoute;
+use App\Models\User;
 use App\Services\RestaurantExploreService;
 use App\Services\TouristRouteService;
 use App\Services\UserInteractionService;
@@ -22,6 +24,12 @@ class ExploreDiscoverController extends Controller
         }
 
         $user = $request->user();
+        $partialData = $request->header('X-Inertia-Partial-Data', '');
+
+        if ($partialData !== '' && $this->wantsDraftOnly($partialData)) {
+            return Inertia::render('explore/discover/index', $this->draftPayload($user, $routes));
+        }
+
         ['lat' => $userLat, 'lng' => $userLng] = $explore->parseUserCoordinates($request);
         $locationActive = $userLat !== null && $userLng !== null;
         $nearbyLimit = 30;
@@ -43,16 +51,8 @@ class ExploreDiscoverController extends Controller
 
         $favoritedSet = array_fill_keys($favoritedIds, true);
         $draftModel = $routes->draftFor($user);
-        $pathPoints = count($draftModel->path_coordinates ?? []);
-        if ($draftModel->stops()->count() >= 2 && $pathPoints <= $draftModel->stops()->count()) {
-            $draftModel = $routes->refreshMetrics($draftModel);
-        }
-        $draft = $routes->formatRoute($draftModel, $user);
-        $draftStopSlugs = collect($draft['stops'] ?? [])
-            ->map(fn ($s) => $s['restaurant']['slug'] ?? null)
-            ->filter()
-            ->values()
-            ->all();
+        $draftStopRestaurantIds = $draftModel->stops()->pluck('restaurant_id')->all();
+        $draftPayload = $this->draftPayload($user, $routes, $draftModel);
 
         return Inertia::render('explore/discover/index', [
             'restaurants' => $restaurants->map(fn ($r) => array_merge(
@@ -60,7 +60,13 @@ class ExploreDiscoverController extends Controller
                 ['is_favorited' => isset($favoritedSet[$r->id])],
             )),
             'favoritesCount' => count($favoritedIds),
-            'markers' => $explore->mapMarkers($restaurants)->values(),
+            'markers' => $explore->mapMarkersForDiscover(
+                $restaurants,
+                $nearbyLimit,
+                $userLat,
+                $userLng,
+                $draftStopRestaurantIds,
+            )->values(),
             'cuisineTypes' => $explore->activeCuisines(),
             'filters' => [
                 'search' => $request->string('search')->value(),
@@ -73,11 +79,38 @@ class ExploreDiscoverController extends Controller
                 'location_active' => $locationActive,
             ],
             'nearbyLimit' => $nearbyLimit,
-            'draftRoute' => $draft,
-            'draftStopSlugs' => $draftStopSlugs,
+            ...$draftPayload,
             'mapCenter' => $locationActive
                 ? ['lat' => $userLat, 'lng' => $userLng]
                 : ['lat' => -6.7766, 'lng' => -79.8442],
         ]);
+    }
+
+    private function wantsDraftOnly(string $partialData): bool
+    {
+        $keys = array_map(trim(...), explode(',', $partialData));
+
+        return $keys !== []
+            && ! array_diff($keys, ['draftRoute', 'draftStopSlugs']);
+    }
+
+    /** @return array{draftRoute: array<string, mixed>, draftStopSlugs: list<string>} */
+    private function draftPayload(
+        User $user,
+        TouristRouteService $routes,
+        ?TouristRoute $draftModel = null,
+    ): array {
+        $draftModel ??= $routes->draftFor($user);
+        $draft = $routes->formatRoute($draftModel, $user);
+        $draftStopSlugs = collect($draft['stops'] ?? [])
+            ->map(fn ($s) => $s['restaurant']['slug'] ?? null)
+            ->filter()
+            ->values()
+            ->all();
+
+        return [
+            'draftRoute' => $draft,
+            'draftStopSlugs' => $draftStopSlugs,
+        ];
     }
 }
