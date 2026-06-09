@@ -164,7 +164,7 @@ test('reservation datetimes are exposed in America Lima timezone', function () {
 
     $this->actingAs($user)
         ->post(route('explore.routes.reservations.store', [$route->slug, $restaurant->slug]), [
-            'reserved_for' => '2026-06-09T18:00',
+            'reserved_for' => '2026-06-09T19:00',
             'party_size' => 2,
         ])
         ->assertRedirect();
@@ -173,7 +173,8 @@ test('reservation datetimes are exposed in America Lima timezone', function () {
     $formatted = app(RestaurantReservationService::class)
         ->formatReservation($reservation, $user);
 
-    expect($formatted['reserved_for'])->toBe('2026-06-09T18:00:00-05:00');
+    expect($formatted['reserved_for'])->toBe('2026-06-09T19:00:00-05:00')
+        ->and($reservation->fresh()->reserved_for->utc()->format('Y-m-d H:i:s'))->toBe('2026-06-10 00:00:00');
 });
 
 test('tourist cannot review without visited reservation', function () {

@@ -10,6 +10,7 @@ use App\Services\UserInteractionService;
 use App\Support\PublicStorage;
 use App\Support\RestaurantHoursPresenter;
 use App\Support\RestaurantMenuPresenter;
+use App\Support\RestaurantReviewsPresenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
@@ -24,6 +25,7 @@ class ExploreRestaurantController extends Controller
         TouristRouteService $routes,
         RestaurantReservationService $reservations,
         UserInteractionService $interactions,
+        RestaurantReviewsPresenter $reviewsPresenter,
     ): mixed {
         if (! $request->user()?->hasRole('tourist')) {
             return Redirect::route('dashboard');
@@ -89,6 +91,7 @@ class ExploreRestaurantController extends Controller
             'isFavorited' => $interactions->isFavorited($user, $restaurant),
             'canReview' => $reservations->canUserReview($user, $restaurant),
             'hasReview' => $reservations->userHasReview($user, $restaurant),
+            'reviews' => $reviewsPresenter->forRestaurant($restaurant),
             'routeContext' => $stop ? [
                 'route_id' => $draft->id,
                 'route_slug' => $draft->slug,

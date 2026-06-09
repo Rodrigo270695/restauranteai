@@ -6,8 +6,8 @@ use App\Models\Restaurant;
 use App\Models\RestaurantReservation;
 use App\Models\TouristRoute;
 use App\Services\RestaurantReservationService;
+use App\Support\PeruDateTime;
 use App\Support\RestaurantHoursPresenter;
-use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -28,10 +28,7 @@ class ExploreReservationController extends Controller
             'note' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $when = Carbon::parse(
-            str_replace('T', ' ', $data['reserved_for']),
-            RestaurantHoursPresenter::TZ,
-        );
+        $when = PeruDateTime::fromLocalInput($data['reserved_for']);
 
         if ($when->lte(now(RestaurantHoursPresenter::TZ))) {
             throw ValidationException::withMessages([
@@ -43,7 +40,7 @@ class ExploreReservationController extends Controller
             $request->user(),
             $route,
             $restaurant,
-            $when->toDateTimeString(),
+            $when,
             (int) $data['party_size'],
             $data['note'] ?? null,
         );

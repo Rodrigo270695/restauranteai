@@ -214,7 +214,7 @@ class TouristRouteService
             'total_distance_km' => $route->total_distance_km !== null ? (float) $route->total_distance_km : null,
             'estimated_minutes' => $route->estimated_minutes,
             'path_coordinates' => $route->path_coordinates ?? [],
-            'stops' => $route->stops->sortBy('position')->values()->map(function (TouristRouteStop $stop, int $index) use ($user) {
+            'stops' => $route->stops->sortBy('position')->values()->map(function (TouristRouteStop $stop, int $index) use ($user, $reservationsByStopId) {
                 $r = $stop->restaurant;
                 $cuisines = $r->cuisineTypes->isNotEmpty()
                     ? $r->cuisineTypes

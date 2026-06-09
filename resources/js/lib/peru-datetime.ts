@@ -47,13 +47,22 @@ export function defaultPeruDateTimeLocal(): string {
     return `${year}-${month}-${day}T${String(hour).padStart(2, '0')}:00`;
 }
 
+/** Convierte ISO del backend a Date interpretando siempre America/Lima. */
+export function parsePeruIso(iso: string): Date {
+    if (/[zZ]$/.test(iso) || /[+-]\d{2}:\d{2}$/.test(iso)) {
+        return new Date(iso);
+    }
+
+    return new Date(`${iso.replace(' ', 'T')}-05:00`);
+}
+
 /** Reserva confirmada / tarjeta activa: fecha mediana + hora corta (Lima). */
 export function formatPeruDateTimeMedium(iso: string, locale = 'es-PE'): string {
     return new Intl.DateTimeFormat(locale, {
         dateStyle: 'medium',
         timeStyle: 'short',
         timeZone: PERU_TZ,
-    }).format(new Date(iso));
+    }).format(parsePeruIso(iso));
 }
 
 /** Detalle de parada visitada: día abreviado + fecha + hora (Lima). */
@@ -65,7 +74,7 @@ export function formatPeruReservationDateTime(iso: string, locale = 'es-PE'): st
         hour: '2-digit',
         minute: '2-digit',
         timeZone: PERU_TZ,
-    }).format(new Date(iso));
+    }).format(parsePeruIso(iso));
 }
 
 /** Hora de salida / visita compacta (Lima). */
@@ -76,7 +85,7 @@ export function formatPeruDateTimeShort(iso: string, locale = 'es-PE'): string {
         hour: '2-digit',
         minute: '2-digit',
         timeZone: PERU_TZ,
-    }).format(new Date(iso));
+    }).format(parsePeruIso(iso));
 }
 
 /** Solo fecha de ruta (YYYY-MM-DD o ISO). */
@@ -89,5 +98,5 @@ export function formatPeruDateOnly(dateStr: string, locale = 'es-PE'): string {
         month: 'long',
         year: 'numeric',
         timeZone: PERU_TZ,
-    }).format(new Date(iso));
+    }).format(parsePeruIso(iso));
 }

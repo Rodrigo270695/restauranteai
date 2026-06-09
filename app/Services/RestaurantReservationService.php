@@ -8,8 +8,8 @@ use App\Models\Review;
 use App\Models\TouristRoute;
 use App\Models\TouristRouteStop;
 use App\Models\User;
+use App\Support\PeruDateTime;
 use App\Support\RestaurantHoursPresenter;
-use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -24,15 +24,15 @@ class RestaurantReservationService
         User $user,
         TouristRoute $route,
         Restaurant $restaurant,
-        string $reservedFor,
+        CarbonInterface $when,
         int $partySize,
         ?string $note = null,
     ): RestaurantReservation {
         abort_unless($route->user_id === $user->id, 403);
         abort_unless($restaurant->is_active && $restaurant->is_verified, 404);
 
-        $when = Carbon::parse($reservedFor, RestaurantHoursPresenter::TZ);
-        $this->hours->assertOpenAt($restaurant, $when);
+        $when = PeruDateTime::forDatabase($when);
+        $this->hours->assertOpenAt($restaurant, $when->copy()->timezone(PeruDateTime::TZ));
 
         $stop = $route->stops()->where('restaurant_id', $restaurant->id)->first();
         if (! $stop) {
@@ -53,7 +53,7 @@ class RestaurantReservationService
             'restaurant_id' => $restaurant->id,
             'tourist_route_id' => $route->id,
             'tourist_route_stop_id' => $stop->id,
-            'reserved_for' => $when,
+            'reserved_for' => $when->copy()->utc(),
             'party_size' => max(1, min($partySize, 20)),
             'status' => RestaurantReservation::STATUS_PENDING,
             'note' => $note,
@@ -219,11 +219,11 @@ class RestaurantReservationService
         return [
             'id' => $reservation->id,
             'status' => $reservation->status,
-            'reserved_for' => $this->formatDateTimeForClient($reservation->reserved_for),
+            'reserved_for' => PeruDateTime::toClientIso($reservation->reserved_for),
             'party_size' => $reservation->party_size,
             'note' => $reservation->note,
-            'confirmed_at' => $this->formatDateTimeForClient($reservation->confirmed_at),
-            'visited_at' => $this->formatDateTimeForClient($reservation->visited_at),
+            'confirmed_at' => PeruDateTime::toClientIso($reservation->confirmed_at),
+            'visited_at' => PeruDateTime::toClientIso($reservation->visited_at),
             'can_confirm' => false,
             'awaiting_restaurant' => $reservation->isPending(),
             'can_mark_visited' => $reservation->isConfirmed(),
@@ -256,14 +256,5 @@ class RestaurantReservationService
     private function assertTouristOwner(User $user, RestaurantReservation $reservation): void
     {
         abort_unless($reservation->user_id === $user->id, 403);
-    }
-
-    private function formatDateTimeForClient(?CarbonInterface $dateTime): ?string
-    {
-        if ($dateTime === null) {
-            return null;
-        }
-
-        return $dateTime->timezone(RestaurantHoursPresenter::TZ)->toIso8601String();
     }
 }
