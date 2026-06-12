@@ -109,7 +109,7 @@ test('owner can create a second restaurant and switch active location', function
 test('geocode endpoint returns coordinates from nominatim', function () {
     Http::fake([
         'nominatim.openstreetmap.org/*' => Http::response([
-            ['lat' => '-6.7713700', 'lon' => '-79.8408800'],
+            ['lat' => '-6.7713700', 'lon' => '-79.8408800', 'importance' => 0.05, 'place_rank' => 26, 'display_name' => 'Av. Balta, Chiclayo, Lambayeque, Perú'],
         ]),
     ]);
 
@@ -120,4 +120,40 @@ test('geocode endpoint returns coordinates from nominatim', function () {
         ->postJson(route('app.restaurants.geocode'), ['address' => 'Av. Balta 100 Chiclayo'])
         ->assertOk()
         ->assertJson(['lat' => -6.77137, 'lng' => -79.84088]);
+});
+
+test('geocode avoids duplicating region when address already includes city', function () {
+    Http::fake([
+        'nominatim.openstreetmap.org/*' => function ($request) {
+            parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
+            $freeTextQuery = $query['q'] ?? null;
+
+            if ($freeTextQuery !== null) {
+                expect($freeTextQuery)->not->toContain('Lambayeque, Perú, Lambayeque');
+                expect($freeTextQuery)->not->toEndWith('Lambayeque, Perú');
+            }
+
+            return Http::response([
+                [
+                    'lat' => '-6.7711046',
+                    'lon' => '-79.8403280',
+                    'importance' => 0.05,
+                    'place_rank' => 26,
+                    'display_name' => 'Avenida San José, Chiclayo, Lambayeque, Perú',
+                ],
+            ]);
+        },
+    ]);
+
+    $owner = locationOwner();
+    locationRestaurant($owner);
+
+    $this->actingAs($owner)
+        ->postJson(route('app.restaurants.geocode'), [
+            'address' => 'av. san jose 545, chiclayo, Perú',
+            'province' => 'Chiclayo',
+            'department' => 'Lambayeque',
+        ])
+        ->assertOk()
+        ->assertJson(['lat' => -6.7711046, 'lng' => -79.840328]);
 });

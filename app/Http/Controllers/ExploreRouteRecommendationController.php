@@ -23,15 +23,10 @@ class ExploreRouteRecommendationController extends Controller
 
         $result = $routeAi->buildDraftFromRecommendations($user, $context);
 
-        $stops = (int) ($result['meta']['stops_count'] ?? 0);
-        $message = "Ruta IA lista con {$stops} paradas ordenadas por cercanía.";
-
         if ($request->wantsJson()) {
             return response()->json($result);
         }
 
-        return Redirect::route('explore.discover', ['view' => 'map'])
-            ->with('success', $message)
-            ->with('ai_route_generated', true);
+        return Redirect::route('explore.discover', ['view' => 'map']);
     }
 }

@@ -97,12 +97,11 @@ test('tourist can generate ai route draft and land on discover map', function ()
 
     $this->actingAs($user)
         ->post(route('explore.routes.recommend'), ['lat' => -6.772, 'lng' => -79.842])
-        ->assertRedirect(route('explore.discover', ['view' => 'map']))
-        ->assertSessionHas('success')
-        ->assertSessionHas('ai_route_generated', true);
+        ->assertRedirect(route('explore.discover', ['view' => 'map']));
 
     $draft = $user->touristRoutes()->where('status', 'draft')->first();
     expect($draft)->not->toBeNull()
+        ->and($draft->generated_by_ai)->toBeTrue()
         ->and($draft->stops()->count())->toBeGreaterThanOrEqual(2)
         ->and($draft->stops()->count())->toBeLessThanOrEqual(5);
 });

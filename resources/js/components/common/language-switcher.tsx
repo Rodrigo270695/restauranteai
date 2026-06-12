@@ -9,9 +9,15 @@ const LANGS = [
 
 interface LanguageSwitcherProps extends HTMLAttributes<HTMLDivElement> {
     variant?: 'light' | 'dark';
+    compact?: boolean;
 }
 
-export default function LanguageSwitcher({ variant = 'light', className, ...props }: LanguageSwitcherProps) {
+export default function LanguageSwitcher({
+    variant = 'light',
+    compact = false,
+    className,
+    ...props
+}: LanguageSwitcherProps) {
     const { i18n } = useTranslation();
 
     const handleChange = (code: string) => {
@@ -20,6 +26,36 @@ export default function LanguageSwitcher({ variant = 'light', className, ...prop
     };
 
     const isActive = (code: string) => i18n.language === code;
+
+    if (compact) {
+        return (
+            <div
+                className={cn(
+                    'inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 p-1',
+                    className,
+                )}
+                {...props}
+            >
+                {LANGS.map(({ code, label, flag }) => (
+                    <button
+                        key={code}
+                        type="button"
+                        onClick={() => handleChange(code)}
+                        className={cn(
+                            'flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition-all',
+                            isActive(code)
+                                ? 'bg-white/15 text-white'
+                                : 'text-white/55 hover:bg-white/10 hover:text-white/85',
+                        )}
+                        aria-label={`Cambiar idioma a ${label}`}
+                    >
+                        <span className="text-sm leading-none">{flag}</span>
+                        <span>{label}</span>
+                    </button>
+                ))}
+            </div>
+        );
+    }
 
     return (
         <div

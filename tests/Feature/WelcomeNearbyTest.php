@@ -80,7 +80,7 @@ test('welcome filters restaurants by minimum rating', function () {
             ->where('restaurants.data.0.name', 'Alto'));
 });
 
-test('nearby page sorts restaurants by distance when coordinates are sent', function () {
+test('nearby page sorts restaurants by distance when location filter is active', function () {
     welcomeRestaurant([
         'name' => 'Lejos',
         'slug' => 'rest-lejos',
@@ -97,6 +97,7 @@ test('nearby page sorts restaurants by distance when coordinates are sent', func
     $this->get(route('restaurants.nearby', [
         'lat' => -6.77,
         'lng' => -79.84,
+        'location_active' => 1,
     ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
@@ -105,4 +106,32 @@ test('nearby page sorts restaurants by distance when coordinates are sent', func
             ->where('filters.location_active', true)
             ->where('restaurants.data.0.name', 'Cerca')
             ->where('restaurants.data.0.distance_km', fn ($km) => $km !== null && $km < 5));
+});
+
+test('nearby page ignores coordinates without location filter', function () {
+    welcomeRestaurant([
+        'name' => 'Lejos',
+        'slug' => 'rest-lejos-2',
+        'latitude' => -6.95,
+        'longitude' => -79.95,
+    ]);
+    welcomeRestaurant([
+        'name' => 'Cerca',
+        'slug' => 'rest-cerca-2',
+        'latitude' => -6.7715,
+        'longitude' => -79.8405,
+        'is_featured' => true,
+    ]);
+
+    $this->get(route('restaurants.nearby', [
+        'lat' => -6.77,
+        'lng' => -79.84,
+    ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('public/restaurants-nearby')
+            ->where('filters.sort', 'featured')
+            ->where('filters.location_active', false)
+            ->missing('filters.lat')
+            ->where('restaurants.data.0.name', 'Cerca'));
 });

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\TouristRoute;
+use App\Models\TouristRouteStop;
 use App\Models\User;
 use App\Services\RestaurantExploreService;
 use App\Services\TouristRouteService;
@@ -24,11 +25,13 @@ class ExploreDiscoverController extends Controller
         }
 
         $user = $request->user();
-        $partialData = $request->header('X-Inertia-Partial-Data', '');
+        $partialKeys = $this->partialDataKeys($request);
 
-        if ($partialData !== '' && $this->wantsDraftOnly($partialData)) {
+        if ($partialKeys !== [] && $this->wantsDraftOnly($partialKeys)) {
             return Inertia::render('explore/discover/index', $this->draftPayload($user, $routes));
         }
+
+        $filterPartial = $this->wantsFilterPartial($partialKeys);
 
         ['lat' => $userLat, 'lng' => $userLng] = $explore->parseUserCoordinates($request);
         $locationActive = $userLat !== null && $userLng !== null;
@@ -50,6 +53,36 @@ class ExploreDiscoverController extends Controller
         }
 
         $favoritedSet = array_fill_keys($favoritedIds, true);
+
+        if ($filterPartial) {
+            $draftStopRestaurantIds = $this->draftStopRestaurantIds($user);
+
+            return Inertia::render('explore/discover/index', [
+                'restaurants' => $restaurants->map(fn ($r) => array_merge(
+                    $explore->formatCard($r, $userLat, $userLng),
+                    ['is_favorited' => isset($favoritedSet[$r->id])],
+                )),
+                'favoritesCount' => count($favoritedIds),
+                'markers' => $explore->mapMarkersForDiscover(
+                    $restaurants,
+                    $nearbyLimit,
+                    $userLat,
+                    $userLng,
+                    $draftStopRestaurantIds,
+                )->values(),
+                'filters' => [
+                    'search' => $request->string('search')->value(),
+                    'cuisine_type_id' => $request->integer('cuisine_type_id') ?: null,
+                    'favorites_only' => $favoritesOnly,
+                    'price_range' => $request->string('price_range')->value() ?: null,
+                    'view' => $request->string('view')->value() === 'list' ? 'list' : 'map',
+                    'lat' => $userLat,
+                    'lng' => $userLng,
+                    'location_active' => $locationActive,
+                ],
+            ]);
+        }
+
         $draftModel = $routes->draftFor($user);
         $draftStopRestaurantIds = $draftModel->stops()->pluck('restaurant_id')->all();
         $draftPayload = $this->draftPayload($user, $routes, $draftModel);
@@ -86,12 +119,43 @@ class ExploreDiscoverController extends Controller
         ]);
     }
 
-    private function wantsDraftOnly(string $partialData): bool
+    /** @return list<string> */
+    private function partialDataKeys(Request $request): array
     {
-        $keys = array_map(trim(...), explode(',', $partialData));
+        $partialData = $request->header('X-Inertia-Partial-Data', '');
+        if ($partialData === '') {
+            return [];
+        }
 
-        return $keys !== []
-            && ! array_diff($keys, ['draftRoute', 'draftStopSlugs']);
+        return array_values(array_filter(array_map(trim(...), explode(',', $partialData))));
+    }
+
+    /** @param  list<string>  $partialKeys */
+    private function wantsDraftOnly(array $partialKeys): bool
+    {
+        return $partialKeys !== []
+            && ! array_diff($partialKeys, ['draftRoute', 'draftStopSlugs']);
+    }
+
+    /** @param  list<string>  $partialKeys */
+    private function wantsFilterPartial(array $partialKeys): bool
+    {
+        if ($partialKeys === []) {
+            return false;
+        }
+
+        $allowed = ['restaurants', 'markers', 'filters', 'favoritesCount'];
+
+        return empty(array_diff($partialKeys, $allowed));
+    }
+
+    /** @return list<int> */
+    private function draftStopRestaurantIds(User $user): array
+    {
+        return TouristRouteStop::query()
+            ->whereHas('route', fn ($q) => $q->where('user_id', $user->id)->where('status', 'draft'))
+            ->pluck('restaurant_id')
+            ->all();
     }
 
     /** @return array{draftRoute: array<string, mixed>, draftStopSlugs: list<string>} */

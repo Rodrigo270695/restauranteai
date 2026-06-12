@@ -2,73 +2,39 @@ import { Link, usePage } from '@inertiajs/react';
 import { LayoutDashboard, LogOut, Menu, Store, User, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getPublicNavItems, isPublicNavItemActive } from '@/config/public-nav-items';
 import { cn } from '@/lib/utils';
 import { login, logout, register } from '@/routes';
 import type { User as UserType } from '@/types';
 
-interface NavItem { labelKey: string; href: string; exact: boolean; soon?: boolean; topBadge?: string }
-
-// ─── Base pública (sin sesión) ────────────────────────────────────────────────
-const BASE_NAV: NavItem[] = [
-    { labelKey: 'nav.restaurants', href: '/restaurantes-cercanos', exact: false },
-    { labelKey: 'nav.contact',     href: '/contacto', exact: true },
-];
-
-// ─── Items según rol ──────────────────────────────────────────────────────────
-const PUBLIC_NAV: NavItem[] = [
-    { labelKey: 'nav.home', href: '/', exact: true },
-    ...BASE_NAV,
-];
-
-const TOURIST_NAV: NavItem[] = [
-    { labelKey: 'nav.home',            href: '/',        exact: true },
-    { labelKey: 'explore.nav_explore', href: '/explore', exact: true, topBadge: 'IA' },
-    { labelKey: 'nav.favorites',       href: '/explore/discover?favorites_only=1', exact: false },
-    ...BASE_NAV,
-];
-
-const OWNER_NAV: NavItem[] = [
-    { labelKey: 'nav.home',     href: '/',             exact: true  },
-    { labelKey: 'nav.my_panel', href: '/owner/pending', exact: false },
-];
-
-const ADMIN_NAV: NavItem[] = [
-    { labelKey: 'nav.home',      href: '/',          exact: true  },
-    { labelKey: 'nav.dashboard', href: '/dashboard', exact: false },
-];
-
-function getNavItems(roles: string[]): NavItem[] {
-    if (roles.includes('super_admin'))      return ADMIN_NAV;
-    if (roles.includes('restaurant_owner')) return OWNER_NAV;
-    if (roles.includes('tourist'))          return TOURIST_NAV;
-    return PUBLIC_NAV;
-}
-
 interface NavMobileMenuProps {
     user: UserType | null;
-    scrolled?: boolean;
+    variant?: 'light' | 'dark';
 }
 
-export function NavMobileMenu({ user }: NavMobileMenuProps) {
+export function NavMobileMenu({ user, variant = 'light' }: NavMobileMenuProps) {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const page = usePage();
     const url = page.url;
     const { auth } = page.props as { auth: { user: UserType | null; roles: string[] } };
     const roles = auth.roles ?? [];
+    const isDark = variant === 'dark';
 
     const isTourist = roles.includes('tourist');
-    const isOwner   = roles.includes('restaurant_owner');
-    const isAdmin   = roles.includes('super_admin');
-
-    const navItems = getNavItems(roles);
+    const isOwner = roles.includes('restaurant_owner');
+    const isAdmin = roles.includes('super_admin');
+    const navItems = getPublicNavItems(roles);
 
     return (
         <div className="md:hidden">
             <button
                 type="button"
                 onClick={() => setOpen(!open)}
-                className="cursor-pointer rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100"
+                className={cn(
+                    'cursor-pointer rounded-lg p-2 transition-colors',
+                    isDark ? 'text-white hover:bg-white/10' : 'text-gray-600 hover:bg-gray-100',
+                )}
                 aria-label={open ? t('nav.close_menu') : t('nav.open_menu')}
             >
                 {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -76,89 +42,137 @@ export function NavMobileMenu({ user }: NavMobileMenuProps) {
 
             <div
                 className={cn(
-                    'absolute left-0 right-0 top-full z-50 border-t border-gray-100 bg-white px-4 py-3 shadow-lg transition-all duration-200',
+                    'absolute left-0 right-0 top-full z-50 border-t px-4 py-3 shadow-lg transition-all duration-200',
+                    isDark ? 'border-white/10 bg-brand-blue' : 'border-gray-100 bg-white',
                     open ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0',
                 )}
             >
-                {/* Links de navegación */}
                 <nav className="flex flex-col gap-1">
-                    {navItems.map(({ labelKey, href, exact, soon, topBadge }) => {
-                        const isActive = !soon && (
-                            labelKey === 'nav.favorites'
-                                ? url.includes('favorites_only=1')
-                                : exact
-                                  ? url === href
-                                  : url.startsWith(href.split('?')[0])
-                        );
+                    {navItems.map(item => {
+                        const isActive = isPublicNavItemActive(url, item);
+                        const Icon = item.icon;
 
-                        if (soon) {
+                        if (item.soon) {
                             return (
-                                <span key={labelKey}
-                                    className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-gray-300">
-                                    {t(labelKey)}
-                                    <span className="rounded-full bg-orange-50 px-1.5 py-0.5 text-[10px] font-bold text-brand-orange">Soon</span>
+                                <span
+                                    key={item.labelKey}
+                                    className={cn(
+                                        'flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium',
+                                        isDark ? 'text-white/40' : 'text-gray-300',
+                                    )}
+                                >
+                                    <span className="flex items-center gap-2">
+                                        <Icon className="size-4" />
+                                        {t(item.labelKey)}
+                                    </span>
+                                    <span className="rounded-full bg-brand-orange/20 px-1.5 py-0.5 text-[10px] font-bold text-brand-orange">
+                                        Soon
+                                    </span>
                                 </span>
                             );
                         }
 
                         return (
-                            <Link key={labelKey} href={href}
+                            <Link
+                                key={item.labelKey}
+                                href={item.href}
                                 onClick={() => setOpen(false)}
                                 className={cn(
-                                    'relative rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                                    isActive ? 'bg-orange-50 text-brand-orange' : 'text-gray-700 hover:bg-gray-50',
+                                    'relative flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                                    isActive
+                                        ? isDark
+                                            ? 'bg-white/10 text-brand-orange'
+                                            : 'bg-orange-50 text-brand-orange'
+                                        : isDark
+                                          ? 'text-white/90 hover:bg-white/10'
+                                          : 'text-gray-700 hover:bg-gray-50',
                                 )}
                             >
-                                {topBadge && (
-                                    <span className="pointer-events-none absolute -top-1 left-3 rounded bg-brand-orange px-1 py-px text-[8px] font-bold leading-none tracking-wide text-white">
-                                        {topBadge}
+                                <Icon className="size-4" />
+                                {item.topBadge && (
+                                    <span className="rounded bg-brand-orange px-1 py-px text-[8px] font-bold leading-none tracking-wide text-white">
+                                        {item.topBadge}
                                     </span>
                                 )}
-                                {t(labelKey)}
+                                {t(item.labelKey)}
                             </Link>
                         );
                     })}
                 </nav>
 
-                {/* Sección de usuario */}
                 {user ? (
-                    <div className="mt-3 flex flex-col gap-1 border-t border-gray-100 pt-3">
+                    <div className={cn('mt-3 flex flex-col gap-1 border-t pt-3', isDark ? 'border-white/10' : 'border-gray-100')}>
                         {isTourist && (
-                            <Link href="/explore/profile" onClick={() => setOpen(false)}
-                                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            <Link
+                                href="/explore/profile"
+                                onClick={() => setOpen(false)}
+                                className={cn(
+                                    'flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium',
+                                    isDark ? 'text-white/90 hover:bg-white/10' : 'text-gray-700 hover:bg-gray-50',
+                                )}
+                            >
                                 <User className="h-4 w-4 text-brand-orange" />
                                 {t('explore.my_profile')}
                             </Link>
                         )}
                         {isOwner && (
-                            <Link href="/owner/pending" onClick={() => setOpen(false)}
-                                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            <Link
+                                href="/owner/pending"
+                                onClick={() => setOpen(false)}
+                                className={cn(
+                                    'flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium',
+                                    isDark ? 'text-white/90 hover:bg-white/10' : 'text-gray-700 hover:bg-gray-50',
+                                )}
+                            >
                                 <Store className="h-4 w-4 text-brand-orange" />
                                 {t('nav.my_panel')}
                             </Link>
                         )}
                         {isAdmin && (
-                            <Link href="/dashboard" onClick={() => setOpen(false)}
-                                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            <Link
+                                href="/dashboard"
+                                onClick={() => setOpen(false)}
+                                className={cn(
+                                    'flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium',
+                                    isDark ? 'text-white/90 hover:bg-white/10' : 'text-gray-700 hover:bg-gray-50',
+                                )}
+                            >
                                 <LayoutDashboard className="h-4 w-4 text-brand-orange" />
                                 Dashboard
                             </Link>
                         )}
-                        <Link href={logout()} method="post" as="button" onClick={() => setOpen(false)}
-                            className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-red-500 hover:bg-orange-50">
+                        <Link
+                            href={logout()}
+                            method="post"
+                            as="button"
+                            onClick={() => setOpen(false)}
+                            className={cn(
+                                'flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-red-400',
+                                isDark ? 'hover:bg-white/10' : 'text-red-500 hover:bg-orange-50',
+                            )}
+                        >
                             <LogOut className="h-4 w-4" />
                             {t('nav.logout')}
                         </Link>
                     </div>
                 ) : (
-                    <div className="mt-3 flex flex-col gap-2 border-t border-gray-100 pt-3">
-                        <Link href={login()} onClick={() => setOpen(false)}
-                            className="rounded-lg px-3 py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    <div className={cn('mt-3 flex flex-col gap-2 border-t pt-3', isDark ? 'border-white/10' : 'border-gray-100')}>
+                        <Link
+                            href={login()}
+                            onClick={() => setOpen(false)}
+                            className={cn(
+                                'rounded-lg px-3 py-2.5 text-center text-sm font-medium',
+                                isDark ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-50',
+                            )}
+                        >
                             {t('nav.login')}
                         </Link>
-                        <Link href={register()} onClick={() => setOpen(false)}
+                        <Link
+                            href={register()}
+                            onClick={() => setOpen(false)}
                             className="rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-white"
-                            style={{ background: 'linear-gradient(90deg,#ffb833,#ffa300,#e59200)' }}>
+                            style={{ background: 'linear-gradient(90deg,#ffb833,#ffa300,#e59200)' }}
+                        >
                             {t('nav.register')}
                         </Link>
                     </div>

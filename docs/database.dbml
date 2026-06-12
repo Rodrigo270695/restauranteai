@@ -1,0 +1,674 @@
+// MiskiGO / DiscoverLambo — esquema de base de datos
+// Pegar en: https://dbdiagram.io/d
+// También compatible con: https://dbdocs.io
+
+Project miskigo {
+  database_type: 'MySQL'
+  Note: 'Generado desde database/migrations/. Edita aquí y exporta PNG/PDF/SQL.'
+}
+
+// ─── Autenticación ───────────────────────────────────────────────
+
+Table users {
+  id bigint [pk, increment]
+  name varchar
+  email varchar [unique, not null]
+  email_verified_at timestamp
+  password varchar [not null]
+  two_factor_secret text
+  two_factor_recovery_codes text
+  two_factor_confirmed_at timestamp
+  remember_token varchar
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table social_accounts {
+  id bigint [pk, increment]
+  user_id bigint [not null, ref: > users.id]
+  provider varchar(30) [not null]
+  provider_id varchar [not null]
+  provider_token varchar
+  provider_refresh_token varchar
+  avatar varchar
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (provider, provider_id) [unique]
+  }
+}
+
+Table sessions {
+  id varchar [pk]
+  user_id bigint [ref: > users.id]
+  ip_address varchar(45)
+  user_agent text
+  payload longtext
+  last_activity int
+}
+
+Table password_reset_tokens {
+  email varchar [pk]
+  token varchar
+  created_at timestamp
+}
+
+// ─── Permisos (Spatie) ───────────────────────────────────────────
+
+Table roles {
+  id bigint [pk, increment]
+  name varchar [not null]
+  guard_name varchar [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (name, guard_name) [unique]
+  }
+}
+
+Table permissions {
+  id bigint [pk, increment]
+  name varchar [not null]
+  guard_name varchar [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (name, guard_name) [unique]
+  }
+}
+
+Table model_has_roles {
+  role_id bigint [not null, ref: > roles.id]
+  model_type varchar [not null]
+  model_id bigint [not null]
+  indexes {
+    (role_id, model_id, model_type) [pk]
+  }
+}
+
+Table model_has_permissions {
+  permission_id bigint [not null, ref: > permissions.id]
+  model_type varchar [not null]
+  model_id bigint [not null]
+  indexes {
+    (permission_id, model_id, model_type) [pk]
+  }
+}
+
+Table role_has_permissions {
+  permission_id bigint [not null, ref: > permissions.id]
+  role_id bigint [not null, ref: > roles.id]
+  indexes {
+    (permission_id, role_id) [pk]
+  }
+}
+
+// ─── Geografía INEI ──────────────────────────────────────────────
+
+Table departments {
+  id bigint [pk, increment]
+  name varchar(100) [not null]
+  code varchar(10) [unique, not null, note: 'Código INEI']
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table provinces {
+  id bigint [pk, increment]
+  department_id bigint [not null, ref: > departments.id]
+  name varchar(100) [not null]
+  code varchar(10) [unique, not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table districts {
+  id bigint [pk, increment]
+  province_id bigint [not null, ref: > provinces.id]
+  name varchar(100) [not null]
+  code varchar(10) [unique, not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+// ─── Catálogos ───────────────────────────────────────────────────
+
+Table cuisine_types {
+  id bigint [pk, increment]
+  name varchar(80) [not null]
+  slug varchar(80) [unique, not null]
+  description text
+  icon varchar(100)
+  is_active boolean [default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table ambiances {
+  id bigint [pk, increment]
+  name varchar(80) [not null]
+  slug varchar(80) [unique, not null]
+  description text
+  is_active boolean [default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table services {
+  id bigint [pk, increment]
+  name varchar(80) [not null]
+  slug varchar(80) [unique, not null]
+  icon varchar(100)
+  is_active boolean [default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table dish_categories {
+  id bigint [pk, increment]
+  name varchar(80) [not null]
+  slug varchar(80) [unique, not null]
+  display_order tinyint [default: 0]
+  is_active boolean [default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table support_languages {
+  id bigint [pk, increment]
+  name varchar(60) [not null]
+  code varchar(10) [unique, not null]
+  is_active boolean [default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table party_types {
+  id bigint [pk, increment]
+  name varchar(80) [not null]
+  slug varchar(80) [unique, not null]
+  description text
+  is_active boolean [default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table dietary_options {
+  id bigint [pk, increment]
+  name varchar(80) [not null]
+  slug varchar(80) [unique, not null]
+  description text
+  for_tourist_preference boolean [default: true]
+  for_restaurant boolean [default: true]
+  is_active boolean [default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table restaurant_environments {
+  id bigint [pk, increment]
+  name varchar(80) [not null]
+  slug varchar(80) [unique, not null]
+  description text
+  is_active boolean [default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table recommended_moments {
+  id bigint [pk, increment]
+  name varchar(80) [not null]
+  slug varchar(80) [unique, not null]
+  description text
+  is_active boolean [default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+// ─── Perfiles de usuario ─────────────────────────────────────────
+
+Table tourist_profiles {
+  id bigint [pk, increment]
+  user_id bigint [not null, unique, ref: - users.id]
+  avatar_url varchar
+  bio text
+  city varchar(100)
+  birth_date date
+  preferred_cuisines json [note: 'array de slugs de cocina']
+  budget_preference json [note: 'low | medium | high']
+  completed_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table restaurant_profiles {
+  id bigint [pk, increment]
+  user_id bigint [not null, ref: > users.id]
+  business_name varchar [not null]
+  ruc varchar(11) [unique]
+  phone varchar(20)
+  address text
+  city varchar(100)
+  district varchar(100)
+  description text
+  website varchar
+  status varchar [note: 'pending | approved | rejected']
+  rejection_reason text
+  approved_at timestamp
+  approved_by bigint [ref: > users.id]
+  post_approval_completed_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+// ─── Restaurantes ────────────────────────────────────────────────
+
+Table restaurants {
+  id bigint [pk, increment]
+  owner_id bigint [not null, ref: > users.id]
+  district_id bigint [ref: > districts.id]
+  cuisine_type_id bigint [ref: > cuisine_types.id]
+  ambiance_id bigint [ref: > ambiances.id]
+  name varchar(150) [not null]
+  slug varchar(180) [unique, not null]
+  description text
+  short_description varchar(255)
+  address varchar(255)
+  latitude decimal(10,8)
+  longitude decimal(11,8)
+  phone varchar(20)
+  whatsapp varchar(20)
+  email varchar(100)
+  website varchar
+  price_range varchar [note: 'economico | moderado | caro']
+  avg_price_per_person decimal(8,2)
+  capacity smallint
+  cover_image varchar
+  avg_rating decimal(3,2) [default: 0]
+  total_reviews int [default: 0]
+  total_views int [default: 0]
+  is_active boolean [default: false]
+  is_verified boolean [default: false]
+  is_featured boolean [default: false]
+  verified_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table restaurant_images {
+  id bigint [pk, increment]
+  restaurant_id bigint [not null, ref: > restaurants.id]
+  path varchar [not null]
+  alt_text varchar(150)
+  type varchar [note: 'exterior | interior | platos | ambiente']
+  display_order tinyint [default: 0]
+  is_cover boolean [default: false]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table restaurant_schedules {
+  id bigint [pk, increment]
+  restaurant_id bigint [not null, ref: > restaurants.id]
+  day_of_week tinyint [not null]
+  opens_at time
+  closes_at time
+  is_closed boolean [default: false]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (restaurant_id, day_of_week) [unique]
+  }
+}
+
+Table dishes {
+  id bigint [pk, increment]
+  restaurant_id bigint [not null, ref: > restaurants.id]
+  dish_category_id bigint [ref: > dish_categories.id]
+  name varchar(120) [not null]
+  description text
+  price decimal(8,2) [not null]
+  image varchar
+  is_signature boolean [default: false]
+  is_available boolean [default: true]
+  is_featured boolean [default: false]
+  display_order tinyint [default: 0]
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table promotions {
+  id bigint [pk, increment]
+  restaurant_id bigint [not null, ref: > restaurants.id]
+  title varchar(150) [not null]
+  description text
+  type varchar [note: 'descuento | evento | menu_especial | 2x1 | otro']
+  discount_percent decimal(5,2)
+  image varchar
+  starts_at datetime [not null]
+  ends_at datetime [not null]
+  is_active boolean [default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table reviews {
+  id bigint [pk, increment]
+  user_id bigint [not null, ref: > users.id]
+  restaurant_id bigint [not null, ref: > restaurants.id]
+  rating tinyint [not null]
+  comment text
+  is_visible boolean [default: true]
+  owner_response text
+  owner_responded_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (user_id, restaurant_id) [unique]
+  }
+}
+
+// ─── Tablas pivote restaurante ↔ catálogo ────────────────────────
+
+Table restaurant_cuisine_type {
+  restaurant_id bigint [not null, ref: > restaurants.id]
+  cuisine_type_id bigint [not null, ref: > cuisine_types.id]
+  is_primary boolean [default: false]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (restaurant_id, cuisine_type_id) [pk]
+  }
+}
+
+Table restaurant_service {
+  restaurant_id bigint [not null, ref: > restaurants.id]
+  service_id bigint [not null, ref: > services.id]
+  indexes {
+    (restaurant_id, service_id) [pk]
+  }
+}
+
+Table restaurant_language {
+  restaurant_id bigint [not null, ref: > restaurants.id]
+  support_language_id bigint [not null, ref: > support_languages.id]
+  indexes {
+    (restaurant_id, support_language_id) [pk]
+  }
+}
+
+Table restaurant_environment {
+  restaurant_id bigint [not null, ref: > restaurants.id]
+  restaurant_environment_id bigint [not null, ref: > restaurant_environments.id]
+  indexes {
+    (restaurant_id, restaurant_environment_id) [pk]
+  }
+}
+
+Table restaurant_recommended_moment {
+  restaurant_id bigint [not null, ref: > restaurants.id]
+  recommended_moment_id bigint [not null, ref: > recommended_moments.id]
+  indexes {
+    (restaurant_id, recommended_moment_id) [pk]
+  }
+}
+
+Table restaurant_party_type {
+  restaurant_id bigint [not null, ref: > restaurants.id]
+  party_type_id bigint [not null, ref: > party_types.id]
+  indexes {
+    (restaurant_id, party_type_id) [pk]
+  }
+}
+
+Table restaurant_dietary_option {
+  restaurant_id bigint [not null, ref: > restaurants.id]
+  dietary_option_id bigint [not null, ref: > dietary_options.id]
+  indexes {
+    (restaurant_id, dietary_option_id) [pk]
+  }
+}
+
+// ─── Turista, preferencias e IA ──────────────────────────────────
+
+Table user_preferences {
+  id bigint [pk, increment]
+  user_id bigint [not null, ref: > users.id]
+  cuisine_type_id bigint [ref: > cuisine_types.id]
+  ambiance_id bigint [ref: > ambiances.id]
+  price_range varchar [note: 'economico | moderado | caro']
+  max_distance_km decimal(5,2)
+  party_type_ids json
+  dietary_option_ids json
+  restaurant_environment_ids json
+  recommended_moment_ids json
+  service_ids json
+  language_ids json
+  min_rating decimal(2,1)
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table user_interactions {
+  id bigint [pk, increment]
+  user_id bigint [not null, ref: > users.id]
+  restaurant_id bigint [ref: > restaurants.id]
+  interaction_type varchar(40) [not null, note: 'view | save | click | recommendation_accepted…']
+  search_query varchar(255)
+  created_at timestamp
+}
+
+Table recommendation_requests {
+  id bigint [pk, increment]
+  user_id bigint [not null, ref: > users.id]
+  budget varchar(20)
+  party_type varchar(30)
+  created_at timestamp
+}
+
+Table recommendations {
+  id bigint [pk, increment]
+  request_id bigint [not null, ref: > recommendation_requests.id]
+  restaurant_id bigint [not null, ref: > restaurants.id]
+  rank tinyint [default: 1]
+  score decimal(8,6) [default: 0]
+  was_viewed boolean [default: false]
+  was_accepted boolean [default: false]
+  created_at timestamp
+}
+
+Table tam_surveys {
+  id bigint [pk, increment]
+  user_id bigint [not null, unique, ref: - users.id]
+  pu1_useful tinyint [default: 3]
+  pu2_faster tinyint
+  pu3_productivity tinyint
+  pu4_effectiveness tinyint
+  peou1_easy_to_learn tinyint
+  peou2_controllable tinyint
+  peou3_clear_understandable tinyint
+  peou4_easy_to_use tinyint [default: 3]
+  bi1_intend_to_use tinyint [default: 3]
+  bi2_recommend tinyint
+  open_comment text
+  created_at timestamp
+  updated_at timestamp
+}
+
+// ─── Rutas y reservas ────────────────────────────────────────────
+
+Table tourist_routes {
+  id bigint [pk, increment]
+  user_id bigint [not null, ref: > users.id]
+  name varchar(120) [not null]
+  slug varchar(150) [not null]
+  description text
+  route_date date
+  completed_at timestamp
+  status varchar [default: 'draft', note: 'draft | active']
+  stops_count tinyint [default: 0]
+  total_distance_km decimal(8,2)
+  estimated_minutes smallint
+  path_coordinates json [note: '[[lat,lng],…]']
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (user_id, slug) [unique]
+  }
+}
+
+Table tourist_route_stops {
+  id bigint [pk, increment]
+  tourist_route_id bigint [not null, ref: > tourist_routes.id]
+  restaurant_id bigint [not null, ref: > restaurants.id]
+  position tinyint [default: 1]
+  note varchar(255)
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (tourist_route_id, restaurant_id) [unique]
+    (tourist_route_id, position) [unique]
+  }
+}
+
+Table restaurant_reservations {
+  id bigint [pk, increment]
+  user_id bigint [not null, ref: > users.id]
+  restaurant_id bigint [not null, ref: > restaurants.id]
+  tourist_route_id bigint [ref: > tourist_routes.id]
+  tourist_route_stop_id bigint [ref: > tourist_route_stops.id]
+  reserved_for datetime [not null]
+  party_size tinyint [default: 2]
+  status varchar [default: 'pending', note: 'pending | confirmed | visited | cancelled']
+  confirmed_at timestamp
+  visited_at timestamp
+  note varchar(500)
+  created_at timestamp
+  updated_at timestamp
+}
+
+// ─── Otros ───────────────────────────────────────────────────────
+
+Table contact_inquiries {
+  id bigint [pk, increment]
+  user_id bigint [ref: > users.id]
+  type varchar(40) [not null]
+  name varchar [not null]
+  email varchar [not null]
+  phone varchar(30)
+  restaurant_name varchar
+  district varchar
+  message text [not null]
+  status varchar(20) [default: 'new']
+  locale varchar(5) [default: 'es']
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table ml_training_runs {
+  id bigint [pk, increment]
+  status varchar(20) [not null]
+  message varchar(500) [not null]
+  started_at timestamp [not null]
+  finished_at timestamp [not null]
+  duration_seconds int [default: 0]
+  result json
+  triggered_by_user_id bigint [ref: > users.id]
+  triggered_by_name varchar(120) [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+// ─── Laravel infra (opcional, ocultar en vista si estorba) ──────
+
+Table cache {
+  key varchar [pk]
+  value mediumtext
+  expiration int
+}
+
+Table jobs {
+  id bigint [pk, increment]
+  queue varchar [not null]
+  payload longtext
+  attempts tinyint
+  reserved_at int
+  available_at int
+  created_at int
+}
+
+TableGroup auth {
+  users
+  social_accounts
+  sessions
+  password_reset_tokens
+  roles
+  permissions
+  model_has_roles
+  model_has_permissions
+  role_has_permissions
+}
+
+TableGroup geography {
+  departments
+  provinces
+  districts
+}
+
+TableGroup catalogs {
+  cuisine_types
+  ambiances
+  services
+  dish_categories
+  support_languages
+  party_types
+  dietary_options
+  restaurant_environments
+  recommended_moments
+}
+
+TableGroup profiles {
+  tourist_profiles
+  restaurant_profiles
+}
+
+TableGroup restaurants_core {
+  restaurants
+  restaurant_images
+  restaurant_schedules
+  dishes
+  promotions
+  reviews
+}
+
+TableGroup restaurant_pivots {
+  restaurant_cuisine_type
+  restaurant_service
+  restaurant_language
+  restaurant_environment
+  restaurant_recommended_moment
+  restaurant_party_type
+  restaurant_dietary_option
+}
+
+TableGroup ml_tourist {
+  user_preferences
+  user_interactions
+  recommendation_requests
+  recommendations
+  tam_surveys
+}
+
+TableGroup routes {
+  tourist_routes
+  tourist_route_stops
+  restaurant_reservations
+}
+
+TableGroup misc {
+  contact_inquiries
+  ml_training_runs
+}

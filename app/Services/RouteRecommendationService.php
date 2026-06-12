@@ -73,7 +73,7 @@ class RouteRecommendationService
             isset($context['longitude']) ? (float) $context['longitude'] : null,
         )->take($maxStops);
 
-        $route = $this->routes->replaceDraftStops($user, $ordered->all());
+        $route = $this->routes->replaceDraftStops($user, $ordered->all(), generatedByAi: true);
 
         return [
             'route' => $this->routes->formatRoute($route),

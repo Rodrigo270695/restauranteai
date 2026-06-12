@@ -80,9 +80,11 @@ export function WelcomeRestaurantsBrowse({
 
     const [search, setSearch] = useState(filters.search ?? '');
     const [mobileFilters, setMobileFilters] = useState(false);
+    const [locationFilterPending, setLocationFilterPending] = useState(false);
     const syncedGeoRef = useRef(false);
 
-    const serverCoords = isNearby ? coordsFromFilters(filters) : null;
+    const serverCoords = isNearby && filters.location_active ? coordsFromFilters(filters) : null;
+    const locationFilterOn = Boolean(filters.location_active || locationFilterPending);
 
     const navigateWithCoords = useCallback(
         (lat: number, lng: number) => {
@@ -91,6 +93,7 @@ export function WelcomeRestaurantsBrowse({
                 {
                     lat,
                     lng,
+                    location_active: 1,
                     sort: 'nearby',
                     search: filters.search || undefined,
                     cuisine_type_id: filters.cuisine_type_id || undefined,
@@ -109,14 +112,15 @@ export function WelcomeRestaurantsBrowse({
         [filters, listPath, restaurants.per_page],
     );
 
-    const { status, request, isActive, isBlocked } = useUserGeolocation({
+    const { status, request, coords, isActive, isBlocked } = useUserGeolocation({
         serverCoords: isNearby ? serverCoords : null,
+        autoRequest: !isNearby,
         onCoordinates: isNearby
             ? (lat, lng) => {
-                  if (syncedGeoRef.current || serverCoords) {
+                  if (!locationFilterPending && !filters.location_active) {
                       return;
                   }
-                  syncedGeoRef.current = true;
+                  setLocationFilterPending(false);
                   navigateWithCoords(lat, lng);
               }
             : undefined,
@@ -135,13 +139,18 @@ export function WelcomeRestaurantsBrowse({
                 open_now: merged.open_now ? 1 : undefined,
                 featured_only: merged.featured_only ? 1 : undefined,
                 max_distance_km: merged.max_distance_km ?? undefined,
-                sort: isNearby ? 'nearby' : merged.sort || 'featured',
+                sort: isNearby
+                    ? merged.location_active
+                        ? 'nearby'
+                        : 'featured'
+                    : merged.sort || 'featured',
                 per_page: restaurants.per_page,
                 page: 1,
             };
-            if (isNearby && serverCoords) {
+            if (isNearby && merged.location_active && serverCoords) {
                 params.lat = serverCoords.lat;
                 params.lng = serverCoords.lng;
+                params.location_active = 1;
             }
             return params;
         },
@@ -152,24 +161,61 @@ export function WelcomeRestaurantsBrowse({
         router.get(listPath, buildQuery(overrides), { preserveState: true, preserveScroll: true });
     };
 
+    const toggleLocationFilter = (enabled: boolean) => {
+        if (!isNearby) {
+            return;
+        }
+
+        if (enabled) {
+            setLocationFilterPending(true);
+            if (serverCoords) {
+                navigateWithCoords(serverCoords.lat, serverCoords.lng);
+                return;
+            }
+            if (coords) {
+                navigateWithCoords(coords.lat, coords.lng);
+                return;
+            }
+            request();
+            return;
+        }
+
+        setLocationFilterPending(false);
+        setSearch(filters.search ?? '');
+        router.get(
+            listPath,
+            {
+                sort: 'featured',
+                search: filters.search || undefined,
+                cuisine_type_id: filters.cuisine_type_id || undefined,
+                price_range: filters.price_range || undefined,
+                district_id: filters.district_id || undefined,
+                ambiance_id: filters.ambiance_id || undefined,
+                min_rating: filters.min_rating ?? undefined,
+                open_now: filters.open_now ? 1 : undefined,
+                featured_only: filters.featured_only ? 1 : undefined,
+                per_page: restaurants.per_page,
+            },
+            { preserveState: true, preserveScroll: true },
+        );
+    };
+
     const clearAll = () => {
         setSearch('');
+        setLocationFilterPending(false);
         const params: Record<string, string | number | undefined> = {
-            sort: isNearby ? 'nearby' : 'featured',
+            sort: isNearby ? 'featured' : 'featured',
             per_page: restaurants.per_page,
         };
-        if (isNearby && serverCoords) {
-            params.lat = serverCoords.lat;
-            params.lng = serverCoords.lng;
-        }
         router.get(listPath, params, { preserveState: true });
     };
 
     useEffect(() => {
-        if (serverCoords) {
+        if (filters.location_active) {
             syncedGeoRef.current = true;
+            setLocationFilterPending(false);
         }
-    }, [serverCoords]);
+    }, [filters.location_active]);
 
     const priceLabel = (value: string) =>
         priceRanges.find(p => p.value === value)?.name ??
@@ -236,6 +282,13 @@ export function WelcomeRestaurantsBrowse({
             clear: () => apply({ featured_only: false }),
         });
     }
+    if (isNearby && filters.location_active) {
+        activeTags.push({
+            key: 'location',
+            label: t('welcome.browse_near_me_filter'),
+            clear: () => toggleLocationFilter(false),
+        });
+    }
     if (isNearby && filters.max_distance_km != null) {
         activeTags.push({
             key: 'distance',
@@ -245,7 +298,7 @@ export function WelcomeRestaurantsBrowse({
     }
 
     const locationBanner = () => {
-        if (!isNearby) {
+        if (!isNearby || !locationFilterOn) {
             return null;
         }
         if (status === 'loading') {
@@ -310,6 +363,27 @@ export function WelcomeRestaurantsBrowse({
                     </button>
                 )}
             </div>
+
+            {isNearby && (
+                <div className="rounded-xl border border-sky-100 bg-sky-50/80 p-3">
+                    <label className="flex cursor-pointer items-start gap-2.5 text-sm text-gray-800">
+                        <input
+                            type="checkbox"
+                            checked={locationFilterOn}
+                            onChange={e => toggleLocationFilter(e.target.checked)}
+                            className="mt-0.5 size-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange"
+                        />
+                        <span>
+                            <span className="block font-semibold text-gray-900">
+                                {t('welcome.browse_near_me_filter')}
+                            </span>
+                            <span className="mt-0.5 block text-xs text-gray-600">
+                                {t('welcome.browse_near_me_filter_hint')}
+                            </span>
+                        </span>
+                    </label>
+                </div>
+            )}
 
             {cuisineTypes.length > 0 && (
                 <div>
@@ -467,7 +541,7 @@ export function WelcomeRestaurantsBrowse({
                 </label>
             </div>
 
-            {isNearby && (
+            {isNearby && filters.location_active && (
                 <div>
                     <p className="mb-2 text-xs font-semibold text-gray-700">{t('welcome.browse_max_distance_label')}</p>
                     <div className="flex flex-wrap gap-2">
@@ -587,6 +661,11 @@ export function WelcomeRestaurantsBrowse({
                                 </select>
                             </div>
                         )}
+                        {isNearby && !filters.location_active && (
+                            <div className="mb-4 rounded-xl border border-dashed border-gray-200 bg-white px-4 py-3 text-sm text-gray-600">
+                                {t('welcome.browse_explore_hint')}
+                            </div>
+                        )}
 
                         {rows.length > 0 ? (
                             <>
@@ -606,7 +685,7 @@ export function WelcomeRestaurantsBrowse({
                             <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-8 py-14 text-center">
                                 <p className="text-lg font-semibold text-gray-800">{t('welcome.browse_empty')}</p>
                                 <p className="mt-2 text-sm text-gray-500">
-                                    {isNearby && (isActive || filters.location_active)
+                                    {isNearby && filters.location_active
                                         ? t('welcome.browse_empty_nearby')
                                         : t('welcome.browse_empty_hint')}
                                 </p>

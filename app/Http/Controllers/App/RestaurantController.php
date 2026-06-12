@@ -12,6 +12,7 @@ use App\Models\PartyType;
 use App\Models\RecommendedMoment;
 use App\Models\Restaurant;
 use App\Models\RestaurantEnvironment;
+use App\Models\User;
 use App\Services\AddressGeocoderService;
 use App\Services\RestaurantCuisineService;
 use App\Services\RestaurantScopeService;
@@ -20,6 +21,7 @@ use App\Support\PriceRange;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -46,7 +48,7 @@ class RestaurantController extends Controller
         Restaurant $restaurant,
         RestaurantScopeService $scope,
         bool $admin = true,
-        ?\Illuminate\Support\Collection $ownedRestaurants = null,
+        ?Collection $ownedRestaurants = null,
     ): Response {
         if ($admin) {
             abort_unless(app(RestaurantScopeService::class)->canManageAsAdmin($request->user(), $restaurant), 403);
@@ -215,7 +217,7 @@ class RestaurantController extends Controller
         return back()->with('success', 'Datos del local actualizados.');
     }
 
-    private function maybeCompleteOwnerOnboarding(?\App\Models\User $user, Restaurant $restaurant): void
+    private function maybeCompleteOwnerOnboarding(?User $user, Restaurant $restaurant): void
     {
         if (! $user?->hasRole('restaurant_owner')) {
             return;
@@ -269,9 +271,17 @@ class RestaurantController extends Controller
 
         $data = $request->validate([
             'address' => ['required', 'string', 'max:255'],
+            'district' => ['nullable', 'string', 'max:120'],
+            'province' => ['nullable', 'string', 'max:120'],
+            'department' => ['nullable', 'string', 'max:120'],
         ]);
 
-        $coords = $geocoder->geocode($data['address']);
+        $coords = $geocoder->geocode(
+            $data['address'],
+            district: $data['district'] ?? null,
+            province: $data['province'] ?? null,
+            department: $data['department'] ?? null,
+        );
 
         if (! $coords) {
             return response()->json([

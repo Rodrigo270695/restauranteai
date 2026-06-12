@@ -40,7 +40,7 @@ class TouristRouteService
      *
      * @param  list<Restaurant>  $restaurants
      */
-    public function replaceDraftStops(User $user, array $restaurants): TouristRoute
+    public function replaceDraftStops(User $user, array $restaurants, bool $generatedByAi = false): TouristRoute
     {
         $route = $this->draftFor($user);
         $route->stops()->delete();
@@ -54,6 +54,8 @@ class TouristRouteService
                 'position' => (int) $route->stops()->max('position') + 1,
             ]);
         }
+
+        $route->update(['generated_by_ai' => $generatedByAi]);
 
         return $this->refreshMetrics($route);
     }
@@ -83,6 +85,8 @@ class TouristRouteService
             'position' => $position,
         ]);
 
+        $route->update(['generated_by_ai' => false]);
+
         return $this->syncDraftMetrics($route);
     }
 
@@ -90,6 +94,7 @@ class TouristRouteService
     {
         $route = $this->draftFor($user);
         $route->stops()->where('restaurant_id', $restaurant->id)->delete();
+        $route->update(['generated_by_ai' => false]);
         $this->reorderStops($route);
 
         return $this->syncDraftMetrics($route);
@@ -147,6 +152,7 @@ class TouristRouteService
             'total_distance_km' => $stats['distance_km'],
             'estimated_minutes' => $stats['estimated_minutes'],
             'path_coordinates' => $stats['path'],
+            'generated_by_ai' => count($points) > 0 ? $route->generated_by_ai : false,
         ]);
 
         return $route->fresh(['stops.restaurant.cuisineTypes', 'stops.restaurant.cuisineType', 'stops.restaurant.district']);
@@ -163,6 +169,7 @@ class TouristRouteService
             'total_distance_km' => $stats['distance_km'],
             'estimated_minutes' => $stats['estimated_minutes'],
             'path_coordinates' => $stats['path'],
+            'generated_by_ai' => count($points) > 0 ? $route->generated_by_ai : false,
         ]);
 
         return $route->fresh(['stops.restaurant.cuisineTypes', 'stops.restaurant.cuisineType', 'stops.restaurant.district']);
@@ -207,6 +214,7 @@ class TouristRouteService
             'slug' => $route->slug,
             'description' => $route->description,
             'status' => $route->status,
+            'generated_by_ai' => (bool) $route->generated_by_ai,
             'route_date' => $route->route_date?->toDateString(),
             'completed_at' => $route->completed_at?->toIso8601String(),
             'is_completed' => $route->isCompleted(),

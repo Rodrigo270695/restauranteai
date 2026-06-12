@@ -1,33 +1,27 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ChefHat, MapPin, Sparkles } from 'lucide-react';
+import { Search, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { RestaurantCardData } from '@/components/explore/restaurant-card';
+import { WelcomeHeroCarousel } from '@/components/public/welcome-hero-carousel';
+import { WelcomeHeroAiBadge, WelcomeHeroMiskiFloat } from '@/components/public/welcome-hero-extras';
+import { WelcomeHeroSearch } from '@/components/public/welcome-hero-search';
 import { WelcomeRestaurantsBrowse } from '@/components/public/welcome-restaurants-browse';
 import type { PaginationMeta } from '@/components/shared/pagination-links';
 import { useLanguageSync } from '@/hooks/use-language-sync';
-import { BrandLogo } from '@/components/common/brand-logo';
-import {
-    BRAND_BTN_STYLE,
-    BRAND_HERO_BG,
-    BRAND_HERO_GLOW,
-    BRAND_SECTION_BG,
-    BRAND_TITLE_GRADIENT,
-} from '@/lib/brand-styles';
 import { cn } from '@/lib/utils';
 import { login, register } from '@/routes';
 
-const FEATURES = [
-    { icon: Sparkles, key: 'feature1' },
-    { icon: ChefHat, key: 'feature2' },
-    { icon: MapPin, key: 'feature3' },
-] as const;
+const HERO_CTA_STYLE = {
+    backgroundColor: '#ffa300',
+    boxShadow: '0 8px 24px rgba(255, 163, 0, 0.35)',
+} as const;
 
 type PriceRangeOption = { value: string; label: string; name: string; hint?: string | null };
 
 type Props = {
     canRegister?: boolean;
     restaurants?: PaginationMeta & { data: (RestaurantCardData & { is_featured?: boolean })[] };
-    cuisineTypes?: { id: number; name: string }[];
+    cuisineTypes?: { id: number; name: string; slug?: string }[];
     districts?: { id: number; name: string }[];
     ambiances?: { id: number; name: string }[];
     priceRanges?: PriceRangeOption[];
@@ -60,115 +54,79 @@ export default function Welcome({
     const isTourist = Boolean(auth?.user && roles.includes('tourist'));
     const isOwner = Boolean(auth?.user && roles.includes('restaurant_owner'));
 
+    const recommendHref = isTourist ? '/explore' : canRegister ? register() : login();
+
     return (
         <>
-            <Head title={t('welcome.hero_title')} />
+            <Head title={t('welcome.hero_headline')} />
 
-            <section className="relative overflow-hidden pt-28 pb-10 lg:pt-32 lg:pb-12" style={{ background: BRAND_HERO_BG }}>
-                <div
-                    className="pointer-events-none absolute -right-20 -top-20 h-[480px] w-[480px] rounded-full opacity-[0.18]"
-                    style={{ background: BRAND_HERO_GLOW }}
-                />
+            <section className="relative min-h-[34rem] overflow-hidden bg-white pt-28 sm:min-h-[36rem] lg:min-h-[40rem] lg:pt-32">
+                <WelcomeHeroCarousel />
+                <WelcomeHeroMiskiFloat />
 
-                <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:gap-12">
-                        <div className="flex-1 space-y-5 text-center lg:text-left">
-                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-blue">
-                                Chiclayo · Lambayeque
-                            </p>
-                            <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl lg:text-5xl xl:text-6xl">
-                                {t('welcome.hero_title')}{' '}
-                                <span
-                                    className="bg-clip-text text-transparent"
-                                    style={{ backgroundImage: BRAND_TITLE_GRADIENT }}
-                                >
-                                    {t('welcome.hero_highlight')}
-                                </span>
+                <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="flex min-h-[26rem] items-center py-10 sm:min-h-[28rem] lg:min-h-[32rem] lg:py-14">
+                        <div className="w-full max-w-xl space-y-6 text-center lg:max-w-2xl lg:text-left">
+                            <div className="flex justify-center lg:justify-start">
+                                <WelcomeHeroAiBadge />
+                            </div>
+                            <h1 className="text-3xl font-bold leading-tight tracking-tight text-brand-blue sm:text-4xl lg:text-5xl xl:text-[3.25rem]">
+                                {t('welcome.hero_headline')}
+                                <br />
+                                <span className="text-[#ffa300]">{t('welcome.hero_headline_highlight')}</span>
                             </h1>
-                            <p className="mx-auto max-w-xl text-base text-gray-600 sm:text-lg lg:mx-0">
+                            <p className="mx-auto max-w-lg text-base leading-relaxed text-gray-600 sm:text-lg lg:mx-0">
                                 {t('welcome.hero_subtitle')}
                             </p>
 
-                            <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-                                <a
-                                    href="#restaurantes"
-                                    className="btn-brand-cta cursor-pointer rounded-xl px-6 py-3 text-sm font-semibold sm:text-base"
+                            <div className="flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap lg:justify-start">
+                                <Link
+                                    href={recommendHref}
+                                    className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-sm font-semibold text-white transition hover:brightness-105 active:scale-[0.98] sm:w-auto sm:text-base"
+                                    style={HERO_CTA_STYLE}
                                 >
+                                    <Sparkles className="size-4" />
+                                    {t('welcome.cta_recommend')}
+                                </Link>
+                                <Link
+                                    href="/restaurantes-cercanos"
+                                    className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-6 py-3.5 text-sm font-semibold text-brand-blue shadow-sm transition hover:bg-gray-50 sm:w-auto sm:text-base"
+                                >
+                                    <Search className="size-4" />
                                     {t('welcome.cta_explore')}
-                                </a>
-                                {canRegister && (
-                                    <Link
-                                        href={register()}
-                                        className="cursor-pointer rounded-xl border border-brand-blue/15 bg-white/90 px-6 py-3 text-sm font-semibold text-brand-blue shadow-sm backdrop-blur-sm transition-all hover:bg-white sm:text-base"
-                                    >
-                                        {t('welcome.cta_register')}
-                                    </Link>
-                                )}
-                                {isTourist && (
-                                    <Link
-                                        href="/explore"
-                                        className="cursor-pointer rounded-xl border border-brand-blue/15 bg-white/90 px-6 py-3 text-sm font-semibold text-brand-blue shadow-sm backdrop-blur-sm transition-all hover:bg-white sm:text-base"
-                                    >
-                                        {t('welcome.cta_go_explore')}
-                                    </Link>
-                                )}
+                                </Link>
                                 {isOwner && (
                                     <Link
                                         href="/owner/pending"
-                                        className="cursor-pointer rounded-xl border border-brand-blue/15 bg-white/90 px-6 py-3 text-sm font-semibold text-brand-blue shadow-sm backdrop-blur-sm transition-all hover:bg-white sm:text-base"
+                                        className="inline-flex w-full cursor-pointer items-center justify-center rounded-2xl border border-brand-blue/15 bg-white px-6 py-3.5 text-sm font-semibold text-brand-blue shadow-sm transition hover:bg-gray-50 sm:w-auto"
                                     >
                                         {t('nav.my_panel')}
                                     </Link>
                                 )}
                             </div>
 
-                            <div className="flex flex-wrap justify-center gap-6 pt-1 sm:gap-10 lg:justify-start">
-                                {[
-                                    { value: `${restaurants.total ?? 0}`, label: t('welcome.stat_restaurants') },
-                                    { value: '4.8★', label: t('welcome.stat_rating') },
-                                    { value: '5K+', label: t('welcome.stat_tourists') },
-                                ].map(({ value, label }) => (
-                                    <div key={label}>
-                                        <p className="text-xl font-extrabold text-gray-900 sm:text-2xl">{value}</p>
-                                        <p className="text-[11px] text-gray-500">{label}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="hidden shrink-0 lg:block">
-                            <BrandLogo surface="light" size="hero" className="drop-shadow-xl" />
-                        </div>
-                    </div>
-
-                    <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:mt-10 lg:grid-cols-3">
-                        {FEATURES.map(({ icon: Icon, key }) => (
-                            <div
-                                key={key}
-                                className={cn(
-                                    'group flex gap-4 rounded-2xl border border-white/60 bg-white/75 p-5 shadow-sm backdrop-blur-sm',
-                                    'transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-200/80 hover:bg-white hover:shadow-md',
-                                )}
-                            >
-                                <span
-                                    className="flex size-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
-                                    style={BRAND_BTN_STYLE}
-                                >
-                                    <Icon className="size-5" />
-                                </span>
-                                <div className="min-w-0">
-                                    <h3 className="text-sm font-bold text-gray-900 sm:text-base">
-                                        {t(`welcome.${key}_title`)}
-                                    </h3>
-                                    <p className="mt-1 text-xs leading-relaxed text-gray-600 sm:text-sm">
-                                        {t(`welcome.${key}_desc`)}
-                                    </p>
+                            <div className="flex items-center justify-center gap-3 pt-1 lg:justify-start">
+                                <div className="flex -space-x-2">
+                                    {['bg-brand-blue', 'bg-[#ffa300]', 'bg-emerald-500', 'bg-violet-500'].map(color => (
+                                        <span
+                                            key={color}
+                                            className={cn(
+                                                'inline-flex size-9 items-center justify-center rounded-full border-2 border-white text-xs font-semibold text-white shadow-sm',
+                                                color,
+                                            )}
+                                        >
+                                            ★
+                                        </span>
+                                    ))}
                                 </div>
+                                <p className="text-sm font-medium text-gray-600">{t('welcome.hero_social_proof')}</p>
                             </div>
-                        ))}
+                        </div>
                     </div>
                 </div>
             </section>
+
+            <WelcomeHeroSearch cuisineTypes={cuisineTypes} />
 
             <WelcomeRestaurantsBrowse
                 mode="catalog"
@@ -181,9 +139,15 @@ export default function Welcome({
                 filters={filters}
             />
 
-            <section className="py-16 lg:py-20" style={{ background: BRAND_SECTION_BG }}>
+            <section
+                className="py-16 lg:py-20"
+                style={{
+                    background:
+                        'radial-gradient(ellipse 120% 100% at 60% 30%, #0d4a9e 0%, #073577 35%, #052a58 65%, #031d3d 100%)',
+                }}
+            >
                 <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
-                    <h2 className="mb-4 text-2xl font-extrabold text-white sm:text-3xl lg:text-4xl">
+                    <h2 className="mb-4 text-2xl font-bold text-white sm:text-3xl lg:text-4xl">
                         {t('welcome.cta_final_title')}
                     </h2>
                     <p className="mb-8 text-base text-white/70 sm:text-lg">{t('welcome.cta_final_desc')}</p>
@@ -196,10 +160,11 @@ export default function Welcome({
                                 {t('welcome.login')}
                             </Link>
                         )}
-                        {canRegister && (
+                        {canRegister && !isTourist && (
                             <Link
                                 href={register()}
-                                className="btn-brand-cta cursor-pointer rounded-xl px-7 py-3.5 text-base font-semibold"
+                                className="cursor-pointer rounded-2xl px-7 py-3.5 text-base font-semibold text-white transition hover:brightness-105"
+                                style={HERO_CTA_STYLE}
                             >
                                 {t('welcome.cta_register')}
                             </Link>
@@ -207,7 +172,8 @@ export default function Welcome({
                         {isTourist && (
                             <Link
                                 href="/explore"
-                                className="btn-brand-cta cursor-pointer rounded-xl px-7 py-3.5 text-base font-semibold"
+                                className="cursor-pointer rounded-2xl px-7 py-3.5 text-base font-semibold text-white transition hover:brightness-105"
+                                style={HERO_CTA_STYLE}
                             >
                                 {t('welcome.cta_go_explore')}
                             </Link>

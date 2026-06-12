@@ -6,10 +6,17 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import 'leaflet/dist/leaflet.css';
 
+type GeocodeContext = {
+    district?: string | null;
+    province?: string | null;
+    department?: string | null;
+};
+
 type Props = {
     latitude: number | null;
     longitude: number | null;
     address?: string;
+    geocodeContext?: GeocodeContext;
     defaultCenter: { lat: number; lng: number };
     onChange: (coords: { latitude: number | null; longitude: number | null }) => void;
     disabled?: boolean;
@@ -55,6 +62,7 @@ export function RestaurantLocationPicker({
     latitude,
     longitude,
     address = '',
+    geocodeContext,
     defaultCenter,
     onChange,
     disabled = false,
@@ -94,7 +102,12 @@ export function RestaurantLocationPicker({
                     'X-CSRF-TOKEN': token,
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: JSON.stringify({ address: q }),
+                body: JSON.stringify({
+                    address: q,
+                    district: geocodeContext?.district ?? undefined,
+                    province: geocodeContext?.province ?? undefined,
+                    department: geocodeContext?.department ?? undefined,
+                }),
             });
             const data = (await res.json()) as { lat?: number; lng?: number; message?: string };
             if (!res.ok) {

@@ -14,21 +14,27 @@ class NearbyRestaurantsController extends Controller
     public function __invoke(Request $request, RestaurantExploreService $explore): mixed
     {
         ['lat' => $userLat, 'lng' => $userLng] = $explore->parseUserCoordinates($request);
+        $locationActive = $request->boolean('location_active')
+            && $userLat !== null
+            && $userLng !== null;
 
         $perPage = in_array((int) $request->input('per_page'), [9, 12, 15, 24], true)
             ? (int) $request->input('per_page')
             : 12;
 
         $filters = $explore->resolvePublicFilters($request, [
-            'sort' => 'nearby',
-            'lat' => $userLat,
-            'lng' => $userLng,
-            'location_active' => $userLat !== null && $userLng !== null,
+            'sort' => $locationActive ? 'nearby' : 'featured',
+            'location_active' => $locationActive,
         ]);
+
+        if ($locationActive) {
+            $filters['lat'] = $userLat;
+            $filters['lng'] = $userLng;
+        }
 
         $maxKm = (float) ($filters['max_distance_km'] ?? 50);
 
-        if ($userLat !== null && $userLng !== null) {
+        if ($locationActive) {
             $sorted = $explore->sortByDistance(
                 (clone $explore->publicQuery($request))->get(),
                 $userLat,

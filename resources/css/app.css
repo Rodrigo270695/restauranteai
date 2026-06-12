@@ -25,12 +25,14 @@
     --color-brand-nav-active:  #ffa300;
 
     --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+        'Poppins', ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 
     --font-serif:
-        'Fraunces', ui-serif, Georgia, Cambria, 'Times New Roman', serif;
+        'Poppins', ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Noto Color Emoji';
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -157,7 +159,11 @@
     }
 
     body {
-        @apply bg-background text-foreground;
+        @apply bg-background font-sans text-foreground antialiased;
+    }
+
+    html {
+        font-family: var(--font-sans);
     }
 
     button:not(:disabled),
@@ -239,5 +245,84 @@
 
     .scrollbar-thin::-webkit-scrollbar-track {
         background: transparent;
+    }
+
+    /* Hero welcome: imagen a ancho completo con borde izquierdo difuminado */
+    .welcome-hero-media {
+        -webkit-mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            transparent 12%,
+            rgba(0, 0, 0, 0.15) 22%,
+            rgba(0, 0, 0, 0.45) 34%,
+            rgba(0, 0, 0, 0.78) 46%,
+            #000 58%,
+            #000 100%
+        );
+        mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            transparent 12%,
+            rgba(0, 0, 0, 0.15) 22%,
+            rgba(0, 0, 0, 0.45) 34%,
+            rgba(0, 0, 0, 0.78) 46%,
+            #000 58%,
+            #000 100%
+        );
+    }
+
+    .welcome-hero-fade {
+        background:
+            linear-gradient(
+                to right,
+                #ffffff 0%,
+                #ffffff 18%,
+                rgba(255, 255, 255, 0.98) 28%,
+                rgba(255, 255, 255, 0.9) 38%,
+                rgba(255, 255, 255, 0.62) 48%,
+                rgba(255, 255, 255, 0.28) 58%,
+                rgba(255, 255, 255, 0.08) 68%,
+                transparent 78%
+            ),
+            linear-gradient(
+                to bottom,
+                rgba(255, 255, 255, 0.55) 0%,
+                transparent 18%,
+                transparent 82%,
+                rgba(255, 255, 255, 0.2) 100%
+            );
+    }
+
+    @media (max-width: 639px) {
+        .welcome-hero-media {
+            -webkit-mask-image: linear-gradient(
+                to bottom,
+                transparent 0%,
+                rgba(0, 0, 0, 0.35) 28%,
+                rgba(0, 0, 0, 0.85) 48%,
+                #000 62%,
+                #000 100%
+            );
+            mask-image: linear-gradient(
+                to bottom,
+                transparent 0%,
+                rgba(0, 0, 0, 0.35) 28%,
+                rgba(0, 0, 0, 0.85) 48%,
+                #000 62%,
+                #000 100%
+            );
+        }
+
+        .welcome-hero-fade {
+            background:
+                linear-gradient(
+                    to bottom,
+                    #ffffff 0%,
+                    #ffffff 42%,
+                    rgba(255, 255, 255, 0.92) 52%,
+                    rgba(255, 255, 255, 0.55) 62%,
+                    transparent 78%
+                );
+        }
     }
 }

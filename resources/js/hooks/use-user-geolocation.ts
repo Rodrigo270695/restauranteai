@@ -18,6 +18,8 @@ type Options = {
     /** Coordenadas ya confirmadas por el servidor (query string). */
     serverCoords?: { lat: number; lng: number } | null;
     onCoordinates?: (lat: number, lng: number) => void;
+    /** Si es false, no pide GPS al montar (solo con request()). */
+    autoRequest?: boolean;
 };
 
 function readStored(): StoredCoords | null {
@@ -53,7 +55,7 @@ async function queryGeolocationPermission(): Promise<PermissionState | 'unknown'
     }
 }
 
-export function useUserGeolocation({ serverCoords, onCoordinates }: Options = {}) {
+export function useUserGeolocation({ serverCoords, onCoordinates, autoRequest = true }: Options = {}) {
     const [status, setStatus] = useState<GeolocationStatus>(() =>
         serverCoords ? 'granted' : 'idle',
     );
@@ -127,6 +129,10 @@ export function useUserGeolocation({ serverCoords, onCoordinates }: Options = {}
             return;
         }
 
+        if (! autoRequest) {
+            return;
+        }
+
         const stored = readStored();
         if (stored) {
             applyCoords(stored.lat, stored.lng);
@@ -158,7 +164,7 @@ export function useUserGeolocation({ serverCoords, onCoordinates }: Options = {}
                 request();
             }
         })();
-    }, [serverCoords, applyCoords, request, attachPermissionListener]);
+    }, [serverCoords, applyCoords, request, attachPermissionListener, autoRequest]);
 
     const retry = useCallback(() => {
         void (async () => {

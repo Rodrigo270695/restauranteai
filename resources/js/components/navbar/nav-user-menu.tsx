@@ -15,14 +15,14 @@ import type { User as UserType } from '@/types';
 
 interface NavUserMenuProps {
     user: UserType;
-    scrolled?: boolean;
+    variant?: 'light' | 'dark';
 }
 
 function UserAvatar({ user, size = 'md' }: { user: UserType; size?: 'sm' | 'md' }) {
     const initials = user.name
         .split(' ')
         .slice(0, 2)
-        .map((n) => n[0])
+        .map(n => n[0])
         .join('')
         .toUpperCase();
 
@@ -33,7 +33,7 @@ function UserAvatar({ user, size = 'md' }: { user: UserType; size?: 'sm' | 'md' 
             <img
                 src={user.avatar}
                 alt={user.name}
-                className={cn('rounded-full object-cover ring-2 ring-white', sizeClass)}
+                className={cn('rounded-full object-cover ring-2 ring-white/30', sizeClass)}
             />
         );
     }
@@ -42,7 +42,7 @@ function UserAvatar({ user, size = 'md' }: { user: UserType; size?: 'sm' | 'md' 
         <span
             className={cn(
                 'flex items-center justify-center rounded-full font-semibold text-white',
-                'bg-linear-to-br from-brand-blue to-brand-orange',
+                'bg-linear-to-br from-brand-orange to-brand-blue-light',
                 sizeClass,
             )}
         >
@@ -51,28 +51,36 @@ function UserAvatar({ user, size = 'md' }: { user: UserType; size?: 'sm' | 'md' 
     );
 }
 
-export function NavUserMenu({ user, scrolled = false }: NavUserMenuProps) {
+export function NavUserMenu({ user, variant = 'light' }: NavUserMenuProps) {
     const { t } = useTranslation();
     const { auth } = usePage().props as { auth: { user: UserType; roles: string[] } };
     const roles = auth.roles ?? [];
+    const isDark = variant === 'dark';
 
     const isTourist = roles.includes('tourist');
-    const isOwner   = roles.includes('restaurant_owner');
-    const isAdmin   = roles.includes('super_admin');
+    const isOwner = roles.includes('restaurant_owner');
+    const isAdmin = roles.includes('super_admin');
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <button
                     type="button"
-                    className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 transition-colors hover:bg-gray-100 focus:outline-none"
+                    className={cn(
+                        'flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 transition-colors focus:outline-none',
+                        isDark ? 'hover:bg-white/10' : 'hover:bg-gray-100',
+                    )}
                 >
                     <UserAvatar user={user} />
                     <div className="hidden text-left lg:block">
-                        <p className="text-sm font-semibold leading-none text-gray-900">{user.name}</p>
-                        <p className="mt-0.5 text-xs text-gray-500">{user.email}</p>
+                        <p className={cn('text-sm font-semibold leading-none', isDark ? 'text-white' : 'text-gray-900')}>
+                            {user.name}
+                        </p>
+                        <p className={cn('mt-0.5 max-w-[11rem] truncate text-xs', isDark ? 'text-white/65' : 'text-gray-500')}>
+                            {user.email}
+                        </p>
                     </div>
-                    <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+                    <ChevronDown className={cn('h-3.5 w-3.5', isDark ? 'text-white/60' : 'text-gray-400')} />
                 </button>
             </DropdownMenuTrigger>
 
@@ -84,7 +92,6 @@ export function NavUserMenu({ user, scrolled = false }: NavUserMenuProps) {
 
                 <DropdownMenuSeparator />
 
-                {/* Turista → Portal turista */}
                 {isTourist && (
                     <DropdownMenuItem asChild>
                         <Link href={exploreProfile.url()} className="flex cursor-pointer items-center gap-2">
@@ -94,7 +101,6 @@ export function NavUserMenu({ user, scrolled = false }: NavUserMenuProps) {
                     </DropdownMenuItem>
                 )}
 
-                {/* Owner → Panel de espera */}
                 {isOwner && (
                     <DropdownMenuItem asChild>
                         <Link href="/owner/pending" className="flex cursor-pointer items-center gap-2">
@@ -104,7 +110,6 @@ export function NavUserMenu({ user, scrolled = false }: NavUserMenuProps) {
                     </DropdownMenuItem>
                 )}
 
-                {/* Admin → Dashboard */}
                 {isAdmin && (
                     <DropdownMenuItem asChild>
                         <Link href="/dashboard" className="flex cursor-pointer items-center gap-2">

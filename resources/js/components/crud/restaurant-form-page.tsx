@@ -9,7 +9,7 @@ import {
     Store,
     UtensilsCrossed,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FormField } from '@/components/modals/resource-modal';
 import { PageHeader, STAT_COLORS, type StatBadge } from '@/components/shared/page-header';
 import { CatalogChipMultiSelect } from '@/components/shared/catalog-chip-multi-select';
@@ -163,6 +163,18 @@ export function RestaurantFormPage({
     const canManage = can('manage_own_restaurant') && !readOnly;
     const flash = usePage().props.flash as { success?: string; error?: string } | undefined;
     const [geo, setGeo] = useState(geoSelection);
+
+    const geocodeContext = useMemo(() => {
+        const department = departments.find((d) => d.id === geo.department_id);
+        const province = department?.provinces.find((p) => p.id === geo.province_id);
+        const district = province?.districts.find((d) => d.id === geo.district_id);
+
+        return {
+            department: department?.name ?? null,
+            province: province?.name ?? null,
+            district: district?.name ?? null,
+        };
+    }, [departments, geo.department_id, geo.province_id, geo.district_id]);
 
     const form = useForm({
         name: restaurant.name ?? '',
@@ -412,6 +424,7 @@ export function RestaurantFormPage({
                                 latitude={form.data.latitude as number | null}
                                 longitude={form.data.longitude as number | null}
                                 address={String(form.data.address)}
+                                geocodeContext={geocodeContext}
                                 defaultCenter={mapDefaults}
                                 disabled={form.processing || readOnly}
                                 geocodeUrl={panel?.baseUrl ? `${panel.baseUrl}/geocode` : '/app/restaurants/geocode'}

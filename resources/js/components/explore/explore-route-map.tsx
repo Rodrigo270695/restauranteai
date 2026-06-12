@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import L from 'leaflet';
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet';
@@ -108,7 +108,7 @@ type Props = {
     hideMarkersWhenRouted?: boolean;
 };
 
-export function ExploreRouteMap({
+export const ExploreRouteMap = memo(function ExploreRouteMap({
     markers = [],
     path: serverPath = [],
     numberedStops = [],
@@ -259,4 +259,4 @@ export function ExploreRouteMap({
             )}
         </div>
     );
-}
+});

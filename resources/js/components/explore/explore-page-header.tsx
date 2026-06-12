@@ -1,6 +1,7 @@
 import { Link, router } from '@inertiajs/react';
-import { ArrowLeft, Home } from 'lucide-react';
+import { ArrowLeft, Home, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
 import { home } from '@/routes';
 
 type Props = {
@@ -9,9 +10,17 @@ type Props = {
     backHref?: string;
     onBack?: () => void;
     showHome?: boolean;
+    variant?: 'default' | 'ai';
 };
 
-export function ExplorePageHeader({ title, subtitle, backHref, onBack, showHome = true }: Props) {
+export function ExplorePageHeader({
+    title,
+    subtitle,
+    backHref,
+    onBack,
+    showHome = true,
+    variant = 'default',
+}: Props) {
     const { t } = useTranslation();
 
     const handleBack = () => {
@@ -37,8 +46,31 @@ export function ExplorePageHeader({ title, subtitle, backHref, onBack, showHome 
                 </button>
             )}
             <div className="min-w-0 flex-1">
-                <h1 className="truncate text-lg font-bold text-gray-900">{title}</h1>
-                {subtitle && <p className="truncate text-xs text-gray-500">{subtitle}</p>}
+                <div className="flex items-center gap-2">
+                    {variant === 'ai' && (
+                        <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand-orange/15 text-brand-orange">
+                            <Sparkles className="size-4" />
+                        </span>
+                    )}
+                    <h1
+                        className={cn(
+                            'truncate text-lg font-bold',
+                            variant === 'ai' ? 'text-brand-blue' : 'text-gray-900',
+                        )}
+                    >
+                        {title}
+                    </h1>
+                </div>
+                {subtitle && (
+                    <p
+                        className={cn(
+                            'truncate text-xs',
+                            variant === 'ai' ? 'font-medium text-brand-orange-dark' : 'text-gray-500',
+                        )}
+                    >
+                        {subtitle}
+                    </p>
+                )}
             </div>
             {showHome && (
                 <Link

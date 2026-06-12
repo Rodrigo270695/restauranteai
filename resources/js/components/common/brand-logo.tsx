@@ -3,6 +3,12 @@ import { cn } from '@/lib/utils';
 
 type Surface = 'light' | 'dark';
 type Size = 'sm' | 'md' | 'lg' | 'xl' | 'hero';
+type LogoVariant = 'default' | 'navbar';
+
+const LOGO_SRC: Record<LogoVariant, string> = {
+    default: '/logo.png',
+    navbar: '/navbar.png',
+};
 
 const IMG_SIZE: Record<Size, string> = {
     sm: 'h-7',
@@ -10,6 +16,14 @@ const IMG_SIZE: Record<Size, string> = {
     lg: 'h-10',
     xl: 'h-14',
     hero: 'h-20 sm:h-24 xl:h-28',
+};
+
+const NAVBAR_IMG_SIZE: Record<Size, string> = {
+    sm: 'h-11',
+    md: 'h-12',
+    lg: 'h-16',
+    xl: 'h-[4.625rem]',
+    hero: 'h-20 sm:h-24',
 };
 
 const PAD_SIZE: Record<Size, string> = {
@@ -27,6 +41,8 @@ type Props = {
     className?: string;
     imgClassName?: string;
     alt?: string;
+    framed?: boolean;
+    logoVariant?: LogoVariant;
 };
 
 export function BrandLogo({
@@ -35,18 +51,22 @@ export function BrandLogo({
     href,
     className,
     imgClassName,
-    alt = 'DiscoverLambo',
+    alt = 'MiskiGO',
+    framed,
+    logoVariant = 'default',
 }: Props) {
+    const showFrame = framed ?? (surface === 'light' && logoVariant === 'default');
+    const sizeClass = logoVariant === 'navbar' ? NAVBAR_IMG_SIZE[size] : IMG_SIZE[size];
     const img = (
         <img
-            src="/logo.png"
+            src={LOGO_SRC[logoVariant]}
             alt={alt}
-            className={cn(IMG_SIZE[size], 'w-auto object-contain', surface === 'dark' && 'drop-shadow-lg', imgClassName)}
+            className={cn(sizeClass, 'w-auto object-contain', surface === 'dark' && 'drop-shadow-lg', imgClassName)}
         />
     );
 
     const content =
-        surface === 'light' ? (
+        showFrame ? (
             <span
                 className={cn(
                     'inline-flex items-center justify-center rounded-xl bg-brand-blue shadow-md ring-1 ring-brand-blue-dark/25',

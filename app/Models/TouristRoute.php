@@ -16,6 +16,7 @@ class TouristRoute extends Model
         'slug',
         'description',
         'status',
+        'generated_by_ai',
         'route_date',
         'completed_at',
         'stops_count',
@@ -29,6 +30,7 @@ class TouristRoute extends Model
         return [
             'route_date' => 'date',
             'completed_at' => 'datetime',
+            'generated_by_ai' => 'boolean',
             'stops_count' => 'integer',
             'total_distance_km' => 'decimal:2',
             'estimated_minutes' => 'integer',

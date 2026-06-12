@@ -5,12 +5,17 @@ use App\Support\PeruDateTime;
 use Carbon\Carbon;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     /** Corrige reservas guardadas con hora peruana interpretada como UTC. */
     public function up(): void
     {
+        if (! Schema::hasTable('restaurant_reservations')) {
+            return;
+        }
+
         RestaurantReservation::query()
             ->orderBy('id')
             ->each(function (RestaurantReservation $reservation): void {

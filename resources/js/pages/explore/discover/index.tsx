@@ -1,6 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Calendar, Filter, Heart, Route, Search, UtensilsCrossed } from 'lucide-react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserGeolocation } from '@/hooks/use-user-geolocation';
 import { ExplorePageHeader } from '@/components/explore/explore-page-header';
@@ -16,6 +16,7 @@ import { index as exploreRoutes, publish as publishRoute } from '@/routes/explor
 type DraftRoute = {
     slug: string;
     stops_count: number;
+    generated_by_ai?: boolean;
     total_distance_km?: number | null;
     estimated_minutes?: number | null;
     path_coordinates?: [number, number][];
@@ -46,6 +47,8 @@ type Props = {
     draftStopSlugs: string[];
     mapCenter: { lat: number; lng: number };
 };
+
+const DISCOVER_FILTER_ONLY = ['restaurants', 'markers', 'filters', 'favoritesCount'] as const;
 
 function DraftRoutePanel({
     draftRoute,
@@ -210,6 +213,7 @@ function DiscoverPage({
 
     const [search, setSearch] = useState(filters.search ?? '');
     const [cuisineId, setCuisineId] = useState<number | ''>(filters.cuisine_type_id ?? '');
+    const [filtersLoading, setFiltersLoading] = useState(false);
     const [routeName, setRouteName] = useState('Ruta gastronómica Chiclayo');
     const [routeDate, setRouteDate] = useState(new Date().toISOString().slice(0, 10));
     const [isPublishing, setIsPublishing] = useState(false);
@@ -222,20 +226,50 @@ function DiscoverPage({
     const favoritesOnly = filters.favorites_only === true;
     const locationActive = filters.location_active === true;
 
-    const discoverParams = (extra?: {
-        search?: string;
-        cuisine_type_id?: number | '';
-        favorites_only?: boolean;
-    }) => ({
-        search: (extra?.search ?? search) || undefined,
-        cuisine_type_id: (extra?.cuisine_type_id ?? cuisineId) || undefined,
-        favorites_only: extra?.favorites_only ?? favoritesOnly,
-        view: 'map' as const,
-        ...geoQuery(),
-    });
+    useEffect(() => {
+        setSearch(filters.search ?? '');
+        setCuisineId(filters.cuisine_type_id ?? '');
+    }, [filters.search, filters.cuisine_type_id, filters.favorites_only]);
+
+    const discoverParams = useCallback(
+        (extra?: {
+            search?: string;
+            cuisine_type_id?: number | '';
+            favorites_only?: boolean;
+        }) => ({
+            search: (extra?.search ?? search) || undefined,
+            cuisine_type_id: (extra?.cuisine_type_id ?? cuisineId) || undefined,
+            favorites_only: extra?.favorites_only ?? favoritesOnly,
+            view: 'map' as const,
+            ...geoQuery(),
+        }),
+        [search, cuisineId, favoritesOnly, geoQuery],
+    );
+
+    const navigateDiscover = useCallback(
+        (extra?: {
+            search?: string;
+            cuisine_type_id?: number | '';
+            favorites_only?: boolean;
+        }) => {
+            router.get(
+                exploreDiscoverUrl(discoverParams(extra)),
+                {},
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                    only: [...DISCOVER_FILTER_ONLY],
+                    onStart: () => setFiltersLoading(true),
+                    onFinish: () => setFiltersLoading(false),
+                },
+            );
+        },
+        [discoverParams],
+    );
 
     const applyFilters = () => {
-        router.get(exploreDiscoverUrl(discoverParams()), {}, { preserveState: true, replace: true });
+        navigateDiscover();
     };
 
     const toggleFavorite = (slug: string, currentlyFavorited: boolean) => {
@@ -259,6 +293,14 @@ function DiscoverPage({
     };
 
     const stopsCount = activeDraft.stops_count;
+    const isAiDraftRoute = Boolean(activeDraft.generated_by_ai) && stopsCount > 0;
+    const pageTitle = isAiDraftRoute
+        ? t('explore.ai_route_page_title')
+        : t('explore.nav_explore');
+    const pageSubtitle = isAiDraftRoute
+        ? t('explore.ai_route_page_subtitle', { count: stopsCount })
+        : t('explore.discoveries_chiclayo');
+    const pageHeaderVariant = isAiDraftRoute ? 'ai' : 'default';
 
     const stopOrderBySlug = useMemo(
         () => new Map(activeDraft.stops.map(s => [s.restaurant.slug, s.position])),
@@ -412,16 +454,20 @@ function DiscoverPage({
                 </Button>
             </div>
 
-            <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-thin">
+            <div
+                className={cn(
+                    'flex gap-2 overflow-x-auto pb-0.5 scrollbar-thin transition-opacity',
+                    filtersLoading && 'pointer-events-none opacity-60',
+                )}
+            >
                 <button
                     type="button"
                     onClick={() => {
+                        if (!cuisineId && !favoritesOnly) {
+                            return;
+                        }
                         setCuisineId('');
-                        router.get(
-                            exploreDiscoverUrl(discoverParams({ cuisine_type_id: '', favorites_only: false })),
-                            {},
-                            { preserveState: true },
-                        );
+                        navigateDiscover({ cuisine_type_id: '', favorites_only: false });
                     }}
                     className={cn(
                         'shrink-0 cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-semibold transition',
@@ -436,11 +482,7 @@ function DiscoverPage({
                 <button
                     type="button"
                     onClick={() => {
-                        router.get(
-                            exploreDiscoverUrl(discoverParams({ favorites_only: !favoritesOnly })),
-                            {},
-                            { preserveState: true },
-                        );
+                        navigateDiscover({ favorites_only: !favoritesOnly });
                     }}
                     className={cn(
                         'shrink-0 cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-semibold transition',
@@ -467,12 +509,11 @@ function DiscoverPage({
                         key={c.id}
                         type="button"
                         onClick={() => {
+                            if (cuisineId === c.id && !favoritesOnly) {
+                                return;
+                            }
                             setCuisineId(c.id);
-                            router.get(
-                                exploreDiscoverUrl(discoverParams({ cuisine_type_id: c.id })),
-                                {},
-                                { preserveState: true },
-                            );
+                            navigateDiscover({ cuisine_type_id: c.id, favorites_only: false });
                         }}
                         className={cn(
                             'shrink-0 cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-semibold transition',
@@ -554,11 +595,12 @@ function DiscoverPage({
             <div className="flex flex-col md:hidden">
                 <div className="space-y-3 border-b border-orange-100 bg-[#FFF8F2] p-4 pb-3">
                     <ExplorePageHeader
-                        title={t('explore.nav_explore')}
-                        subtitle={t('explore.discoveries_chiclayo')}
+                        title={pageTitle}
+                        subtitle={pageSubtitle}
+                        variant={pageHeaderVariant}
                         showHome
                     />
-                    {flash?.message && (
+                    {flash?.message && !isAiDraftRoute && (
                         <div
                             className={cn(
                                 'rounded-xl px-3 py-2 text-sm font-medium',
@@ -611,11 +653,12 @@ function DiscoverPage({
             <div className="hidden md:flex md:h-[calc(100dvh-3.5rem)] md:flex-col">
                 <div className="shrink-0 space-y-3 border-b border-orange-100 bg-[#FFF8F2] px-5 py-4 lg:px-6">
                     <ExplorePageHeader
-                        title={t('explore.nav_explore')}
-                        subtitle={t('explore.discoveries_chiclayo')}
+                        title={pageTitle}
+                        subtitle={pageSubtitle}
+                        variant={pageHeaderVariant}
                         showHome
                     />
-                    {flash?.message && (
+                    {flash?.message && !isAiDraftRoute && (
                         <div
                             className={cn(
                                 'max-w-2xl rounded-xl px-4 py-2 text-sm font-medium',

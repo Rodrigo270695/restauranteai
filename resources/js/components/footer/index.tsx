@@ -3,13 +3,15 @@ import { FooterBrand } from './footer-brand';
 import { FooterNav } from './footer-nav';
 import { FooterSocial } from './footer-social';
 
-const FOOTER_BG = '#120003';
-
 export function Footer() {
     const { t } = useTranslation();
 
     return (
-        <footer style={{ backgroundColor: FOOTER_BG }}>
+        <footer
+            style={{
+                background: 'linear-gradient(180deg, #052a58 0%, #031d3d 100%)',
+            }}
+        >
 
             {/* ── Fila principal ── */}
             <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -34,7 +36,7 @@ export function Footer() {
             </div>
 
             {/* ── Barra copyright ── */}
-            <div className="border-t border-white/6">
+            <div className="border-t border-white/10">
                 <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
                     <p className="text-center text-xs text-white/30">
                         © {new Date().getFullYear()} DiscoverLambo · {t('footer.rights')}

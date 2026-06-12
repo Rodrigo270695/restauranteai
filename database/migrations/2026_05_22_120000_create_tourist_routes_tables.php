@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('slug', 150);
             $table->text('description')->nullable();
             $table->enum('status', ['draft', 'active'])->default('draft');
+            $table->boolean('generated_by_ai')->default(false);
             $table->unsignedTinyInteger('stops_count')->default(0);
             $table->decimal('total_distance_km', 8, 2)->nullable();
             $table->unsignedSmallInteger('estimated_minutes')->nullable();
