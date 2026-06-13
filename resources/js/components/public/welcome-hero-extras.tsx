@@ -1,5 +1,7 @@
-import { Bot, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
+const MISKI_FLOAT_IMAGE = '/IMAGEN%20FLOTANTE.png';
 
 export function WelcomeHeroAiBadge() {
     const { t } = useTranslation();
@@ -21,30 +23,31 @@ export function WelcomeHeroAiBadge() {
     );
 }
 
-/** Placeholder hasta recibir el asset del robot Miski. */
+/** Tarjeta flotante de Miski con avatar del asistente. */
 export function WelcomeHeroMiskiFloat() {
     const { t } = useTranslation();
 
     return (
-        <div className="pointer-events-none absolute bottom-8 right-6 z-20 hidden max-w-[17.5rem] lg:block xl:right-10">
-            <div className="relative rounded-2xl bg-white/95 p-4 pr-10 shadow-[0_16px_40px_rgba(7,53,119,0.14)] ring-1 ring-black/5 backdrop-blur-sm">
+        <div className="pointer-events-none absolute bottom-12 right-6 z-20 hidden max-w-[25rem] lg:block xl:right-14">
+            <div className="relative rounded-3xl bg-white/95 p-6 pr-14 shadow-[0_20px_48px_rgba(7,53,119,0.16)] ring-1 ring-black/5 backdrop-blur-sm">
                 <div
-                    className="absolute -top-5 right-3 flex size-12 items-center justify-center rounded-full border-2 border-white shadow-md"
-                    style={{
-                        background: 'linear-gradient(180deg, #eef3fb 0%, #dbeafe 100%)',
-                    }}
+                    className="absolute -top-11 right-0 size-[6.5rem] overflow-hidden rounded-full border-[3px] border-white bg-white shadow-[0_10px_28px_rgba(7,53,119,0.2)]"
                     aria-hidden
                 >
-                    <Bot className="size-6 text-brand-blue" strokeWidth={2.2} />
+                    <img
+                        src={MISKI_FLOAT_IMAGE}
+                        alt=""
+                        className="size-full object-cover object-[center_15%]"
+                    />
                 </div>
 
-                <p className="text-sm font-bold leading-snug text-gray-900">
+                <p className="text-lg font-bold leading-snug text-gray-900">
                     {t('welcome.hero_miski_greeting')}{' '}
                     <span className="text-[#ffa300]">Miski</span>
                 </p>
-                <p className="mt-1.5 text-xs leading-relaxed text-gray-600">{t('welcome.hero_miski_desc')}</p>
+                <p className="mt-2.5 text-base leading-relaxed text-gray-600">{t('welcome.hero_miski_desc')}</p>
 
-                <Sparkles className="absolute bottom-3.5 right-3.5 size-4 text-[#ffa300]/80" aria-hidden />
+                <Sparkles className="absolute bottom-5 right-5 size-6 text-[#ffa300]/80" aria-hidden />
             </div>
         </div>
     );

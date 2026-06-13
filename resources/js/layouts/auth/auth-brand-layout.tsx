@@ -2,6 +2,7 @@
 import { ChefHat, MapPin, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '@/components/common/language-switcher';
+import { AuthBrandLogoRow } from '@/components/auth/auth-brand-mascot';
 import { useLanguageSync } from '@/hooks/use-language-sync';
 import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
@@ -54,14 +55,10 @@ export default function AuthBrandLayout({ children, title, description }: AuthLa
                     }}
                 />
 
-                {/* ── LOGO centrado grande ── */}
+                {/* ── Logo + mascota ── */}
                 <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-6">
-                    <Link href={home()} className="block">
-                        <img
-                            src="/logo.png"
-                            alt="DiscoverLambo"
-                            className="w-72 drop-shadow-[0_8px_32px_rgba(0,0,0,0.45)]"
-                        />
+                    <Link href={home()} className="block transition-opacity hover:opacity-95">
+                        <AuthBrandLogoRow size="desktop" />
                     </Link>
 
                     {/* Tagline */}
@@ -114,10 +111,10 @@ export default function AuthBrandLayout({ children, title, description }: AuthLa
                     </div>
                 )}
 
-                {/* Mobile logo */}
+                {/* Mobile logo + mascota */}
                 <div className="mb-8 lg:hidden">
-                    <Link href={home()} className="flex justify-center">
-                        <img src="/logo.png" alt="DiscoverLambo" className="h-24 w-auto" />
+                    <Link href={home()} className="flex justify-center transition-opacity hover:opacity-95">
+                        <AuthBrandLogoRow size="mobile" />
                     </Link>
                 </div>
 
