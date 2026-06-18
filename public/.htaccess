@@ -5,6 +5,9 @@
 
     RewriteEngine On
 
+    # cPanel/LiteSpeed: /storage/* siempre vía Laravel (evita 403 por symlink o WAF)
+    RewriteRule ^storage/.* index.php [L]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
