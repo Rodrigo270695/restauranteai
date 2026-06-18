@@ -52,9 +52,93 @@ class GalleryController extends Controller
         ]);
     }
 
-    public function store(GalleryImageRequest $request, RestaurantScopeService $scope, ?Restaurant $restaurant = null): RedirectResponse
+    public function store(GalleryImageRequest $request, RestaurantScopeService $scope): RedirectResponse
     {
-        $restaurant = $this->resolveRestaurant($request, $scope, $restaurant);
+        return $this->persistNewImage($request, $scope->forOwnerPanel($request), $request);
+    }
+
+    public function storeForRestaurant(
+        Restaurant $restaurant,
+        GalleryImageRequest $request,
+        RestaurantScopeService $scope,
+    ): RedirectResponse {
+        $restaurant = $scope->forAdminManage($request->user(), $restaurant);
+
+        return $this->persistNewImage($request, $restaurant, $request);
+    }
+
+    public function update(
+        GalleryImageRequest $request,
+        RestaurantImage $image,
+        RestaurantScopeService $scope,
+    ): RedirectResponse {
+        return $this->persistImageUpdate(
+            $request,
+            $scope->forOwnerPanel($request),
+            $image,
+        );
+    }
+
+    public function updateForRestaurant(
+        Restaurant $restaurant,
+        GalleryImageRequest $request,
+        RestaurantImage $image,
+        RestaurantScopeService $scope,
+    ): RedirectResponse {
+        $restaurant = $scope->forAdminManage($request->user(), $restaurant);
+
+        return $this->persistImageUpdate($request, $restaurant, $image);
+    }
+
+    public function destroy(
+        RestaurantImage $image,
+        RestaurantScopeService $scope,
+    ): RedirectResponse {
+        return $this->removeImage(
+            request(),
+            $scope->forOwnerPanel(request()),
+            $image,
+        );
+    }
+
+    public function destroyForRestaurant(
+        Restaurant $restaurant,
+        RestaurantImage $image,
+        RestaurantScopeService $scope,
+    ): RedirectResponse {
+        $restaurant = $scope->forAdminManage(request()->user(), $restaurant);
+
+        return $this->removeImage(request(), $restaurant, $image);
+    }
+
+    public function setCover(
+        RestaurantImage $image,
+        RestaurantScopeService $scope,
+    ): RedirectResponse {
+        return $this->applyCover(
+            request(),
+            $scope->forOwnerPanel(request()),
+            $image,
+        );
+    }
+
+    public function setCoverForRestaurant(
+        Restaurant $restaurant,
+        RestaurantImage $image,
+        RestaurantScopeService $scope,
+    ): RedirectResponse {
+        $restaurant = $scope->forAdminManage(request()->user(), $restaurant);
+
+        return $this->applyCover(request(), $restaurant, $image);
+    }
+
+    private function persistNewImage(
+        GalleryImageRequest $request,
+        Restaurant $restaurant,
+        Request $authRequest,
+    ): RedirectResponse {
+        abort_unless(app(RestaurantScopeService::class)->canManageGallery($authRequest->user(), $restaurant), 403);
+
         $data = $request->validated();
 
         $path = $request->file('image')->store("restaurants/{$restaurant->id}", 'public');
@@ -76,13 +160,12 @@ class GalleryController extends Controller
         return back()->with('success', 'Foto agregada a la galería.');
     }
 
-    public function update(
+    private function persistImageUpdate(
         GalleryImageRequest $request,
+        Restaurant $restaurant,
         RestaurantImage $image,
-        RestaurantScopeService $scope,
-        ?Restaurant $restaurant = null,
     ): RedirectResponse {
-        $restaurant = $this->resolveRestaurant($request, $scope, $restaurant);
+        abort_unless(app(RestaurantScopeService::class)->canManageGallery($request->user(), $restaurant), 403);
         abort_unless($image->restaurant_id === $restaurant->id, 403);
 
         $data = $request->validated();
@@ -106,13 +189,12 @@ class GalleryController extends Controller
         return back()->with('success', 'Foto actualizada.');
     }
 
-    public function destroy(
+    private function removeImage(
+        Request $request,
+        Restaurant $restaurant,
         RestaurantImage $image,
-        RestaurantScopeService $scope,
-        ?Restaurant $restaurant = null,
     ): RedirectResponse {
-        $restaurant = $this->resolveRestaurant(request(), $scope, $restaurant);
-        abort_unless(app(RestaurantScopeService::class)->canManageGallery(request()->user(), $restaurant), 403);
+        abort_unless(app(RestaurantScopeService::class)->canManageGallery($request->user(), $restaurant), 403);
         abort_unless($image->restaurant_id === $restaurant->id, 403);
 
         $wasCover = $image->is_cover;
@@ -131,27 +213,17 @@ class GalleryController extends Controller
         return back()->with('success', 'Foto eliminada.');
     }
 
-    public function setCover(
+    private function applyCover(
+        Request $request,
+        Restaurant $restaurant,
         RestaurantImage $image,
-        RestaurantScopeService $scope,
-        ?Restaurant $restaurant = null,
     ): RedirectResponse {
-        $restaurant = $this->resolveRestaurant(request(), $scope, $restaurant);
-        abort_unless(app(RestaurantScopeService::class)->canManageGallery(request()->user(), $restaurant), 403);
+        abort_unless(app(RestaurantScopeService::class)->canManageGallery($request->user(), $restaurant), 403);
         abort_unless($image->restaurant_id === $restaurant->id, 403);
 
         $this->setAsCover($restaurant, $image);
 
         return back()->with('success', 'Portada actualizada.');
-    }
-
-    private function resolveRestaurant(Request $request, RestaurantScopeService $scope, ?Restaurant $bound): Restaurant
-    {
-        if ($bound) {
-            return $scope->forAdminManage($request->user(), $bound);
-        }
-
-        return $scope->forOwnerPanel($request);
     }
 
     private function setAsCover($restaurant, RestaurantImage $image): void

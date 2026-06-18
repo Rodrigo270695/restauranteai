@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminAnalyticsController;
+use App\Http\Controllers\Admin\AdminReservationController;
 use App\Http\Controllers\Admin\AdminReviewController;
 use App\Http\Controllers\Admin\BusinessRequestController;
 use App\Http\Controllers\Admin\CatalogController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\App\AnalyticsController;
 use App\Http\Controllers\App\DishController;
 use App\Http\Controllers\App\GalleryController;
 use App\Http\Controllers\App\PromotionController;
+use App\Http\Controllers\App\ReservationController;
 use App\Http\Controllers\App\RestaurantController as AppRestaurantController;
 use App\Http\Controllers\App\RestaurantLanguagesController;
 use App\Http\Controllers\App\RestaurantServicesController;
@@ -28,9 +30,9 @@ use App\Http\Controllers\ExploreController;
 use App\Http\Controllers\ExploreDiscoverController;
 use App\Http\Controllers\ExploreRecommendationController;
 use App\Http\Controllers\ExploreReservationController;
-use App\Http\Controllers\ExploreReviewController;
 use App\Http\Controllers\ExploreRestaurantController;
 use App\Http\Controllers\ExploreRestaurantInteractionController;
+use App\Http\Controllers\ExploreReviewController;
 use App\Http\Controllers\ExploreRouteRecommendationController;
 use App\Http\Controllers\NearbyRestaurantsController;
 use App\Http\Controllers\OwnerPendingController;
@@ -95,9 +97,9 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
             Route::get('reviews', [ReviewController::class, 'index'])->name('reviews');
             Route::put('reviews/{review}/respond', [ReviewController::class, 'respond'])->name('reviews.respond');
 
-            Route::get('reservations', [\App\Http\Controllers\App\ReservationController::class, 'index'])->name('reservations');
-            Route::post('reservations/{reservation}/confirm', [\App\Http\Controllers\App\ReservationController::class, 'confirm'])->name('reservations.confirm');
-            Route::post('reservations/{reservation}/reject', [\App\Http\Controllers\App\ReservationController::class, 'reject'])->name('reservations.reject');
+            Route::get('reservations', [ReservationController::class, 'index'])->name('reservations');
+            Route::post('reservations/{reservation}/confirm', [ReservationController::class, 'confirm'])->name('reservations.confirm');
+            Route::post('reservations/{reservation}/reject', [ReservationController::class, 'reject'])->name('reservations.reject');
 
             Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics');
         });
@@ -108,9 +110,9 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
             Route::get('reviews', [AdminReviewController::class, 'index'])->name('reviews');
             Route::put('reviews/{review}/respond', [AdminReviewController::class, 'respond'])->name('reviews.respond');
 
-            Route::get('reservations', [\App\Http\Controllers\Admin\AdminReservationController::class, 'index'])->name('reservations');
-            Route::post('reservations/{reservation}/confirm', [\App\Http\Controllers\Admin\AdminReservationController::class, 'confirm'])->name('reservations.confirm');
-            Route::post('reservations/{reservation}/reject', [\App\Http\Controllers\Admin\AdminReservationController::class, 'reject'])->name('reservations.reject');
+            Route::get('reservations', [AdminReservationController::class, 'index'])->name('reservations');
+            Route::post('reservations/{reservation}/confirm', [AdminReservationController::class, 'confirm'])->name('reservations.confirm');
+            Route::post('reservations/{reservation}/reject', [AdminReservationController::class, 'reject'])->name('reservations.reject');
 
             Route::get('analytics', [AdminAnalyticsController::class, 'index'])->name('analytics');
 
@@ -142,11 +144,11 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
                 Route::put('schedules', [ScheduleController::class, 'sync'])->name('schedules.sync');
 
                 Route::get('gallery', [GalleryController::class, 'indexForRestaurant'])->name('gallery');
-                Route::post('gallery', [GalleryController::class, 'store'])->name('gallery.store');
-                Route::match(['put', 'post'], 'gallery/{image}', [GalleryController::class, 'update'])->name('gallery.update');
-                Route::delete('gallery/{image}', [GalleryController::class, 'destroy'])->name('gallery.destroy');
-                Route::post('gallery/{image}/delete', [GalleryController::class, 'destroy'])->name('gallery.delete');
-                Route::post('gallery/{image}/cover', [GalleryController::class, 'setCover'])->name('gallery.cover');
+                Route::post('gallery', [GalleryController::class, 'storeForRestaurant'])->name('gallery.store');
+                Route::match(['put', 'post'], 'gallery/{image}', [GalleryController::class, 'updateForRestaurant'])->name('gallery.update');
+                Route::delete('gallery/{image}', [GalleryController::class, 'destroyForRestaurant'])->name('gallery.destroy');
+                Route::post('gallery/{image}/delete', [GalleryController::class, 'destroyForRestaurant'])->name('gallery.delete');
+                Route::post('gallery/{image}/cover', [GalleryController::class, 'setCoverForRestaurant'])->name('gallery.cover');
 
                 Route::get('services', [RestaurantServicesController::class, 'indexForRestaurant'])->name('services');
                 Route::put('services', [RestaurantServicesController::class, 'sync'])->name('services.sync');
@@ -166,9 +168,9 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
 
                 Route::get('analytics', [AnalyticsController::class, 'indexForRestaurant'])->name('analytics');
 
-                Route::get('reservations', [\App\Http\Controllers\App\ReservationController::class, 'indexForRestaurant'])->name('reservations');
-                Route::post('reservations/{reservation}/confirm', [\App\Http\Controllers\App\ReservationController::class, 'confirmForRestaurant'])->name('reservations.confirm');
-                Route::post('reservations/{reservation}/reject', [\App\Http\Controllers\App\ReservationController::class, 'rejectForRestaurant'])->name('reservations.reject');
+                Route::get('reservations', [ReservationController::class, 'indexForRestaurant'])->name('reservations');
+                Route::post('reservations/{reservation}/confirm', [ReservationController::class, 'confirmForRestaurant'])->name('reservations.confirm');
+                Route::post('reservations/{reservation}/reject', [ReservationController::class, 'rejectForRestaurant'])->name('reservations.reject');
             });
 
             Route::get('business-requests', [BusinessRequestController::class, 'index'])->name('business-requests');

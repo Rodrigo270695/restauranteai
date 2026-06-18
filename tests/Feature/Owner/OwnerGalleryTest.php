@@ -67,6 +67,25 @@ test('super admin can open admin gallery route for a restaurant', function () {
         ->assertOk();
 });
 
+test('super admin can delete gallery image via admin post route', function () {
+    [, $restaurant] = galleryOwnerWithRestaurant();
+    $admin = User::factory()->create();
+    $admin->assignRole('super_admin');
+
+    $image = $restaurant->images()->create([
+        'path' => 'restaurants/test/admin-delete.jpg',
+        'type' => 'interior',
+        'display_order' => 0,
+        'is_cover' => false,
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('app.admin.restaurants.manage.gallery.delete', [$restaurant, $image]))
+        ->assertRedirect();
+
+    expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
+});
+
 test('owner can delete gallery image via post route', function () {
     [$user, $restaurant] = galleryOwnerWithRestaurant();
     $user->revokePermissionTo('manage_gallery');
