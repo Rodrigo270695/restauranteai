@@ -77,8 +77,8 @@ echo \"OK: \" . count(\$manifest) . \" entradas del manifest presentes en {\$doc
 "
 
 echo "==> Verificando rutas de galería..."
-php artisan route:list --name=gallery.unlink | grep -F 'gallery.unlink' || {
-  echo "ERROR: No existe la ruta app.admin.restaurants.manage.gallery.unlink. ¿git pull completo?"
+php artisan route:list --name=gallery.destroy.post | grep -F 'gallery.destroy.post' || {
+  echo "ERROR: Falta la ruta POST app/gallery/{image} (gallery.destroy.post)."
   exit 1
 }
 

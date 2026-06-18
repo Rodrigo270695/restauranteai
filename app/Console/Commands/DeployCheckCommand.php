@@ -34,8 +34,8 @@ class DeployCheckCommand extends Command
         $controller = File::get($controllerPath);
 
         $checks = [
-            'mutateGalleryImage' => str_contains($controller, 'function mutateGalleryImage'),
-            'wantsDelete' => str_contains($controller, 'function wantsDelete'),
+            'updateGalleryImage' => str_contains($controller, 'function updateGalleryImage'),
+            'gallery.destroy.post route file' => str_contains(File::get(base_path('routes/web.php')), "->name('gallery.destroy.post')"),
             'gallery.unlink route file' => str_contains(File::get(base_path('routes/web.php')), 'gallery/{image}/unlink'),
         ];
 

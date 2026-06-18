@@ -69,15 +69,11 @@ class GalleryController extends Controller
         return $this->persistNewImage($request, $restaurant, $request);
     }
 
-    public function mutateGalleryImage(
+    public function updateGalleryImage(
         Request $request,
         RestaurantImage $image,
         RestaurantScopeService $scope,
     ): RedirectResponse {
-        if ($this->wantsDelete($request)) {
-            return $this->removeImageForUser($request, $image, $scope);
-        }
-
         $restaurant = $scope->forOwnerPanel($request);
         abort_unless($image->restaurant_id === $restaurant->id, 403);
 
@@ -109,7 +105,7 @@ class GalleryController extends Controller
         return back()->with('success', 'Foto actualizada.');
     }
 
-    public function mutateGalleryImageForRestaurant(
+    public function updateGalleryImageForRestaurant(
         Restaurant $restaurant,
         Request $request,
         RestaurantImage $image,
@@ -117,10 +113,6 @@ class GalleryController extends Controller
     ): RedirectResponse {
         abort_unless($scope->canManageGallery($request->user(), $restaurant), 403);
         abort_unless($image->restaurant_id === $restaurant->id, 404);
-
-        if ($this->wantsDelete($request)) {
-            return $this->removeImage($request, $restaurant, $image);
-        }
 
         $validated = $request->validate([
             'image' => ['sometimes', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
@@ -263,37 +255,6 @@ class GalleryController extends Controller
         $this->setAsCover($restaurant, $image);
 
         return back()->with('success', 'Portada actualizada.');
-    }
-
-    private function wantsDelete(Request $request): bool
-    {
-        if ($request->isMethod('delete')) {
-            return true;
-        }
-
-        $method = strtolower((string) (
-            $request->input('_method')
-            ?: $request->header('X-HTTP-Method-Override')
-            ?: $request->header('X-Http-Method-Override')
-            ?: ''
-        ));
-
-        if (in_array($method, ['delete', 'remove'], true)) {
-            return true;
-        }
-
-        // JS desplegado en cPanel: POST vacío a /app/gallery/{id} = eliminar
-        if ($request->isMethod('post')
-            && ! $request->hasFile('image')
-            && ! $request->has('type')
-            && ! $request->has('alt_text')
-            && ! $request->has('display_order')
-            && ! $request->boolean('is_cover')
-        ) {
-            return true;
-        }
-
-        return false;
     }
 
     private function setAsCover($restaurant, RestaurantImage $image): void

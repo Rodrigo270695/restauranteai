@@ -141,7 +141,7 @@ test('super admin impersonating can delete gallery image via method spoof', func
 
     $this->actingAs($admin)
         ->withSession([RestaurantScopeService::ACTING_SESSION_KEY => $restaurant->id])
-        ->post(route('app.gallery.update', $image), ['_method' => 'delete'])
+        ->delete(route('app.gallery.destroy', $image))
         ->assertRedirect();
 
     expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
@@ -159,7 +159,7 @@ test('owner can delete gallery image via empty post to gallery id', function () 
     ]);
 
     $this->actingAs($user)
-        ->post(route('app.gallery.update', $image), [])
+        ->post(route('app.gallery.destroy.post', $image), [])
         ->assertRedirect();
 
     expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
