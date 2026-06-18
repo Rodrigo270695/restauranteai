@@ -80,7 +80,7 @@ test('super admin can delete gallery image via admin post route', function () {
     ]);
 
     $this->actingAs($admin)
-        ->post(route('app.admin.restaurants.manage.gallery.delete', [$restaurant, $image]))
+        ->post(route('app.admin.restaurants.manage.gallery.remove', [$restaurant, $image]))
         ->assertRedirect();
 
     expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
@@ -100,7 +100,7 @@ test('super admin can delete gallery without restaurants view permission', funct
     ]);
 
     $this->actingAs($admin)
-        ->post(route('app.admin.restaurants.manage.gallery.delete', [$restaurant, $image]))
+        ->post(route('app.admin.restaurants.manage.gallery.remove', [$restaurant, $image]))
         ->assertRedirect();
 
     expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
@@ -118,7 +118,7 @@ test('owner can delete gallery image via post route', function () {
     ]);
 
     $this->actingAs($user)
-        ->post(route('app.gallery.delete', $image))
+        ->post(route('app.gallery.remove', $image))
         ->assertRedirect();
 
     expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();

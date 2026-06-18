@@ -273,7 +273,7 @@ export function RestaurantGalleryPage({ restaurant, owner, images, stats, canMan
                 variant="destructive"
                 onConfirm={() => {
                     if (deleteTarget) {
-                        router.post(`${galleryBase}/${deleteTarget.id}/delete`, {}, {
+                        router.post(`${galleryBase}/${deleteTarget.id}/remove`, {}, {
                             preserveScroll: true,
                             onFinish: () => setDeleteTarget(null),
                         });
