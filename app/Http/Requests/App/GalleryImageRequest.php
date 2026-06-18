@@ -2,6 +2,9 @@
 
 namespace App\Http\Requests\App;
 
+use App\Models\Restaurant;
+use App\Models\RestaurantImage;
+use App\Services\RestaurantScopeService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -12,7 +15,15 @@ class GalleryImageRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()?->can('manage_gallery') ?? false;
+        $user = $this->user();
+        if (! $user) {
+            return false;
+        }
+
+        $scope = app(RestaurantScopeService::class);
+        $restaurant = $this->resolveRestaurant($scope);
+
+        return $restaurant && $scope->canManageGallery($user, $restaurant);
     }
 
     public function rules(): array
@@ -26,5 +37,24 @@ class GalleryImageRequest extends FormRequest
             'display_order' => ['nullable', 'integer', 'min:0', 'max:255'],
             'is_cover' => ['sometimes', 'boolean'],
         ];
+    }
+
+    private function resolveRestaurant(RestaurantScopeService $scope): ?Restaurant
+    {
+        $bound = $this->route('restaurant');
+        if ($bound instanceof Restaurant) {
+            return $bound;
+        }
+
+        $image = $this->route('image');
+        if ($image instanceof RestaurantImage) {
+            return $image->restaurant;
+        }
+
+        try {
+            return $scope->forOwnerPanel($this);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

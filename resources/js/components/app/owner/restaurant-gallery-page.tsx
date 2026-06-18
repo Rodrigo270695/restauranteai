@@ -32,6 +32,7 @@ type Props = {
     owner: { name: string; business_name?: string | null };
     images: GalleryImage[];
     stats: { total: number; has_cover: boolean };
+    canManageGallery?: boolean;
     panel?: PanelContext;
 };
 
@@ -46,10 +47,10 @@ const defaultGalleryForm = (): GalleryFormData => ({
     alt_text: '',
 });
 
-export function RestaurantGalleryPage({ restaurant, owner, images, stats, panel }: Props) {
+export function RestaurantGalleryPage({ restaurant, owner, images, stats, canManageGallery, panel }: Props) {
     const can = useCan();
     const readOnly = useOwnerReadOnly();
-    const canManage = can('manage_gallery') && !readOnly;
+    const canManage = (canManageGallery ?? can('manage_gallery')) && !readOnly;
     const galleryBase = scopedPath('/gallery', panel);
     const flash = usePage().props.flash as { success?: string; error?: string } | undefined;
 

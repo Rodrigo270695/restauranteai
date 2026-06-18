@@ -24,11 +24,13 @@ class GalleryController extends Controller
 
     public function indexForRestaurant(Request $request, Restaurant $restaurant, bool $admin = true): Response
     {
+        $scope = app(RestaurantScopeService::class);
+
         if ($admin) {
-            abort_unless(app(RestaurantScopeService::class)->canManageAsAdmin($request->user(), $restaurant), 403);
+            abort_unless($scope->canManageAsAdmin($request->user(), $restaurant), 403);
         }
 
-        abort_unless($request->user()?->can('manage_gallery'), 403);
+        abort_unless($scope->canManageGallery($request->user(), $restaurant), 403);
 
         $images = $restaurant->images()
             ->orderByDesc('is_cover')
@@ -41,6 +43,7 @@ class GalleryController extends Controller
 
         return Inertia::render('app/gallery', [
             ...OwnerPanel::props($restaurant, $admin),
+            'canManageGallery' => $scope->canManageGallery($request->user(), $restaurant),
             'images' => $images->values(),
             'stats' => [
                 'total' => $images->count(),
@@ -108,9 +111,8 @@ class GalleryController extends Controller
         RestaurantScopeService $scope,
         ?Restaurant $restaurant = null,
     ): RedirectResponse {
-        abort_unless(request()->user()?->can('manage_gallery'), 403);
-
         $restaurant = $this->resolveRestaurant(request(), $scope, $restaurant);
+        abort_unless(app(RestaurantScopeService::class)->canManageGallery(request()->user(), $restaurant), 403);
         abort_unless($image->restaurant_id === $restaurant->id, 403);
 
         $wasCover = $image->is_cover;
@@ -134,9 +136,8 @@ class GalleryController extends Controller
         RestaurantScopeService $scope,
         ?Restaurant $restaurant = null,
     ): RedirectResponse {
-        abort_unless(request()->user()?->can('manage_gallery'), 403);
-
         $restaurant = $this->resolveRestaurant(request(), $scope, $restaurant);
+        abort_unless(app(RestaurantScopeService::class)->canManageGallery(request()->user(), $restaurant), 403);
         abort_unless($image->restaurant_id === $restaurant->id, 403);
 
         $this->setAsCover($restaurant, $image);

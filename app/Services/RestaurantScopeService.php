@@ -45,6 +45,24 @@ class RestaurantScopeService
             && $user->can('restaurants.view');
     }
 
+    public function canManageGallery(?User $user, Restaurant $restaurant): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if ($this->canManageAsAdmin($user, $restaurant)) {
+            return true;
+        }
+
+        if ($user->hasRole('restaurant_owner')
+            && $user->restaurants()->whereKey($restaurant->id)->exists()) {
+            return true;
+        }
+
+        return $user->can('manage_gallery');
+    }
+
     public function isActing(Request $request): bool
     {
         return $request->session()->has(self::ACTING_SESSION_KEY);
