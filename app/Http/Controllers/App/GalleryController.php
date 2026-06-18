@@ -12,6 +12,7 @@ use App\Support\PublicStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -74,18 +75,38 @@ class GalleryController extends Controller
         RestaurantScopeService $scope,
     ): RedirectResponse {
         if ($this->wantsDelete($request)) {
-            return $this->destroy($image, $scope);
+            return $this->removeImageForUser($request, $image, $scope);
         }
 
-        $formRequest = GalleryImageRequest::createFrom($request);
-        $formRequest->setContainer(app())->setRedirector(app('redirect'));
-        $formRequest->validateResolved();
+        $restaurant = $scope->forOwnerPanel($request);
+        abort_unless($image->restaurant_id === $restaurant->id, 403);
 
-        return $this->persistImageUpdate(
-            $formRequest,
-            $scope->forOwnerPanel($request),
-            $image,
-        );
+        $validated = $request->validate([
+            'image' => ['sometimes', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+            'alt_text' => ['nullable', 'string', 'max:150'],
+            'type' => ['sometimes', Rule::in(GalleryImageRequest::GALLERY_TYPES)],
+            'display_order' => ['nullable', 'integer', 'min:0', 'max:255'],
+            'is_cover' => ['sometimes', 'boolean'],
+        ]);
+
+        $updates = [
+            'alt_text' => $validated['alt_text'] ?? $image->alt_text,
+            'type' => $validated['type'] ?? $image->type,
+            'display_order' => $validated['display_order'] ?? $image->display_order,
+        ];
+
+        if ($request->hasFile('image')) {
+            Storage::disk('public')->delete($image->path);
+            $updates['path'] = $request->file('image')->store("restaurants/{$restaurant->id}", 'public');
+        }
+
+        $image->update($updates);
+
+        if ($request->boolean('is_cover')) {
+            $this->setAsCover($restaurant, $image->fresh());
+        }
+
+        return back()->with('success', 'Foto actualizada.');
     }
 
     public function mutateGalleryImageForRestaurant(
@@ -101,43 +122,39 @@ class GalleryController extends Controller
             return $this->removeImage($request, $restaurant, $image);
         }
 
-        $formRequest = GalleryImageRequest::createFrom($request);
-        $formRequest->setContainer(app())->setRedirector(app('redirect'));
-        $formRequest->validateResolved();
+        $validated = $request->validate([
+            'image' => ['sometimes', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+            'alt_text' => ['nullable', 'string', 'max:150'],
+            'type' => ['sometimes', Rule::in(GalleryImageRequest::GALLERY_TYPES)],
+            'display_order' => ['nullable', 'integer', 'min:0', 'max:255'],
+            'is_cover' => ['sometimes', 'boolean'],
+        ]);
 
-        return $this->persistImageUpdate($formRequest, $restaurant, $image);
-    }
+        $updates = [
+            'alt_text' => $validated['alt_text'] ?? $image->alt_text,
+            'type' => $validated['type'] ?? $image->type,
+            'display_order' => $validated['display_order'] ?? $image->display_order,
+        ];
 
-    public function update(
-        GalleryImageRequest $request,
-        RestaurantImage $image,
-        RestaurantScopeService $scope,
-    ): RedirectResponse {
-        return $this->persistImageUpdate(
-            $request,
-            $scope->forOwnerPanel($request),
-            $image,
-        );
-    }
+        if ($request->hasFile('image')) {
+            Storage::disk('public')->delete($image->path);
+            $updates['path'] = $request->file('image')->store("restaurants/{$restaurant->id}", 'public');
+        }
 
-    public function updateForRestaurant(
-        Restaurant $restaurant,
-        GalleryImageRequest $request,
-        RestaurantImage $image,
-        RestaurantScopeService $scope,
-    ): RedirectResponse {
-        abort_unless($scope->canManageGallery($request->user(), $restaurant), 403);
+        $image->update($updates);
 
-        return $this->persistImageUpdate($request, $restaurant, $image);
+        if ($request->boolean('is_cover')) {
+            $this->setAsCover($restaurant, $image->fresh());
+        }
+
+        return back()->with('success', 'Foto actualizada.');
     }
 
     public function destroy(
         RestaurantImage $image,
         RestaurantScopeService $scope,
     ): RedirectResponse {
-        $restaurant = $scope->forOwnerPanel(request());
-
-        return $this->removeImage(request(), $restaurant, $image);
+        return $this->removeImageForUser(request(), $image, $scope);
     }
 
     public function destroyForRestaurant(
@@ -146,6 +163,7 @@ class GalleryController extends Controller
         RestaurantScopeService $scope,
     ): RedirectResponse {
         abort_unless($scope->canManageGallery(request()->user(), $restaurant), 403);
+        abort_unless($image->restaurant_id === $restaurant->id, 404);
 
         return $this->removeImage(request(), $restaurant, $image);
     }
@@ -169,6 +187,18 @@ class GalleryController extends Controller
         abort_unless($scope->canManageGallery(request()->user(), $restaurant), 403);
 
         return $this->applyCover(request(), $restaurant, $image);
+    }
+
+    private function removeImageForUser(
+        Request $request,
+        RestaurantImage $image,
+        RestaurantScopeService $scope,
+    ): RedirectResponse {
+        $restaurant = $image->restaurant;
+        abort_unless($restaurant, 404);
+        abort_unless($scope->canManageGallery($request->user(), $restaurant), 403);
+
+        return $this->removeImage($request, $restaurant, $image);
     }
 
     private function persistNewImage(
@@ -199,41 +229,11 @@ class GalleryController extends Controller
         return back()->with('success', 'Foto agregada a la galería.');
     }
 
-    private function persistImageUpdate(
-        GalleryImageRequest $request,
-        Restaurant $restaurant,
-        RestaurantImage $image,
-    ): RedirectResponse {
-        abort_unless(app(RestaurantScopeService::class)->canManageGallery($request->user(), $restaurant), 403);
-        abort_unless($image->restaurant_id === $restaurant->id, 403);
-
-        $data = $request->validated();
-        $updates = [
-            'alt_text' => $data['alt_text'] ?? $image->alt_text,
-            'type' => $data['type'] ?? $image->type,
-            'display_order' => $data['display_order'] ?? $image->display_order,
-        ];
-
-        if ($request->hasFile('image')) {
-            Storage::disk('public')->delete($image->path);
-            $updates['path'] = $request->file('image')->store("restaurants/{$restaurant->id}", 'public');
-        }
-
-        $image->update($updates);
-
-        if ($request->boolean('is_cover')) {
-            $this->setAsCover($restaurant, $image->fresh());
-        }
-
-        return back()->with('success', 'Foto actualizada.');
-    }
-
     private function removeImage(
         Request $request,
         Restaurant $restaurant,
         RestaurantImage $image,
     ): RedirectResponse {
-        abort_unless(app(RestaurantScopeService::class)->canManageGallery($request->user(), $restaurant), 403);
         abort_unless($image->restaurant_id === $restaurant->id, 403);
 
         $wasCover = $image->is_cover;
@@ -278,7 +278,22 @@ class GalleryController extends Controller
             ?: ''
         ));
 
-        return in_array($method, ['delete', 'remove'], true);
+        if (in_array($method, ['delete', 'remove'], true)) {
+            return true;
+        }
+
+        // JS desplegado en cPanel: POST vacío a /app/gallery/{id} = eliminar
+        if ($request->isMethod('post')
+            && ! $request->hasFile('image')
+            && ! $request->has('type')
+            && ! $request->has('alt_text')
+            && ! $request->has('display_order')
+            && ! $request->boolean('is_cover')
+        ) {
+            return true;
+        }
+
+        return false;
     }
 
     private function setAsCover($restaurant, RestaurantImage $image): void

@@ -147,6 +147,24 @@ test('super admin impersonating can delete gallery image via method spoof', func
     expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
 });
 
+test('owner can delete gallery image via empty post to gallery id', function () {
+    [$user, $restaurant] = galleryOwnerWithRestaurant();
+    $user->revokePermissionTo('manage_gallery');
+
+    $image = $restaurant->images()->create([
+        'path' => 'restaurants/test/empty-post.jpg',
+        'type' => 'interior',
+        'display_order' => 0,
+        'is_cover' => false,
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('app.gallery.update', $image), [])
+        ->assertRedirect();
+
+    expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
+});
+
 test('owner can delete gallery image via post route', function () {
     [$user, $restaurant] = galleryOwnerWithRestaurant();
     $user->revokePermissionTo('manage_gallery');
