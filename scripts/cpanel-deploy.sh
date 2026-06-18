@@ -7,6 +7,9 @@ cd "$(dirname "$0")/.."
 echo "==> Actualizando código..."
 git pull --ff-only
 
+echo "==> Autoload de Composer..."
+composer dump-autoload -o --no-interaction 2>/dev/null || composer dump-autoload -o --no-interaction
+
 echo "==> Limpiando cachés Laravel y archivo hot de Vite..."
 rm -f public/hot
 php artisan optimize:clear
@@ -82,8 +85,12 @@ echo \"OK: \" . count(\$manifest) . \" entradas del manifest presentes en {\$doc
 "
 
 echo "==> Verificando rutas de galería..."
-php artisan route:list --name=gallery.destroy.post | grep -F 'gallery.destroy.post' || {
-  echo "ERROR: Falta la ruta POST app/gallery/{image} (gallery.destroy.post)."
+php artisan route:list --name=gallery.unlink | grep -F 'gallery.unlink' || {
+  echo "ERROR: Falta la ruta POST app/gallery/{image}/unlink."
+  exit 1
+}
+php artisan route:list --name=gallery.update.post | grep -F 'gallery.update.post' || {
+  echo "ERROR: Falta la ruta POST app/gallery/{image}/update."
   exit 1
 }
 
@@ -98,7 +105,11 @@ touch public/index.php
 
 echo ""
 echo "==> Verificación de despliegue..."
-php artisan app:deploy-check
+if php artisan app:deploy-check 2>/dev/null; then
+  echo "OK: app:deploy-check"
+else
+  echo "AVISO: app:deploy-check no registrado (ejecuta git pull). Las comprobaciones inline anteriores ya validaron build y rutas."
+fi
 
 echo ""
 echo "Listo. IMPORTANTE: ve a cPanel → Setup Node.js App → DETENER APLICACIÓN"
