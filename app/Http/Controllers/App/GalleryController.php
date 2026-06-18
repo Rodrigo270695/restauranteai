@@ -40,7 +40,7 @@ class GalleryController extends Controller
             ->orderBy('display_order')
             ->orderBy('id')
             ->get()
-            ->map(fn (RestaurantImage $img) => $this->formatImage($img, $restaurant, $admin));
+            ->map(fn (RestaurantImage $img) => $this->formatImage($img));
 
         $cover = $images->firstWhere('is_cover', true);
 
@@ -78,8 +78,9 @@ class GalleryController extends Controller
         RestaurantImage $image,
         RestaurantScopeService $scope,
     ): RedirectResponse {
-        $restaurant = $scope->forOwnerPanel($request);
-        abort_unless($image->restaurant_id === $restaurant->id, 403);
+        $restaurant = $image->restaurant;
+        abort_unless($restaurant, 404);
+        abort_unless($scope->canManageGallery($request->user(), $restaurant), 403);
 
         $validated = $request->validate([
             'image' => ['sometimes', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
@@ -151,19 +152,9 @@ class GalleryController extends Controller
         RestaurantImage $image,
         RestaurantScopeService $scope,
     ): RedirectResponse {
-        $restaurant = $scope->forOwnerPanel($request);
-
-        if ($image->restaurant_id !== $restaurant->id) {
-            Log::warning('gallery.destroy owner mismatch', [
-                'user_id' => $request->user()?->id,
-                'panel_restaurant_id' => $restaurant->id,
-                'image_id' => $image->id,
-                'image_restaurant_id' => $image->restaurant_id,
-                'route' => $request->route()?->getName(),
-            ]);
-
-            return $this->denyGalleryMutation($request, 'Esta foto no pertenece al local activo.');
-        }
+        $restaurant = $image->restaurant;
+        abort_unless($restaurant, 404);
+        abort_unless($scope->canManageGallery($request->user(), $restaurant), 403);
 
         return $this->removeImage($request, $restaurant, $image);
     }
@@ -197,11 +188,12 @@ class GalleryController extends Controller
         RestaurantImage $image,
         RestaurantScopeService $scope,
     ): RedirectResponse {
-        return $this->applyCover(
-            request(),
-            $scope->forOwnerPanel(request()),
-            $image,
-        );
+        $request = request();
+        $restaurant = $image->restaurant;
+        abort_unless($restaurant, 404);
+        abort_unless($scope->canManageGallery($request->user(), $restaurant), 403);
+
+        return $this->applyCover($request, $restaurant, $image);
     }
 
     public function setCoverForRestaurant(
@@ -295,7 +287,7 @@ class GalleryController extends Controller
     }
 
     /** @return array<string, mixed> */
-    private function formatImage(RestaurantImage $img, Restaurant $restaurant, bool $admin): array
+    private function formatImage(RestaurantImage $img): array
     {
         return [
             'id' => $img->id,
@@ -304,17 +296,6 @@ class GalleryController extends Controller
             'type' => $img->type,
             'display_order' => $img->display_order,
             'is_cover' => (bool) $img->is_cover,
-            'urls' => [
-                'unlink' => $admin
-                    ? route('app.admin.restaurants.manage.gallery.detach', [$restaurant, $img])
-                    : route('app.gallery.detach', $img),
-                'cover' => $admin
-                    ? route('app.admin.restaurants.manage.gallery.cover', [$restaurant, $img])
-                    : route('app.gallery.cover', $img),
-                'update' => $admin
-                    ? route('app.admin.restaurants.manage.gallery.update.post', [$restaurant, $img])
-                    : route('app.gallery.update.post', $img),
-            ],
         ];
     }
 }

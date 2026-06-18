@@ -25,11 +25,6 @@ export type GalleryImage = {
     type: GalleryType | 'platos';
     display_order: number;
     is_cover: boolean;
-    urls: {
-        unlink: string;
-        cover: string;
-        update: string;
-    };
 };
 
 type Props = {
@@ -52,6 +47,10 @@ const defaultGalleryForm = (): GalleryFormData => ({
     type: 'interior',
     alt_text: '',
 });
+
+function galleryActionUrl(base: string, imageId: number, action: 'cover' | 'detach' | 'update'): string {
+    return `${base}/${imageId}/${action}`;
+}
 
 export function RestaurantGalleryPage({ restaurant, owner, images, stats, canManageGallery, galleryStoreUrl, panel }: Props) {
     const can = useCan();
@@ -116,7 +115,7 @@ export function RestaurantGalleryPage({ restaurant, owner, images, stats, canMan
     const submitEdit = (e: React.FormEvent) => {
         e.preventDefault();
         if (readOnly || !editTarget) return;
-        editForm.post(editTarget.urls.update, {
+        editForm.post(galleryActionUrl(galleryBase, editTarget.id, 'update'), {
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
@@ -216,7 +215,11 @@ export function RestaurantGalleryPage({ restaurant, owner, images, stats, canMan
                                                         size="sm"
                                                         className="h-7 flex-1 cursor-pointer border-amber-200/80 text-[11px] text-amber-800 transition-colors hover:border-amber-300 hover:bg-amber-50 hover:text-amber-900"
                                                         onClick={() =>
-                                                            router.post(img.urls.cover, {}, { preserveScroll: true })
+                                                            router.post(
+                                                                galleryActionUrl(galleryBase, img.id, 'cover'),
+                                                                {},
+                                                                { preserveScroll: true },
+                                                            )
                                                         }
                                                     >
                                                         <Star className="size-3" />
@@ -278,8 +281,8 @@ export function RestaurantGalleryPage({ restaurant, owner, images, stats, canMan
                 confirmLabel="Eliminar"
                 variant="destructive"
                 onConfirm={() => {
-                    if (!deleteTarget?.urls?.unlink) return;
-                    router.post(deleteTarget.urls.unlink, {}, {
+                    if (!deleteTarget) return;
+                    router.post(galleryActionUrl(galleryBase, deleteTarget.id, 'detach'), {}, {
                         preserveScroll: true,
                         onFinish: () => setDeleteTarget(null),
                     });

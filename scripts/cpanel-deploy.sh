@@ -47,10 +47,10 @@ GALLERY_JS=$(php -r "
 echo \$m['resources/js/pages/app/gallery/index.tsx']['file'] ?? '';
 ")
 if [ -n "$GALLERY_JS" ] && [ -f "public/build/$GALLERY_JS" ]; then
-  if grep -qE 'urls\.unlink|urls\?\.unlink' "public/build/$GALLERY_JS"; then
-    echo "OK: JS de galería usa URLs del servidor ($GALLERY_JS)"
+  if grep -q '/detach' "public/build/$GALLERY_JS" && grep -q '/update' "public/build/$GALLERY_JS"; then
+    echo "OK: JS de galería usa galleryBase + acción ($GALLERY_JS)"
   else
-    echo "ERROR: JS de galería sin urls.unlink ($GALLERY_JS)."
+    echo "ERROR: JS de galería sin rutas /detach o /update ($GALLERY_JS)."
     exit 1
   fi
 fi

@@ -184,12 +184,12 @@ test('owner can delete gallery image via legacy post with method delete', functi
     expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
 });
 
-test('admin gallery page includes server generated action urls', function () {
+test('admin gallery page includes gallery store url for client actions', function () {
     [, $restaurant] = galleryOwnerWithRestaurant();
     $admin = User::factory()->create();
     $admin->assignRole('super_admin');
 
-    $image = $restaurant->images()->create([
+    $restaurant->images()->create([
         'path' => 'restaurants/test/admin-urls.jpg',
         'type' => 'interior',
         'display_order' => 0,
@@ -202,9 +202,7 @@ test('admin gallery page includes server generated action urls', function () {
         ->assertInertia(fn ($page) => $page
             ->where('galleryStoreUrl', route('app.admin.restaurants.manage.gallery.store', $restaurant))
             ->has('images', 1)
-            ->where('images.0.urls.unlink', route('app.admin.restaurants.manage.gallery.detach', [$restaurant, $image]))
-            ->where('images.0.urls.cover', route('app.admin.restaurants.manage.gallery.cover', [$restaurant, $image]))
-            ->where('images.0.urls.update', route('app.admin.restaurants.manage.gallery.update.post', [$restaurant, $image]))
+            ->missing('images.0.urls')
         );
 });
 
@@ -229,6 +227,32 @@ test('super admin can update gallery image via admin post update route', functio
         ->assertRedirect();
 
     expect($image->fresh()->alt_text)->toBe('Después admin');
+});
+
+test('owner can delete gallery image when active session restaurant differs', function () {
+    [$user, $restaurant] = galleryOwnerWithRestaurant();
+    $user->revokePermissionTo('manage_gallery');
+
+    $otherRestaurant = Restaurant::create([
+        'owner_id' => $user->id,
+        'name' => 'Otro Local',
+        'slug' => 'otro-local-'.$user->id,
+        'is_active' => true,
+    ]);
+
+    $image = $restaurant->images()->create([
+        'path' => 'restaurants/test/session-mismatch.jpg',
+        'type' => 'interior',
+        'display_order' => 0,
+        'is_cover' => false,
+    ]);
+
+    $this->actingAs($user)
+        ->withSession([RestaurantScopeService::ACTING_SESSION_KEY => $otherRestaurant->id])
+        ->post(route('app.gallery.detach', $image))
+        ->assertRedirect();
+
+    expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
 });
 
 test('owner can update gallery image via post update route', function () {
