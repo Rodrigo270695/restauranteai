@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\App;
 
+use App\Http\Requests\App\Concerns\HandlesFailedGalleryAuthorization;
+use App\Http\Requests\App\Concerns\ResolvesGalleryRestaurant;
 use App\Models\Restaurant;
 use App\Models\RestaurantImage;
 use App\Services\RestaurantScopeService;
@@ -10,6 +12,9 @@ use Illuminate\Validation\Rule;
 
 class GalleryImageRequest extends FormRequest
 {
+    use HandlesFailedGalleryAuthorization;
+    use ResolvesGalleryRestaurant;
+
     /** Tipos de la galería del local (no incluye platos: eso va en la carta). */
     public const GALLERY_TYPES = ['exterior', 'interior', 'ambiente'];
 
@@ -21,7 +26,7 @@ class GalleryImageRequest extends FormRequest
         }
 
         $scope = app(RestaurantScopeService::class);
-        $restaurant = $this->resolveRestaurant($scope);
+        $restaurant = $this->resolveGalleryRestaurant($this, $scope);
 
         return $restaurant && $scope->canManageGallery($user, $restaurant);
     }
@@ -37,24 +42,5 @@ class GalleryImageRequest extends FormRequest
             'display_order' => ['nullable', 'integer', 'min:0', 'max:255'],
             'is_cover' => ['sometimes', 'boolean'],
         ];
-    }
-
-    private function resolveRestaurant(RestaurantScopeService $scope): ?Restaurant
-    {
-        $bound = $this->route('restaurant');
-        if ($bound instanceof Restaurant) {
-            return $bound;
-        }
-
-        $image = $this->route('image');
-        if ($image instanceof RestaurantImage) {
-            return $image->restaurant;
-        }
-
-        try {
-            return $scope->forOwnerPanel($this);
-        } catch (\Throwable) {
-            return null;
-        }
     }
 }

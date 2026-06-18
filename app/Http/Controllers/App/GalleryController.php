@@ -4,6 +4,7 @@ namespace App\Http\Controllers\App;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\App\GalleryImageRequest;
+use App\Http\Requests\App\GalleryMutationRequest;
 use App\Models\Restaurant;
 use App\Models\RestaurantImage;
 use App\Services\RestaurantScopeService;
@@ -74,21 +75,13 @@ class GalleryController extends Controller
     }
 
     public function updateGalleryImage(
-        Request $request,
+        GalleryImageRequest $request,
         RestaurantImage $image,
-        RestaurantScopeService $scope,
     ): RedirectResponse {
         $restaurant = $image->restaurant;
         abort_unless($restaurant, 404);
-        abort_unless($scope->canManageGallery($request->user(), $restaurant), 403);
 
-        $validated = $request->validate([
-            'image' => ['sometimes', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
-            'alt_text' => ['nullable', 'string', 'max:150'],
-            'type' => ['sometimes', Rule::in(GalleryImageRequest::GALLERY_TYPES)],
-            'display_order' => ['nullable', 'integer', 'min:0', 'max:255'],
-            'is_cover' => ['sometimes', 'boolean'],
-        ]);
+        $validated = $request->validated();
 
         $updates = [
             'alt_text' => $validated['alt_text'] ?? $image->alt_text,
@@ -148,13 +141,11 @@ class GalleryController extends Controller
     }
 
     public function destroy(
-        Request $request,
+        GalleryMutationRequest $request,
         RestaurantImage $image,
-        RestaurantScopeService $scope,
     ): RedirectResponse {
         $restaurant = $image->restaurant;
         abort_unless($restaurant, 404);
-        abort_unless($scope->canManageGallery($request->user(), $restaurant), 403);
 
         return $this->removeImage($request, $restaurant, $image);
     }
@@ -185,13 +176,11 @@ class GalleryController extends Controller
     }
 
     public function setCover(
+        GalleryMutationRequest $request,
         RestaurantImage $image,
-        RestaurantScopeService $scope,
     ): RedirectResponse {
-        $request = request();
         $restaurant = $image->restaurant;
         abort_unless($restaurant, 404);
-        abort_unless($scope->canManageGallery($request->user(), $restaurant), 403);
 
         return $this->applyCover($request, $restaurant, $image);
     }
@@ -239,7 +228,7 @@ class GalleryController extends Controller
         Restaurant $restaurant,
         RestaurantImage $image,
     ): RedirectResponse {
-        abort_unless($image->restaurant_id === $restaurant->id, 403);
+        abort_unless((int) $image->restaurant_id === (int) $restaurant->id, 403);
 
         $wasCover = $image->is_cover;
         Storage::disk('public')->delete($image->path);
@@ -263,7 +252,7 @@ class GalleryController extends Controller
         RestaurantImage $image,
     ): RedirectResponse {
         abort_unless(app(RestaurantScopeService::class)->canManageGallery($request->user(), $restaurant), 403);
-        abort_unless($image->restaurant_id === $restaurant->id, 403);
+        abort_unless((int) $image->restaurant_id === (int) $restaurant->id, 403);
 
         $this->setAsCover($restaurant, $image);
 

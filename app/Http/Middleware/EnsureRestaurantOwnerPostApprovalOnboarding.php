@@ -27,6 +27,7 @@ class EnsureRestaurantOwnerPostApprovalOnboarding
         'app.gallery.cover',
         'app.gallery.update',
         'app.gallery.update.post',
+        'app.gallery.destroy',
         'app.gallery.destroy.post',
         'logout',
     ];

@@ -56,8 +56,7 @@ class RestaurantScopeService
             return true;
         }
 
-        if ($user->hasRole('restaurant_owner')
-            && $user->restaurants()->whereKey($restaurant->id)->exists()) {
+        if ((int) $restaurant->owner_id === (int) $user->id) {
             return true;
         }
 

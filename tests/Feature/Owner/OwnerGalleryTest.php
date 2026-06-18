@@ -229,6 +229,26 @@ test('super admin can update gallery image via admin post update route', functio
     expect($image->fresh()->alt_text)->toBe('Después admin');
 });
 
+test('owner can delete gallery image when manage_gallery permission was revoked', function () {
+    [$user, $restaurant] = galleryOwnerWithRestaurant();
+    $user->revokePermissionTo('manage_gallery');
+
+    $image = $restaurant->images()->create([
+        'path' => 'restaurants/test/no-perm-delete.jpg',
+        'type' => 'interior',
+        'display_order' => 0,
+        'is_cover' => false,
+    ]);
+
+    $this->actingAs($user)
+        ->withHeaders(['X-Inertia' => 'true', 'X-Requested-With' => 'XMLHttpRequest'])
+        ->post(route('app.gallery.detach', $image))
+        ->assertRedirect()
+        ->assertSessionMissing('error');
+
+    expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
+});
+
 test('owner can delete gallery image when active session restaurant differs', function () {
     [$user, $restaurant] = galleryOwnerWithRestaurant();
     $user->revokePermissionTo('manage_gallery');
