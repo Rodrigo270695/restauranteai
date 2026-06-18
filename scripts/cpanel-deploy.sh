@@ -24,7 +24,7 @@ fi
 echo "==> Instalando dependencias npm (incluye dev por si acaso)..."
 rm -rf node_modules
 export NODE_ENV=development
-npm install --include=dev --no-audit --no-fund
+npm install --include=dev 
 
 if [ ! -d node_modules/@laravel/vite-plugin-wayfinder ]; then
   echo "ERROR: Falta @laravel/vite-plugin-wayfinder. Revisa package.json y vuelve a instalar."
