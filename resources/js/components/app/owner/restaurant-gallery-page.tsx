@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { AdminPanelBanner } from '@/components/layout/admin-panel-banner';
 import { useCan } from '@/hooks/use-can';
 import { useOwnerReadOnly } from '@/hooks/use-owner-read-only';
-import { scopedPath, galleryImageActionUrl, type PanelContext } from '@/lib/scoped-app-path';
+import { scopedPath, type PanelContext } from '@/lib/scoped-app-path';
 import { cn } from '@/lib/utils';
 
 export type GalleryImage = {
@@ -25,6 +25,11 @@ export type GalleryImage = {
     type: GalleryType | 'platos';
     display_order: number;
     is_cover: boolean;
+    urls: {
+        unlink: string;
+        cover: string;
+        update: string;
+    };
 };
 
 type Props = {
@@ -33,6 +38,7 @@ type Props = {
     images: GalleryImage[];
     stats: { total: number; has_cover: boolean };
     canManageGallery?: boolean;
+    galleryStoreUrl?: string;
     panel?: PanelContext;
 };
 
@@ -47,11 +53,11 @@ const defaultGalleryForm = (): GalleryFormData => ({
     alt_text: '',
 });
 
-export function RestaurantGalleryPage({ restaurant, owner, images, stats, canManageGallery, panel }: Props) {
+export function RestaurantGalleryPage({ restaurant, owner, images, stats, canManageGallery, galleryStoreUrl, panel }: Props) {
     const can = useCan();
     const readOnly = useOwnerReadOnly();
     const canManage = (canManageGallery ?? can('manage_gallery')) && !readOnly;
-    const galleryBase = scopedPath('/gallery', panel);
+    const galleryBase = galleryStoreUrl ?? scopedPath('/gallery', panel);
     const flash = usePage().props.flash as { success?: string; error?: string } | undefined;
 
     const [uploadOpen, setUploadOpen] = useState(false);
@@ -110,7 +116,7 @@ export function RestaurantGalleryPage({ restaurant, owner, images, stats, canMan
     const submitEdit = (e: React.FormEvent) => {
         e.preventDefault();
         if (readOnly || !editTarget) return;
-        editForm.post(galleryImageActionUrl(restaurant.id, editTarget.id, 'update', panel), {
+        editForm.post(editTarget.urls.update, {
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
@@ -210,11 +216,7 @@ export function RestaurantGalleryPage({ restaurant, owner, images, stats, canMan
                                                         size="sm"
                                                         className="h-7 flex-1 cursor-pointer border-amber-200/80 text-[11px] text-amber-800 transition-colors hover:border-amber-300 hover:bg-amber-50 hover:text-amber-900"
                                                         onClick={() =>
-                                                            router.post(
-                                                                galleryImageActionUrl(restaurant.id, img.id, 'cover', panel),
-                                                                {},
-                                                                { preserveScroll: true },
-                                                            )
+                                                            router.post(img.urls.cover, {}, { preserveScroll: true })
                                                         }
                                                     >
                                                         <Star className="size-3" />
@@ -276,8 +278,8 @@ export function RestaurantGalleryPage({ restaurant, owner, images, stats, canMan
                 confirmLabel="Eliminar"
                 variant="destructive"
                 onConfirm={() => {
-                    if (!deleteTarget?.id) return;
-                    router.post(galleryImageActionUrl(restaurant.id, deleteTarget.id, 'unlink', panel), {}, {
+                    if (!deleteTarget?.urls?.unlink) return;
+                    router.post(deleteTarget.urls.unlink, {}, {
                         preserveScroll: true,
                         onFinish: () => setDeleteTarget(null),
                     });

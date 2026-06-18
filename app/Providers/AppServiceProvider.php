@@ -41,8 +41,12 @@ class AppServiceProvider extends ServiceProvider
             $image = RestaurantImage::query()->findOrFail($value);
 
             $restaurant = $route->parameter('restaurant');
-            if ($restaurant instanceof Restaurant) {
-                abort_unless($image->restaurant_id === $restaurant->id, 404);
+            $restaurantId = $restaurant instanceof Restaurant
+                ? $restaurant->id
+                : (is_numeric($restaurant) ? (int) $restaurant : null);
+
+            if ($restaurantId !== null && $image->restaurant_id !== $restaurantId) {
+                abort(404);
             }
 
             return $image;

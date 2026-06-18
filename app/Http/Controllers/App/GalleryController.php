@@ -40,13 +40,16 @@ class GalleryController extends Controller
             ->orderBy('display_order')
             ->orderBy('id')
             ->get()
-            ->map(fn (RestaurantImage $img) => $this->formatImage($img));
+            ->map(fn (RestaurantImage $img) => $this->formatImage($img, $restaurant, $admin));
 
         $cover = $images->firstWhere('is_cover', true);
 
         return Inertia::render('app/gallery', [
             ...OwnerPanel::props($restaurant, $admin),
             'canManageGallery' => $scope->canManageGallery($request->user(), $restaurant),
+            'galleryStoreUrl' => $admin
+                ? route('app.admin.restaurants.manage.gallery.store', $restaurant)
+                : route('app.gallery.store'),
             'images' => $images->values(),
             'stats' => [
                 'total' => $images->count(),
@@ -170,7 +173,16 @@ class GalleryController extends Controller
         RestaurantScopeService $scope,
     ): RedirectResponse {
         abort_unless($scope->canManageGallery(request()->user(), $restaurant), 403);
-        abort_unless($image->restaurant_id === $restaurant->id, 404);
+
+        if ($image->restaurant_id !== $restaurant->id) {
+            Log::warning('gallery.destroyForRestaurant mismatch', [
+                'user_id' => request()->user()?->id,
+                'route_restaurant_id' => $restaurant->id,
+                'image_id' => $image->id,
+                'image_restaurant_id' => $image->restaurant_id,
+            ]);
+            abort(404);
+        }
 
         return $this->removeImage(request(), $restaurant, $image);
     }
@@ -268,7 +280,7 @@ class GalleryController extends Controller
     }
 
     /** @return array<string, mixed> */
-    private function formatImage(RestaurantImage $img): array
+    private function formatImage(RestaurantImage $img, Restaurant $restaurant, bool $admin): array
     {
         return [
             'id' => $img->id,
@@ -277,6 +289,17 @@ class GalleryController extends Controller
             'type' => $img->type,
             'display_order' => $img->display_order,
             'is_cover' => (bool) $img->is_cover,
+            'urls' => [
+                'unlink' => $admin
+                    ? route('app.admin.restaurants.manage.gallery.unlink', [$restaurant, $img])
+                    : route('app.gallery.unlink', $img),
+                'cover' => $admin
+                    ? route('app.admin.restaurants.manage.gallery.cover', [$restaurant, $img])
+                    : route('app.gallery.cover', $img),
+                'update' => $admin
+                    ? route('app.admin.restaurants.manage.gallery.update.post', [$restaurant, $img])
+                    : route('app.gallery.update.post', $img),
+            ],
         ];
     }
 }

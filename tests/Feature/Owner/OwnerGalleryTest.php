@@ -184,6 +184,30 @@ test('owner can delete gallery image via legacy post with method delete', functi
     expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
 });
 
+test('admin gallery page includes server generated action urls', function () {
+    [, $restaurant] = galleryOwnerWithRestaurant();
+    $admin = User::factory()->create();
+    $admin->assignRole('super_admin');
+
+    $image = $restaurant->images()->create([
+        'path' => 'restaurants/test/admin-urls.jpg',
+        'type' => 'interior',
+        'display_order' => 0,
+        'is_cover' => false,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('app.admin.restaurants.manage.gallery', $restaurant))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('galleryStoreUrl', route('app.admin.restaurants.manage.gallery.store', $restaurant))
+            ->has('images', 1)
+            ->where('images.0.urls.unlink', route('app.admin.restaurants.manage.gallery.unlink', [$restaurant, $image]))
+            ->where('images.0.urls.cover', route('app.admin.restaurants.manage.gallery.cover', [$restaurant, $image]))
+            ->where('images.0.urls.update', route('app.admin.restaurants.manage.gallery.update.post', [$restaurant, $image]))
+        );
+});
+
 test('super admin can update gallery image via admin post update route', function () {
     [, $restaurant] = galleryOwnerWithRestaurant();
     $admin = User::factory()->create();
