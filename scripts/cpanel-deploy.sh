@@ -60,6 +60,14 @@ php artisan route:list --name=gallery.unlink | grep -F 'gallery.unlink' || {
 echo "==> Cache de configuración..."
 php artisan config:cache
 
+if php -r "exit(function_exists('opcache_reset') ? 0 : 1);" 2>/dev/null; then
+  php -r "if (function_exists('opcache_reset')) { opcache_reset(); echo 'OPcache reiniciado'.PHP_EOL; }"
+fi
+
+echo ""
+echo "==> Verificación de despliegue..."
+php artisan app:deploy-check
+
 echo ""
 echo "Listo. IMPORTANTE: ve a cPanel → Setup Node.js App → DETENER APLICACIÓN"
 echo "Luego recarga con Ctrl+Shift+R y prueba eliminar una foto."

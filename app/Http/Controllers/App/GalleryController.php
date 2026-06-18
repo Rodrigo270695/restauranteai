@@ -135,25 +135,9 @@ class GalleryController extends Controller
         RestaurantImage $image,
         RestaurantScopeService $scope,
     ): RedirectResponse {
-        $restaurant = $image->restaurant;
-        abort_unless($restaurant, 404);
+        $restaurant = $scope->forOwnerPanel(request());
 
-        $request = request();
-        $user = $request->user();
-
-        abort_unless($scope->canManageGallery($user, $restaurant), 403);
-
-        if ($user?->hasRole('super_admin')) {
-            abort_unless(
-                $scope->isActing($request)
-                && (int) $scope->actingRestaurant($request)?->id === (int) $restaurant->id,
-                403,
-            );
-        } elseif ($user?->hasRole('restaurant_owner')) {
-            abort_unless($user->restaurants()->whereKey($restaurant->id)->exists(), 403);
-        }
-
-        return $this->removeImage($request, $restaurant, $image);
+        return $this->removeImage(request(), $restaurant, $image);
     }
 
     public function destroyForRestaurant(
@@ -287,7 +271,12 @@ class GalleryController extends Controller
             return true;
         }
 
-        $method = strtolower((string) $request->input('_method', ''));
+        $method = strtolower((string) (
+            $request->input('_method')
+            ?: $request->header('X-HTTP-Method-Override')
+            ?: $request->header('X-Http-Method-Override')
+            ?: ''
+        ));
 
         return in_array($method, ['delete', 'remove'], true);
     }
