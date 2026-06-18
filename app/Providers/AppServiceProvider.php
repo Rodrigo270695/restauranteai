@@ -35,6 +35,8 @@ class AppServiceProvider extends ServiceProvider
 
     protected function configureRouteBindings(): void
     {
+        Route::pattern('image', '[0-9]+');
+
         Route::bind('image', function (string $value, $route): RestaurantImage {
             $image = RestaurantImage::query()->findOrFail($value);
 

@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { AdminPanelBanner } from '@/components/layout/admin-panel-banner';
 import { useCan } from '@/hooks/use-can';
 import { useOwnerReadOnly } from '@/hooks/use-owner-read-only';
-import { scopedPath, type PanelContext } from '@/lib/scoped-app-path';
+import { scopedPath, galleryImageActionUrl, type PanelContext } from '@/lib/scoped-app-path';
 import { cn } from '@/lib/utils';
 
 export type GalleryImage = {
@@ -46,10 +46,6 @@ const defaultGalleryForm = (): GalleryFormData => ({
     type: 'interior',
     alt_text: '',
 });
-
-function galleryImagePath(base: string, imageId: number, action: 'cover' | 'unlink' | 'update'): string {
-    return `${base}/${imageId}/${action}`;
-}
 
 export function RestaurantGalleryPage({ restaurant, owner, images, stats, canManageGallery, panel }: Props) {
     const can = useCan();
@@ -114,7 +110,7 @@ export function RestaurantGalleryPage({ restaurant, owner, images, stats, canMan
     const submitEdit = (e: React.FormEvent) => {
         e.preventDefault();
         if (readOnly || !editTarget) return;
-        editForm.post(galleryImagePath(galleryBase, editTarget.id, 'update'), {
+        editForm.post(galleryImageActionUrl(restaurant.id, editTarget.id, 'update', panel), {
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
@@ -214,7 +210,11 @@ export function RestaurantGalleryPage({ restaurant, owner, images, stats, canMan
                                                         size="sm"
                                                         className="h-7 flex-1 cursor-pointer border-amber-200/80 text-[11px] text-amber-800 transition-colors hover:border-amber-300 hover:bg-amber-50 hover:text-amber-900"
                                                         onClick={() =>
-                                                            router.post(galleryImagePath(galleryBase, img.id, 'cover'), {}, { preserveScroll: true })
+                                                            router.post(
+                                                                galleryImageActionUrl(restaurant.id, img.id, 'cover', panel),
+                                                                {},
+                                                                { preserveScroll: true },
+                                                            )
                                                         }
                                                     >
                                                         <Star className="size-3" />
@@ -276,12 +276,11 @@ export function RestaurantGalleryPage({ restaurant, owner, images, stats, canMan
                 confirmLabel="Eliminar"
                 variant="destructive"
                 onConfirm={() => {
-                    if (deleteTarget) {
-                        router.post(galleryImagePath(galleryBase, deleteTarget.id, 'unlink'), {}, {
-                            preserveScroll: true,
-                            onFinish: () => setDeleteTarget(null),
-                        });
-                    }
+                    if (!deleteTarget?.id) return;
+                    router.post(galleryImageActionUrl(restaurant.id, deleteTarget.id, 'unlink', panel), {}, {
+                        preserveScroll: true,
+                        onFinish: () => setDeleteTarget(null),
+                    });
                 }}
             />
         </>

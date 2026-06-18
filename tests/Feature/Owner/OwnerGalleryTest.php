@@ -184,6 +184,29 @@ test('owner can delete gallery image via legacy post with method delete', functi
     expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
 });
 
+test('super admin can update gallery image via admin post update route', function () {
+    [, $restaurant] = galleryOwnerWithRestaurant();
+    $admin = User::factory()->create();
+    $admin->assignRole('super_admin');
+
+    $image = $restaurant->images()->create([
+        'path' => 'restaurants/test/admin-update.jpg',
+        'type' => 'interior',
+        'display_order' => 0,
+        'is_cover' => false,
+        'alt_text' => 'Antes',
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('app.admin.restaurants.manage.gallery.update.post', [$restaurant, $image]), [
+            'alt_text' => 'Después admin',
+            'type' => 'ambiente',
+        ])
+        ->assertRedirect();
+
+    expect($image->fresh()->alt_text)->toBe('Después admin');
+});
+
 test('owner can update gallery image via post update route', function () {
     [$user, $restaurant] = galleryOwnerWithRestaurant();
     $user->revokePermissionTo('manage_gallery');
