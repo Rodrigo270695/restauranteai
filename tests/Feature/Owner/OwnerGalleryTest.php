@@ -80,9 +80,7 @@ test('super admin can delete gallery image via admin post route', function () {
     ]);
 
     $this->actingAs($admin)
-        ->post(route('app.admin.restaurants.manage.gallery.destroy', [$restaurant, $image]), [
-            '_method' => 'delete',
-        ])
+        ->post(route('app.admin.restaurants.manage.gallery.unlink', [$restaurant, $image]))
         ->assertRedirect();
 
     expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
@@ -108,6 +106,47 @@ test('super admin can delete gallery without restaurants view permission', funct
     expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
 });
 
+test('super admin impersonating can delete gallery image via unlink route', function () {
+    [, $restaurant] = galleryOwnerWithRestaurant();
+    $admin = User::factory()->create();
+    $admin->assignRole('super_admin');
+    $admin->revokePermissionTo('restaurants.view');
+
+    $image = $restaurant->images()->create([
+        'path' => 'restaurants/test/acting-unlink.jpg',
+        'type' => 'interior',
+        'display_order' => 0,
+        'is_cover' => false,
+    ]);
+
+    $this->actingAs($admin)
+        ->withSession([RestaurantScopeService::ACTING_SESSION_KEY => $restaurant->id])
+        ->post(route('app.gallery.unlink', $image))
+        ->assertRedirect();
+
+    expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
+});
+
+test('super admin impersonating can delete gallery image via method spoof', function () {
+    [, $restaurant] = galleryOwnerWithRestaurant();
+    $admin = User::factory()->create();
+    $admin->assignRole('super_admin');
+
+    $image = $restaurant->images()->create([
+        'path' => 'restaurants/test/acting-spoof.jpg',
+        'type' => 'interior',
+        'display_order' => 0,
+        'is_cover' => false,
+    ]);
+
+    $this->actingAs($admin)
+        ->withSession([RestaurantScopeService::ACTING_SESSION_KEY => $restaurant->id])
+        ->post(route('app.gallery.update', $image), ['_method' => 'delete'])
+        ->assertRedirect();
+
+    expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
+});
+
 test('owner can delete gallery image via post route', function () {
     [$user, $restaurant] = galleryOwnerWithRestaurant();
     $user->revokePermissionTo('manage_gallery');
@@ -120,9 +159,7 @@ test('owner can delete gallery image via post route', function () {
     ]);
 
     $this->actingAs($user)
-        ->post(route('app.gallery.destroy', $image), [
-            '_method' => 'delete',
-        ])
+        ->post(route('app.gallery.unlink', $image))
         ->assertRedirect();
 
     expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();

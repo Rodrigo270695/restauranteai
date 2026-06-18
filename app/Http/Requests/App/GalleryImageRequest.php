@@ -28,7 +28,7 @@ class GalleryImageRequest extends FormRequest
 
     public function rules(): array
     {
-        $isStore = $this->isMethod('post');
+        $isStore = $this->routeIs('app.gallery.store', 'app.admin.restaurants.manage.gallery.store');
 
         return [
             'image' => [$isStore ? 'required' : 'sometimes', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],

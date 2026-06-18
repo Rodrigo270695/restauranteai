@@ -39,9 +39,13 @@ if [ ! -f public/build/manifest.json ]; then
   exit 1
 fi
 
-if grep -rE 'gallery[^"]*/(delete|remove)"' public/build/assets/*.js 2>/dev/null; then
-  echo "ERROR: El build JS aún usa rutas /delete o /remove en galería. Abortando despliegue."
-  exit 1
+GALLERY_JS=$(grep -l 'Eliminar foto' public/build/assets/*.js 2>/dev/null | head -1 || true)
+if [ -n "$GALLERY_JS" ]; then
+  if grep -q '/unlink' "$GALLERY_JS"; then
+    echo "OK: JS de galería usa /unlink ($GALLERY_JS)"
+  else
+    echo "AVISO: JS de galería sin /unlink ($GALLERY_JS). Backend acepta POST .../gallery/{id} con _method=delete."
+  fi
 fi
 
 echo "==> Sincronizando build al document root..."

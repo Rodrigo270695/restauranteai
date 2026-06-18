@@ -73,10 +73,9 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
 
             Route::get('gallery', [GalleryController::class, 'index'])->name('gallery');
             Route::post('gallery', [GalleryController::class, 'store'])->name('gallery.store');
-            Route::match(['put', 'post'], 'gallery/{image}', [GalleryController::class, 'update'])->name('gallery.update');
-            Route::delete('gallery/{image}', [GalleryController::class, 'destroy'])->name('gallery.destroy');
             Route::post('gallery/{image}/unlink', [GalleryController::class, 'destroy'])->name('gallery.unlink');
             Route::post('gallery/{image}/cover', [GalleryController::class, 'setCover'])->name('gallery.cover');
+            Route::match(['put', 'post', 'delete'], 'gallery/{image}', [GalleryController::class, 'mutateGalleryImage'])->name('gallery.update');
 
             Route::get('restaurant-services', [RestaurantServicesController::class, 'index'])->name('restaurant-services');
             Route::put('restaurant-services', [RestaurantServicesController::class, 'sync'])->name('restaurant-services.sync');
@@ -145,10 +144,9 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
 
                 Route::get('gallery', [GalleryController::class, 'indexForRestaurant'])->name('gallery');
                 Route::post('gallery', [GalleryController::class, 'storeForRestaurant'])->name('gallery.store');
-                Route::match(['put', 'post'], 'gallery/{image}', [GalleryController::class, 'updateForRestaurant'])->name('gallery.update');
-                Route::delete('gallery/{image}', [GalleryController::class, 'destroyForRestaurant'])->name('gallery.destroy');
                 Route::post('gallery/{image}/unlink', [GalleryController::class, 'destroyForRestaurant'])->name('gallery.unlink');
                 Route::post('gallery/{image}/cover', [GalleryController::class, 'setCoverForRestaurant'])->name('gallery.cover');
+                Route::match(['put', 'post', 'delete'], 'gallery/{image}', [GalleryController::class, 'mutateGalleryImageForRestaurant'])->name('gallery.update');
 
                 Route::get('services', [RestaurantServicesController::class, 'indexForRestaurant'])->name('services');
                 Route::put('services', [RestaurantServicesController::class, 'sync'])->name('services.sync');

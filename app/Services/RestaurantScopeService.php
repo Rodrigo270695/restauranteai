@@ -22,7 +22,7 @@ class RestaurantScopeService
 
         if ($actingId = $request->session()->get(self::ACTING_SESSION_KEY)) {
             $restaurant = Restaurant::query()->find($actingId);
-            abort_unless($restaurant && $this->canManageAsAdmin($user, $restaurant), 403);
+            abort_unless($restaurant && $this->canManageGallery($user, $restaurant), 403);
 
             return $restaurant;
         }
