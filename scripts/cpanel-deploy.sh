@@ -29,6 +29,11 @@ if [ ! -f public/build/manifest.json ]; then
   exit 1
 fi
 
+if grep -rE 'gallery[^"]*/(delete|remove)"' public/build/assets/*.js 2>/dev/null; then
+  echo "ERROR: El build JS aún usa rutas /delete o /remove en galería. Abortando despliegue."
+  exit 1
+fi
+
 echo "==> Sincronizando build al document root..."
 rsync -av --delete public/build/ ~/miskigo.gostudio.pe/build/
 
