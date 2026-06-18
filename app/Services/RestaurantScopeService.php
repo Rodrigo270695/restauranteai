@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Restaurant;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class RestaurantScopeService
@@ -51,7 +52,7 @@ class RestaurantScopeService
             return false;
         }
 
-        if ($this->canManageAsAdmin($user, $restaurant)) {
+        if ($user->hasRole('super_admin')) {
             return true;
         }
 
@@ -122,8 +123,8 @@ class RestaurantScopeService
         ]);
     }
 
-    /** @return \Illuminate\Support\Collection<int, Restaurant> */
-    public function ownedRestaurants(User $user): \Illuminate\Support\Collection
+    /** @return Collection<int, Restaurant> */
+    public function ownedRestaurants(User $user): Collection
     {
         return $user->restaurants()->orderBy('name')->get();
     }

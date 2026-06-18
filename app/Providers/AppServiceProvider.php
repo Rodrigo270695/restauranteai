@@ -3,11 +3,13 @@
 namespace App\Providers;
 
 use App\Models\Restaurant;
+use App\Models\RestaurantImage;
 use App\Policies\RestaurantPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -27,7 +29,22 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureRouteBindings();
         Gate::policy(Restaurant::class, RestaurantPolicy::class);
+    }
+
+    protected function configureRouteBindings(): void
+    {
+        Route::bind('image', function (string $value, $route): RestaurantImage {
+            $image = RestaurantImage::query()->findOrFail($value);
+
+            $restaurant = $route->parameter('restaurant');
+            if ($restaurant instanceof Restaurant) {
+                abort_unless($image->restaurant_id === $restaurant->id, 404);
+            }
+
+            return $image;
+        });
     }
 
     /**

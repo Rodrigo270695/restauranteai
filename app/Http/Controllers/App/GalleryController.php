@@ -19,16 +19,17 @@ class GalleryController extends Controller
 {
     public function index(Request $request, RestaurantScopeService $scope): Response
     {
-        return $this->indexForRestaurant($request, $scope->forOwnerPanel($request), false);
+        return $this->renderGallery($request, $scope->forOwnerPanel($request), admin: false);
     }
 
-    public function indexForRestaurant(Request $request, Restaurant $restaurant, bool $admin = true): Response
+    public function indexForRestaurant(Request $request, Restaurant $restaurant): Response
+    {
+        return $this->renderGallery($request, $restaurant, admin: true);
+    }
+
+    private function renderGallery(Request $request, Restaurant $restaurant, bool $admin): Response
     {
         $scope = app(RestaurantScopeService::class);
-
-        if ($admin) {
-            abort_unless($scope->canManageAsAdmin($request->user(), $restaurant), 403);
-        }
 
         abort_unless($scope->canManageGallery($request->user(), $restaurant), 403);
 
@@ -62,7 +63,7 @@ class GalleryController extends Controller
         GalleryImageRequest $request,
         RestaurantScopeService $scope,
     ): RedirectResponse {
-        $restaurant = $scope->forAdminManage($request->user(), $restaurant);
+        abort_unless($scope->canManageGallery($request->user(), $restaurant), 403);
 
         return $this->persistNewImage($request, $restaurant, $request);
     }
@@ -85,7 +86,7 @@ class GalleryController extends Controller
         RestaurantImage $image,
         RestaurantScopeService $scope,
     ): RedirectResponse {
-        $restaurant = $scope->forAdminManage($request->user(), $restaurant);
+        abort_unless($scope->canManageGallery($request->user(), $restaurant), 403);
 
         return $this->persistImageUpdate($request, $restaurant, $image);
     }
@@ -106,7 +107,7 @@ class GalleryController extends Controller
         RestaurantImage $image,
         RestaurantScopeService $scope,
     ): RedirectResponse {
-        $restaurant = $scope->forAdminManage(request()->user(), $restaurant);
+        abort_unless($scope->canManageGallery(request()->user(), $restaurant), 403);
 
         return $this->removeImage(request(), $restaurant, $image);
     }
@@ -127,7 +128,7 @@ class GalleryController extends Controller
         RestaurantImage $image,
         RestaurantScopeService $scope,
     ): RedirectResponse {
-        $restaurant = $scope->forAdminManage(request()->user(), $restaurant);
+        abort_unless($scope->canManageGallery(request()->user(), $restaurant), 403);
 
         return $this->applyCover(request(), $restaurant, $image);
     }
