@@ -49,7 +49,32 @@ if [ -n "$GALLERY_JS" ]; then
 fi
 
 echo "==> Sincronizando build al document root..."
-rsync -av --delete public/build/ ~/miskigo.gostudio.pe/build/
+DOCROOT_BUILD="${DEPLOY_DOCROOT_BUILD:-$HOME/miskigo.gostudio.pe/build}"
+rsync -av --delete public/build/ "${DOCROOT_BUILD}/"
+
+echo "==> Verificando assets del manifest en document root..."
+php -r "
+\$manifest = json_decode(file_get_contents('public/build/manifest.json'), true);
+\$docroot = getenv('DEPLOY_DOCROOT_BUILD') ?: (getenv('HOME') . '/miskigo.gostudio.pe/build');
+\$missing = [];
+foreach (\$manifest as \$entry) {
+    if (! isset(\$entry['file'])) {
+        continue;
+    }
+    \$path = \$docroot . '/' . \$entry['file'];
+    if (! is_file(\$path)) {
+        \$missing[] = \$entry['file'];
+    }
+}
+if (\$missing !== []) {
+    fwrite(STDERR, \"ERROR: Faltan archivos en {\$docroot}:\\n\");
+    foreach (\$missing as \$file) {
+        fwrite(STDERR, \"  - {\$file}\\n\");
+    }
+    exit(1);
+}
+echo \"OK: \" . count(\$manifest) . \" entradas del manifest presentes en {\$docroot}\\n\";
+"
 
 echo "==> Verificando rutas de galería..."
 php artisan route:list --name=gallery.unlink | grep -F 'gallery.unlink' || {
