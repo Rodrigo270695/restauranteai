@@ -20,6 +20,14 @@ class EnsureRestaurantOwnerPostApprovalOnboarding
         'app.restaurants.locations.store',
         'app.restaurants.switch',
         'app.restaurants.geocode',
+        'app.gallery',
+        'app.gallery.store',
+        'app.gallery.detach',
+        'app.gallery.unlink',
+        'app.gallery.cover',
+        'app.gallery.update',
+        'app.gallery.update.post',
+        'app.gallery.destroy.post',
         'logout',
     ];
 

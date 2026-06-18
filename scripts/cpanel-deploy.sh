@@ -99,8 +99,8 @@ echo \"OK: app bundle {\$repoApp}\\n\";
 "
 
 echo "==> Verificando rutas de galería..."
-php artisan route:list --name=gallery.unlink | grep -F 'gallery.unlink' || {
-  echo "ERROR: Falta la ruta POST app/gallery/{image}/unlink."
+php artisan route:list --name=gallery.detach | grep -F 'gallery.detach' || {
+  echo "ERROR: Falta la ruta POST app/gallery/{image}/detach."
   exit 1
 }
 php artisan route:list --name=gallery.update.post | grep -F 'gallery.update.post' || {

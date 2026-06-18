@@ -73,6 +73,7 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
 
             Route::get('gallery', [GalleryController::class, 'index'])->name('gallery');
             Route::post('gallery', [GalleryController::class, 'store'])->name('gallery.store');
+            Route::post('gallery/{image}/detach', [GalleryController::class, 'destroy'])->name('gallery.detach');
             Route::post('gallery/{image}/unlink', [GalleryController::class, 'destroy'])->name('gallery.unlink');
             Route::post('gallery/{image}/cover', [GalleryController::class, 'setCover'])->name('gallery.cover');
             Route::post('gallery/{image}/update', [GalleryController::class, 'updateGalleryImage'])->name('gallery.update.post');
@@ -147,6 +148,7 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
 
                 Route::get('gallery', [GalleryController::class, 'indexForRestaurant'])->name('gallery');
                 Route::post('gallery', [GalleryController::class, 'storeForRestaurant'])->name('gallery.store');
+                Route::post('gallery/{image}/detach', [GalleryController::class, 'destroyForRestaurant'])->name('gallery.detach');
                 Route::post('gallery/{image}/unlink', [GalleryController::class, 'destroyForRestaurant'])->name('gallery.unlink');
                 Route::post('gallery/{image}/cover', [GalleryController::class, 'setCoverForRestaurant'])->name('gallery.cover');
                 Route::post('gallery/{image}/update', [GalleryController::class, 'updateGalleryImageForRestaurant'])->name('gallery.update.post');

@@ -147,21 +147,22 @@ class GalleryController extends Controller
     }
 
     public function destroy(
+        Request $request,
         RestaurantImage $image,
         RestaurantScopeService $scope,
     ): RedirectResponse {
-        $request = request();
-        $restaurant = $image->restaurant;
-        abort_unless($restaurant, 404);
+        $restaurant = $scope->forOwnerPanel($request);
 
-        if (! $scope->canManageGallery($request->user(), $restaurant)) {
-            Log::warning('gallery.destroy forbidden', [
+        if ($image->restaurant_id !== $restaurant->id) {
+            Log::warning('gallery.destroy owner mismatch', [
                 'user_id' => $request->user()?->id,
+                'panel_restaurant_id' => $restaurant->id,
                 'image_id' => $image->id,
-                'restaurant_id' => $restaurant->id,
+                'image_restaurant_id' => $image->restaurant_id,
                 'route' => $request->route()?->getName(),
             ]);
-            abort(403);
+
+            return $this->denyGalleryMutation($request, 'Esta foto no pertenece al local activo.');
         }
 
         return $this->removeImage($request, $restaurant, $image);
@@ -172,19 +173,24 @@ class GalleryController extends Controller
         RestaurantImage $image,
         RestaurantScopeService $scope,
     ): RedirectResponse {
-        abort_unless($scope->canManageGallery(request()->user(), $restaurant), 403);
+        $request = request();
+
+        if (! $scope->canManageGallery($request->user(), $restaurant)) {
+            return $this->denyGalleryMutation($request, 'No tienes permiso para gestionar esta galería.');
+        }
 
         if ($image->restaurant_id !== $restaurant->id) {
             Log::warning('gallery.destroyForRestaurant mismatch', [
-                'user_id' => request()->user()?->id,
+                'user_id' => $request->user()?->id,
                 'route_restaurant_id' => $restaurant->id,
                 'image_id' => $image->id,
                 'image_restaurant_id' => $image->restaurant_id,
             ]);
-            abort(404);
+
+            return $this->denyGalleryMutation($request, 'Esta foto no pertenece a este restaurante.');
         }
 
-        return $this->removeImage(request(), $restaurant, $image);
+        return $this->removeImage($request, $restaurant, $image);
     }
 
     public function setCover(
@@ -279,6 +285,15 @@ class GalleryController extends Controller
         $restaurant->update(['cover_image' => $image->path]);
     }
 
+    private function denyGalleryMutation(Request $request, string $message): RedirectResponse
+    {
+        if ($request->header('X-Inertia')) {
+            return redirect()->back()->with('error', $message);
+        }
+
+        abort(403, $message);
+    }
+
     /** @return array<string, mixed> */
     private function formatImage(RestaurantImage $img, Restaurant $restaurant, bool $admin): array
     {
@@ -291,8 +306,8 @@ class GalleryController extends Controller
             'is_cover' => (bool) $img->is_cover,
             'urls' => [
                 'unlink' => $admin
-                    ? route('app.admin.restaurants.manage.gallery.unlink', [$restaurant, $img])
-                    : route('app.gallery.unlink', $img),
+                    ? route('app.admin.restaurants.manage.gallery.detach', [$restaurant, $img])
+                    : route('app.gallery.detach', $img),
                 'cover' => $admin
                     ? route('app.admin.restaurants.manage.gallery.cover', [$restaurant, $img])
                     : route('app.gallery.cover', $img),
