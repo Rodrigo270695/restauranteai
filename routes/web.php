@@ -73,6 +73,7 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
             Route::post('gallery', [GalleryController::class, 'store'])->name('gallery.store');
             Route::match(['put', 'post'], 'gallery/{image}', [GalleryController::class, 'update'])->name('gallery.update');
             Route::delete('gallery/{image}', [GalleryController::class, 'destroy'])->name('gallery.destroy');
+            Route::post('gallery/{image}/delete', [GalleryController::class, 'destroy'])->name('gallery.delete');
             Route::post('gallery/{image}/cover', [GalleryController::class, 'setCover'])->name('gallery.cover');
 
             Route::get('restaurant-services', [RestaurantServicesController::class, 'index'])->name('restaurant-services');
@@ -144,6 +145,7 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
                 Route::post('gallery', [GalleryController::class, 'store'])->name('gallery.store');
                 Route::match(['put', 'post'], 'gallery/{image}', [GalleryController::class, 'update'])->name('gallery.update');
                 Route::delete('gallery/{image}', [GalleryController::class, 'destroy'])->name('gallery.destroy');
+                Route::post('gallery/{image}/delete', [GalleryController::class, 'destroy'])->name('gallery.delete');
                 Route::post('gallery/{image}/cover', [GalleryController::class, 'setCover'])->name('gallery.cover');
 
                 Route::get('services', [RestaurantServicesController::class, 'indexForRestaurant'])->name('services');
