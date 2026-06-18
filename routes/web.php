@@ -35,12 +35,17 @@ use App\Http\Controllers\ExploreRouteRecommendationController;
 use App\Http\Controllers\NearbyRestaurantsController;
 use App\Http\Controllers\OwnerPendingController;
 use App\Http\Controllers\PublicRestaurantController;
+use App\Http\Controllers\PublicStorageController;
 use App\Http\Controllers\RucValidationController;
 use App\Http\Controllers\TamSurveyController;
 use App\Http\Controllers\TouristProfileController;
 use App\Http\Controllers\TouristRouteController;
 use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/storage/{path}', PublicStorageController::class)
+    ->where('path', '.*')
+    ->name('storage.serve');
 
 Route::get('/', WelcomeController::class)->name('home');
 Route::middleware('auth')->get('/inicio', AuthenticatedHomeController::class)->name('authenticated.home');
