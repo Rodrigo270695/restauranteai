@@ -37,7 +37,10 @@ class DeployCheckCommand extends Command
             'updateGalleryImage' => str_contains($controller, 'function updateGalleryImage'),
             'gallery.destroy.post route file' => str_contains(File::get(base_path('routes/web.php')), "->name('gallery.destroy.post')"),
             'gallery.unlink route file' => str_contains(File::get(base_path('routes/web.php')), 'gallery/{image}/unlink'),
+            'gallery.update.post route file' => str_contains(File::get(base_path('routes/web.php')), 'gallery/{image}/update'),
         ];
+
+        $jsChecksOk = true;
 
         foreach ($checks as $label => $ok) {
             $this->line(($ok ? '✔' : '✘')." {$label}");
@@ -64,20 +67,32 @@ class DeployCheckCommand extends Command
             $this->newLine();
             $this->line("Build manifest: {$mtime}");
 
-            $galleryJs = collect(File::glob(public_path('build/assets/gallery-*.js')))->first();
-            if ($galleryJs) {
+            $manifest = json_decode(File::get($buildManifest), true);
+            $galleryEntry = $manifest['resources/js/pages/app/gallery/index.tsx']['file'] ?? null;
+            $galleryJs = $galleryEntry ? public_path('build/'.$galleryEntry) : null;
+
+            if ($galleryJs && File::exists($galleryJs)) {
                 $js = File::get($galleryJs);
-                $hasUnlink = str_contains($js, 'unlink');
+                $hasUnlink = str_contains($js, '/unlink') || str_contains($js, '`unlink`');
+                $hasUpdatePost = str_contains($js, '/update') || str_contains($js, '`update`');
                 $hasMethodDelete = str_contains($js, '_method') && str_contains($js, 'delete');
                 $this->line('JS galería: '.basename($galleryJs));
-                $this->line('  → contiene "unlink": '.($hasUnlink ? 'sí' : 'no'));
+                $this->line('  → acción unlink: '.($hasUnlink ? 'sí' : 'no'));
+                $this->line('  → acción update: '.($hasUpdatePost ? 'sí' : 'no'));
                 $this->line('  → contiene _method+delete: '.($hasMethodDelete ? 'sí' : 'no'));
+                if (! $hasUnlink || ! $hasUpdatePost) {
+                    $jsChecksOk = false;
+                }
+            } else {
+                $this->warn('No se encontró el chunk JS de galería en el manifest.');
+                $jsChecksOk = false;
             }
         } else {
             $this->warn('public/build/manifest.json no existe');
+            $jsChecksOk = false;
         }
 
-        $failed = in_array(false, $checks, true);
+        $failed = in_array(false, $checks, true) || ! $jsChecksOk;
 
         return $failed ? self::FAILURE : self::SUCCESS;
     }

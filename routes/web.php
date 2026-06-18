@@ -75,6 +75,7 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
             Route::post('gallery', [GalleryController::class, 'store'])->name('gallery.store');
             Route::post('gallery/{image}/unlink', [GalleryController::class, 'destroy'])->name('gallery.unlink');
             Route::post('gallery/{image}/cover', [GalleryController::class, 'setCover'])->name('gallery.cover');
+            Route::post('gallery/{image}/update', [GalleryController::class, 'updateGalleryImage'])->name('gallery.update.post');
             Route::post('gallery/{image}', [GalleryController::class, 'destroy'])->name('gallery.destroy.post');
             Route::put('gallery/{image}', [GalleryController::class, 'updateGalleryImage'])->name('gallery.update');
             Route::delete('gallery/{image}', [GalleryController::class, 'destroy'])->name('gallery.destroy');
@@ -148,6 +149,7 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
                 Route::post('gallery', [GalleryController::class, 'storeForRestaurant'])->name('gallery.store');
                 Route::post('gallery/{image}/unlink', [GalleryController::class, 'destroyForRestaurant'])->name('gallery.unlink');
                 Route::post('gallery/{image}/cover', [GalleryController::class, 'setCoverForRestaurant'])->name('gallery.cover');
+                Route::post('gallery/{image}/update', [GalleryController::class, 'updateGalleryImageForRestaurant'])->name('gallery.update.post');
                 Route::post('gallery/{image}', [GalleryController::class, 'destroyForRestaurant'])->name('gallery.destroy.post');
                 Route::put('gallery/{image}', [GalleryController::class, 'updateGalleryImageForRestaurant'])->name('gallery.update');
                 Route::delete('gallery/{image}', [GalleryController::class, 'destroyForRestaurant'])->name('gallery.destroy');

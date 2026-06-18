@@ -11,6 +11,7 @@ use App\Support\OwnerPanel;
 use App\Support\PublicStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -146,7 +147,21 @@ class GalleryController extends Controller
         RestaurantImage $image,
         RestaurantScopeService $scope,
     ): RedirectResponse {
-        return $this->removeImageForUser(request(), $image, $scope);
+        $request = request();
+        $restaurant = $image->restaurant;
+        abort_unless($restaurant, 404);
+
+        if (! $scope->canManageGallery($request->user(), $restaurant)) {
+            Log::warning('gallery.destroy forbidden', [
+                'user_id' => $request->user()?->id,
+                'image_id' => $image->id,
+                'restaurant_id' => $restaurant->id,
+                'route' => $request->route()?->getName(),
+            ]);
+            abort(403);
+        }
+
+        return $this->removeImage($request, $restaurant, $image);
     }
 
     public function destroyForRestaurant(
@@ -179,18 +194,6 @@ class GalleryController extends Controller
         abort_unless($scope->canManageGallery(request()->user(), $restaurant), 403);
 
         return $this->applyCover(request(), $restaurant, $image);
-    }
-
-    private function removeImageForUser(
-        Request $request,
-        RestaurantImage $image,
-        RestaurantScopeService $scope,
-    ): RedirectResponse {
-        $restaurant = $image->restaurant;
-        abort_unless($restaurant, 404);
-        abort_unless($scope->canManageGallery($request->user(), $restaurant), 403);
-
-        return $this->removeImage($request, $restaurant, $image);
     }
 
     private function persistNewImage(

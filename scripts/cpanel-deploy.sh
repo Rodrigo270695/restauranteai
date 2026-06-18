@@ -39,12 +39,17 @@ if [ ! -f public/build/manifest.json ]; then
   exit 1
 fi
 
-GALLERY_JS=$(grep -l 'Eliminar foto' public/build/assets/*.js 2>/dev/null | head -1 || true)
-if [ -n "$GALLERY_JS" ]; then
-  if grep -q '/unlink' "$GALLERY_JS"; then
-    echo "OK: JS de galería usa /unlink ($GALLERY_JS)"
+GALLERY_JS=$(php -r "
+\$m = json_decode(file_get_contents('public/build/manifest.json'), true);
+echo \$m['resources/js/pages/app/gallery/index.tsx']['file'] ?? '';
+")
+if [ -n "$GALLERY_JS" ] && [ -f "public/build/$GALLERY_JS" ]; then
+  if grep -qE '(\`/unlink\`|/unlink|`unlink`)' "public/build/$GALLERY_JS" \
+    && grep -qE '(\`/update\`|/update|`update`)' "public/build/$GALLERY_JS"; then
+    echo "OK: JS de galería usa unlink y update (public/build/$GALLERY_JS)"
   else
-    echo "AVISO: JS de galería sin /unlink ($GALLERY_JS). Backend acepta POST .../gallery/{id} con _method=delete."
+    echo "ERROR: JS de galería sin rutas unlink/update (public/build/$GALLERY_JS)."
+    exit 1
   fi
 fi
 
@@ -88,6 +93,8 @@ php artisan config:cache
 if php -r "exit(function_exists('opcache_reset') ? 0 : 1);" 2>/dev/null; then
   php -r "if (function_exists('opcache_reset')) { opcache_reset(); echo 'OPcache reiniciado'.PHP_EOL; }"
 fi
+
+touch public/index.php
 
 echo ""
 echo "==> Verificación de despliegue..."

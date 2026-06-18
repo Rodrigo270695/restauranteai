@@ -165,20 +165,44 @@ test('owner can delete gallery image via empty post to gallery id', function () 
     expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
 });
 
-test('owner can delete gallery image via post route', function () {
+test('owner can delete gallery image via legacy post with method delete', function () {
     [$user, $restaurant] = galleryOwnerWithRestaurant();
     $user->revokePermissionTo('manage_gallery');
 
     $image = $restaurant->images()->create([
-        'path' => 'restaurants/test/sample.jpg',
+        'path' => 'restaurants/test/legacy-delete.jpg',
         'type' => 'interior',
         'display_order' => 0,
-        'is_cover' => true,
+        'is_cover' => false,
     ]);
 
     $this->actingAs($user)
-        ->post(route('app.gallery.unlink', $image))
+        ->withHeaders(['X-Inertia' => 'true', 'X-Requested-With' => 'XMLHttpRequest'])
+        ->post(route('app.gallery.destroy.post', $image), ['_method' => 'delete'])
         ->assertRedirect();
 
     expect($restaurant->images()->whereKey($image->id)->exists())->toBeFalse();
+});
+
+test('owner can update gallery image via post update route', function () {
+    [$user, $restaurant] = galleryOwnerWithRestaurant();
+    $user->revokePermissionTo('manage_gallery');
+
+    $image = $restaurant->images()->create([
+        'path' => 'restaurants/test/update-post.jpg',
+        'type' => 'interior',
+        'display_order' => 0,
+        'is_cover' => false,
+        'alt_text' => 'Antes',
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('app.gallery.update.post', $image), [
+            'alt_text' => 'Después',
+            'type' => 'ambiente',
+        ])
+        ->assertRedirect();
+
+    expect($image->fresh()->alt_text)->toBe('Después');
+    expect($image->fresh()->type)->toBe('ambiente');
 });

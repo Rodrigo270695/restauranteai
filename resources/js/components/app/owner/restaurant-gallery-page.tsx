@@ -47,6 +47,10 @@ const defaultGalleryForm = (): GalleryFormData => ({
     alt_text: '',
 });
 
+function galleryImagePath(base: string, imageId: number, action: 'cover' | 'unlink' | 'update'): string {
+    return `${base}/${imageId}/${action}`;
+}
+
 export function RestaurantGalleryPage({ restaurant, owner, images, stats, canManageGallery, panel }: Props) {
     const can = useCan();
     const readOnly = useOwnerReadOnly();
@@ -110,7 +114,7 @@ export function RestaurantGalleryPage({ restaurant, owner, images, stats, canMan
     const submitEdit = (e: React.FormEvent) => {
         e.preventDefault();
         if (readOnly || !editTarget) return;
-        editForm.transform((data) => ({ ...data, _method: 'put' })).post(`${galleryBase}/${editTarget.id}`, {
+        editForm.post(galleryImagePath(galleryBase, editTarget.id, 'update'), {
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
@@ -210,7 +214,7 @@ export function RestaurantGalleryPage({ restaurant, owner, images, stats, canMan
                                                         size="sm"
                                                         className="h-7 flex-1 cursor-pointer border-amber-200/80 text-[11px] text-amber-800 transition-colors hover:border-amber-300 hover:bg-amber-50 hover:text-amber-900"
                                                         onClick={() =>
-                                                            router.post(`${galleryBase}/${img.id}/cover`, {}, { preserveScroll: true })
+                                                            router.post(galleryImagePath(galleryBase, img.id, 'cover'), {}, { preserveScroll: true })
                                                         }
                                                     >
                                                         <Star className="size-3" />
@@ -273,7 +277,7 @@ export function RestaurantGalleryPage({ restaurant, owner, images, stats, canMan
                 variant="destructive"
                 onConfirm={() => {
                     if (deleteTarget) {
-                        router.post(`${galleryBase}/${deleteTarget.id}/unlink`, {}, {
+                        router.post(galleryImagePath(galleryBase, deleteTarget.id, 'unlink'), {}, {
                             preserveScroll: true,
                             onFinish: () => setDeleteTarget(null),
                         });
