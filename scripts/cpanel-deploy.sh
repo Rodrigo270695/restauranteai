@@ -35,6 +35,19 @@ if [ ! -d node_modules/@laravel/vite-plugin-wayfinder ]; then
 fi
 
 echo "==> Compilando assets..."
+export DEPLOY_DOCROOT_BUILD="${DEPLOY_DOCROOT_BUILD:-$HOME/miskigo.gostudio.pe/build}"
+mkdir -p "$DEPLOY_DOCROOT_BUILD"
+
+# Un solo directorio de build: PHP (public/build) y el docroot (/build/) deben ser el mismo.
+if [ -L public/build ]; then
+  rm -f public/build
+elif [ -d public/build ]; then
+  echo "==> Migrando build previo del repo al document root..."
+  rsync -av public/build/ "${DEPLOY_DOCROOT_BUILD}/"
+  rm -rf public/build
+fi
+ln -sfn "${DEPLOY_DOCROOT_BUILD}" public/build
+
 npm run build
 
 if [ ! -f public/build/manifest.json ]; then
@@ -55,47 +68,31 @@ if [ -n "$GALLERY_JS" ] && [ -f "public/build/$GALLERY_JS" ]; then
   fi
 fi
 
-echo "==> Sincronizando build al document root..."
-export DEPLOY_DOCROOT_BUILD="${DEPLOY_DOCROOT_BUILD:-$HOME/miskigo.gostudio.pe/build}"
-rsync -av --delete public/build/ "${DEPLOY_DOCROOT_BUILD}/"
-
-echo "==> Verificando assets del manifest en document root..."
+echo "==> Verificando build unificado (repo ↔ docroot)..."
 php -r "
-\$manifest = json_decode(file_get_contents('public/build/manifest.json'), true);
+\$manifestPath = 'public/build/manifest.json';
 \$docroot = getenv('DEPLOY_DOCROOT_BUILD') ?: (getenv('HOME') . '/miskigo.gostudio.pe/build');
-\$docManifestPath = \$docroot . '/manifest.json';
-if (! is_file(\$docManifestPath)) {
-    fwrite(STDERR, \"ERROR: Falta manifest en docroot: {\$docManifestPath}\n\");
+if (! is_link('public/build')) {
+    fwrite(STDERR, \"ERROR: public/build no es symlink a {\$docroot}. Ejecuta de nuevo el script completo.\\n\");
     exit(1);
 }
-\$docManifest = json_decode(file_get_contents(\$docManifestPath), true);
-\$repoApp = \$manifest['resources/js/app.tsx']['file'] ?? null;
-\$docApp = \$docManifest['resources/js/app.tsx']['file'] ?? null;
-if (\$repoApp !== \$docApp) {
-    fwrite(STDERR, \"ERROR: manifest desincronizado entre repo y docroot.\n\");
-    fwrite(STDERR, \"  repo:    {\$repoApp}\n\");
-    fwrite(STDERR, \"  docroot: {\$docApp}\n\");
+\$linkTarget = readlink('public/build');
+if (\$linkTarget !== \$docroot && realpath('public/build') !== realpath(\$docroot)) {
+    fwrite(STDERR, \"ERROR: public/build apunta a {\$linkTarget}, se esperaba {\$docroot}.\\n\");
     exit(1);
 }
-\$missing = [];
-foreach (\$manifest as \$entry) {
-    if (! isset(\$entry['file'])) {
-        continue;
-    }
-    \$path = \$docroot . '/' . \$entry['file'];
-    if (! is_file(\$path)) {
-        \$missing[] = \$entry['file'];
-    }
-}
-if (\$missing !== []) {
-    fwrite(STDERR, \"ERROR: Faltan archivos en {\$docroot}:\\n\");
-    foreach (\$missing as \$file) {
-        fwrite(STDERR, \"  - {\$file}\\n\");
-    }
+if (! is_file(\$manifestPath)) {
+    fwrite(STDERR, \"ERROR: {\$manifestPath} no existe. El build falló.\\n\");
     exit(1);
 }
-echo \"OK: \" . count(\$manifest) . \" entradas del manifest presentes en {\$docroot}\\n\";
-echo \"OK: app bundle {\$repoApp}\\n\";
+\$manifest = json_decode(file_get_contents(\$manifestPath), true);
+\$appBundle = \$manifest['resources/js/app.tsx']['file'] ?? null;
+if (! \$appBundle || ! is_file('public/build/' . \$appBundle)) {
+    fwrite(STDERR, \"ERROR: Falta el bundle principal {\$appBundle} en public/build.\\n\");
+    exit(1);
+}
+echo \"OK: \" . count(\$manifest) . \" entradas del manifest en build unificado\\n\";
+echo \"OK: app bundle {\$appBundle}\\n\";
 "
 
 echo "==> Verificando rutas de galería..."
