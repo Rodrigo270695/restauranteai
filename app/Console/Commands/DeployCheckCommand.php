@@ -73,12 +73,12 @@ class DeployCheckCommand extends Command
 
             if ($galleryJs && File::exists($galleryJs)) {
                 $js = File::get($galleryJs);
-                $hasUnlink = str_contains($js, '/unlink') || str_contains($js, '`unlink`');
-                $hasUpdatePost = str_contains($js, '/update') || str_contains($js, '`update`');
+                $hasUnlink = str_contains($js, 'urls.unlink') || str_contains($js, 'urls?.unlink');
+                $hasUpdatePost = str_contains($js, 'urls.update') || str_contains($js, 'urls?.update');
                 $hasMethodDelete = str_contains($js, '_method') && str_contains($js, 'delete');
                 $this->line('JS galería: '.basename($galleryJs));
-                $this->line('  → acción unlink: '.($hasUnlink ? 'sí' : 'no'));
-                $this->line('  → acción update: '.($hasUpdatePost ? 'sí' : 'no'));
+                $this->line('  → usa urls.unlink: '.($hasUnlink ? 'sí' : 'no'));
+                $this->line('  → usa urls.update: '.($hasUpdatePost ? 'sí' : 'no'));
                 $this->line('  → contiene _method+delete: '.($hasMethodDelete ? 'sí' : 'no'));
                 if (! $hasUnlink || ! $hasUpdatePost) {
                     $jsChecksOk = false;

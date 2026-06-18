@@ -47,23 +47,36 @@ GALLERY_JS=$(php -r "
 echo \$m['resources/js/pages/app/gallery/index.tsx']['file'] ?? '';
 ")
 if [ -n "$GALLERY_JS" ] && [ -f "public/build/$GALLERY_JS" ]; then
-  if grep -qE '(\`/unlink\`|/unlink|`unlink`)' "public/build/$GALLERY_JS" \
-    && grep -qE '(\`/update\`|/update|`update`)' "public/build/$GALLERY_JS"; then
-    echo "OK: JS de galería usa unlink y update (public/build/$GALLERY_JS)"
+  if grep -qE 'urls\.unlink|urls\?\.unlink' "public/build/$GALLERY_JS"; then
+    echo "OK: JS de galería usa URLs del servidor ($GALLERY_JS)"
   else
-    echo "ERROR: JS de galería sin rutas unlink/update (public/build/$GALLERY_JS)."
+    echo "ERROR: JS de galería sin urls.unlink ($GALLERY_JS)."
     exit 1
   fi
 fi
 
 echo "==> Sincronizando build al document root..."
-DOCROOT_BUILD="${DEPLOY_DOCROOT_BUILD:-$HOME/miskigo.gostudio.pe/build}"
-rsync -av --delete public/build/ "${DOCROOT_BUILD}/"
+export DEPLOY_DOCROOT_BUILD="${DEPLOY_DOCROOT_BUILD:-$HOME/miskigo.gostudio.pe/build}"
+rsync -av --delete public/build/ "${DEPLOY_DOCROOT_BUILD}/"
 
 echo "==> Verificando assets del manifest en document root..."
 php -r "
 \$manifest = json_decode(file_get_contents('public/build/manifest.json'), true);
 \$docroot = getenv('DEPLOY_DOCROOT_BUILD') ?: (getenv('HOME') . '/miskigo.gostudio.pe/build');
+\$docManifestPath = \$docroot . '/manifest.json';
+if (! is_file(\$docManifestPath)) {
+    fwrite(STDERR, \"ERROR: Falta manifest en docroot: {\$docManifestPath}\n\");
+    exit(1);
+}
+\$docManifest = json_decode(file_get_contents(\$docManifestPath), true);
+\$repoApp = \$manifest['resources/js/app.tsx']['file'] ?? null;
+\$docApp = \$docManifest['resources/js/app.tsx']['file'] ?? null;
+if (\$repoApp !== \$docApp) {
+    fwrite(STDERR, \"ERROR: manifest desincronizado entre repo y docroot.\n\");
+    fwrite(STDERR, \"  repo:    {\$repoApp}\n\");
+    fwrite(STDERR, \"  docroot: {\$docApp}\n\");
+    exit(1);
+}
 \$missing = [];
 foreach (\$manifest as \$entry) {
     if (! isset(\$entry['file'])) {
@@ -82,6 +95,7 @@ if (\$missing !== []) {
     exit(1);
 }
 echo \"OK: \" . count(\$manifest) . \" entradas del manifest presentes en {\$docroot}\\n\";
+echo \"OK: app bundle {\$repoApp}\\n\";
 "
 
 echo "==> Verificando rutas de galería..."
