@@ -33,9 +33,13 @@ test('owner can save restaurant environments and recommended moments', function 
 
     $restaurant = Restaurant::create([
         'owner_id' => $owner->id,
+        'district_id' => basicGeoDistrict()->id,
         'name' => 'Local Entorno',
         'slug' => 'local-entorno',
         'price_range' => 'moderado',
+        'address' => 'Av. Test 1',
+        'latitude' => -6.77137,
+        'longitude' => -79.84088,
     ]);
 
     $vista = RestaurantEnvironment::where('slug', 'vista_al_mar')->firstOrFail();
@@ -44,12 +48,10 @@ test('owner can save restaurant environments and recommended moments', function 
     $cena = RecommendedMoment::where('slug', 'cena')->firstOrFail();
 
     $this->actingAs($owner)
-        ->put(route('app.restaurants.update'), [
-            'name' => 'Local Entorno',
-            'price_range' => 'moderado',
+        ->put(route('app.restaurants.update'), restaurantUpdatePayload($restaurant, [
             'restaurant_environment_ids' => [$vista->id, $urbano->id],
             'recommended_moment_ids' => [$almuerzo->id, $cena->id],
-        ])
+        ]))
         ->assertRedirect();
 
     $restaurant->refresh()->load(['restaurantEnvironments', 'recommendedMoments']);

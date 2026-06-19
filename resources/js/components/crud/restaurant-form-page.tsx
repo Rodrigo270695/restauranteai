@@ -29,6 +29,7 @@ import { useCan } from '@/hooks/use-can';
 import { useOwnerReadOnly } from '@/hooks/use-owner-read-only';
 import type { PanelContext } from '@/lib/scoped-app-path';
 import { PRICE_RANGES, avgPriceHintForRange, priceRangeLabel, validateAvgPriceForRange } from '@/lib/restaurant-price';
+import { validateRestaurantLocation, validateRestaurantName } from '@/lib/validate-restaurant-form';
 import { cn } from '@/lib/utils';
 
 type Option = { id: number; name: string };
@@ -249,6 +250,24 @@ export function RestaurantFormPage({
         e.preventDefault();
         if (readOnly) return;
 
+        const nameError = validateRestaurantName(String(form.data.name));
+        if (nameError) {
+            import('sonner').then(({ toast }) => toast.error(nameError));
+            return;
+        }
+
+        const locationError = validateRestaurantLocation({
+            district_id: form.data.district_id,
+            address: String(form.data.address),
+            latitude: form.data.latitude as number | null,
+            longitude: form.data.longitude as number | null,
+            geo,
+        });
+        if (locationError) {
+            import('sonner').then(({ toast }) => toast.error(locationError));
+            return;
+        }
+
         const validationError = validateAvgPriceForRange(
             String(form.data.price_range),
             form.data.avg_price_per_person,
@@ -263,6 +282,11 @@ export function RestaurantFormPage({
             preserveScroll: true,
             onError: (errors) => {
                 const message =
+                    errors.district_id ??
+                    errors.address ??
+                    errors.latitude ??
+                    errors.longitude ??
+                    errors.name ??
                     errors.avg_price_per_person ??
                     errors.price_range ??
                     Object.values(errors)[0];
@@ -402,13 +426,16 @@ export function RestaurantFormPage({
                                     form.setData('district_id', next.district_id ?? '');
                                 }}
                                 errors={{
+                                    department_id: form.errors.district_id,
+                                    province_id: form.errors.district_id,
                                     district_id: form.errors.district_id,
                                 }}
                                 disabled={form.processing || readOnly}
+                                required
                             />
                         </FieldSpan>
                         <FieldSpan full>
-                            <FormField label="Dirección" htmlFor="r-address" error={form.errors.address}>
+                            <FormField label="Dirección" htmlFor="r-address" error={form.errors.address} required>
                                 <Input
                                     id="r-address"
                                     placeholder="Calle, número, referencia"
@@ -420,24 +447,25 @@ export function RestaurantFormPage({
                             </FormField>
                         </FieldSpan>
                         <FieldSpan full>
-                            <RestaurantLocationPicker
-                                latitude={form.data.latitude as number | null}
-                                longitude={form.data.longitude as number | null}
-                                address={String(form.data.address)}
-                                geocodeContext={geocodeContext}
-                                defaultCenter={mapDefaults}
-                                disabled={form.processing || readOnly}
-                                geocodeUrl={panel?.baseUrl ? `${panel.baseUrl}/geocode` : '/app/restaurants/geocode'}
-                                onChange={({ latitude, longitude }) => {
-                                    form.setData('latitude', latitude);
-                                    form.setData('longitude', longitude);
-                                }}
-                            />
-                            {(form.errors.latitude || form.errors.longitude) && (
-                                <p className="mt-1 text-xs text-red-600">
-                                    {form.errors.latitude ?? form.errors.longitude}
-                                </p>
-                            )}
+                            <FormField
+                                label="Ubicación en el mapa"
+                                error={form.errors.latitude ?? form.errors.longitude}
+                                required
+                            >
+                                <RestaurantLocationPicker
+                                    latitude={form.data.latitude as number | null}
+                                    longitude={form.data.longitude as number | null}
+                                    address={String(form.data.address)}
+                                    geocodeContext={geocodeContext}
+                                    defaultCenter={mapDefaults}
+                                    disabled={form.processing || readOnly}
+                                    geocodeUrl={panel?.baseUrl ? `${panel.baseUrl}/geocode` : '/app/restaurants/geocode'}
+                                    onChange={({ latitude, longitude }) => {
+                                        form.setData('latitude', latitude);
+                                        form.setData('longitude', longitude);
+                                    }}
+                                />
+                            </FormField>
                         </FieldSpan>
                     </FormSection>
 

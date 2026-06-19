@@ -66,17 +66,19 @@ test('owner can save multiple cuisines from profile form', function () {
     ]);
     $restaurant = Restaurant::create([
         'owner_id' => $user->id,
+        'district_id' => basicGeoDistrict()->id,
         'name' => 'Mi Local',
         'slug' => 'mi-local',
         'price_range' => 'moderado',
+        'address' => 'Av. Test 1',
+        'latitude' => -6.77137,
+        'longitude' => -79.84088,
     ]);
 
-    $this->actingAs($user)->put(route('app.restaurants.update'), [
-        'name' => 'Mi Local',
-        'price_range' => 'moderado',
+    $this->actingAs($user)->put(route('app.restaurants.update'), restaurantUpdatePayload($restaurant, [
         'cuisine_type_ids' => [$criolla->id, $chifa->id],
         'primary_cuisine_type_id' => $criolla->id,
-    ])->assertRedirect();
+    ]))->assertRedirect();
 
     $restaurant->refresh()->load('cuisineTypes');
     expect($restaurant->cuisineTypes->pluck('id')->all())->toEqual([$criolla->id, $chifa->id]);

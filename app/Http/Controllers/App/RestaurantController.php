@@ -4,6 +4,7 @@ namespace App\Http\Controllers\App;
 
 use App\Http\Controllers\Concerns\ResolvesScopedRestaurant;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\App\UpdateRestaurantRequest;
 use App\Models\Ambiance;
 use App\Models\CuisineType;
 use App\Models\Department;
@@ -123,48 +124,21 @@ class RestaurantController extends Controller
     }
 
     public function update(
-        Request $request,
+        UpdateRestaurantRequest $request,
         RestaurantScopeService $scope,
         RestaurantCuisineService $cuisineService,
         ?Restaurant $restaurant = null,
     ): RedirectResponse {
-        abort_unless($request->user()?->can('manage_own_restaurant'), 403);
-
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:150'],
-            'short_description' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
-            'district_id' => ['nullable', 'exists:districts,id'],
-            'cuisine_type_ids' => ['nullable', 'array'],
-            'cuisine_type_ids.*' => ['integer', 'exists:cuisine_types,id'],
-            'primary_cuisine_type_id' => ['nullable', 'integer', 'exists:cuisine_types,id'],
-            'ambiance_id' => ['nullable', 'exists:ambiances,id'],
-            'party_type_ids' => ['nullable', 'array'],
-            'party_type_ids.*' => ['integer', 'exists:party_types,id'],
-            'dietary_option_ids' => ['nullable', 'array'],
-            'dietary_option_ids.*' => ['integer', 'exists:dietary_options,id'],
-            'restaurant_environment_ids' => ['nullable', 'array'],
-            'restaurant_environment_ids.*' => ['integer', 'exists:restaurant_environments,id'],
-            'recommended_moment_ids' => ['nullable', 'array'],
-            'recommended_moment_ids.*' => ['integer', 'exists:recommended_moments,id'],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'whatsapp' => ['nullable', 'string', 'max:20'],
-            'email' => ['nullable', 'email', 'max:100'],
-            'website' => ['nullable', 'string', 'max:255'],
-            'price_range' => ['required', PriceRange::validationRule()],
-            'avg_price_per_person' => ['nullable', 'numeric', 'min:0'],
-            'capacity' => ['nullable', 'integer', 'min:1'],
-            'is_active' => ['sometimes', 'boolean'],
-        ]);
+        $data = $request->validated();
 
         if ($error = PriceRange::avgPriceError($data['price_range'], $data['avg_price_per_person'] ?? null)) {
             return back()->withErrors(['avg_price_per_person' => $error])->withInput();
         }
 
         $restaurant = $this->scopedRestaurant($request, $scope, $restaurant);
+
+        $profile = $request->user()?->restaurantProfile;
+        $inOnboarding = $profile?->needsPostApprovalOnboarding() ?? false;
 
         $cuisineIds = $data['cuisine_type_ids'] ?? [];
         $primaryCuisineId = $data['primary_cuisine_type_id'] ?? null;
@@ -214,7 +188,12 @@ class RestaurantController extends Controller
 
         $this->maybeCompleteOwnerOnboarding($request->user(), $restaurant);
 
-        return back()->with('success', 'Datos del local actualizados.');
+        $message = 'Datos del local actualizados.';
+        if ($inOnboarding && ! $request->user()?->fresh()->restaurantProfile?->needsPostApprovalOnboarding()) {
+            $message = 'Local configurado. Ya puedes usar el resto del panel.';
+        }
+
+        return back()->with('success', $message);
     }
 
     private function maybeCompleteOwnerOnboarding(?User $user, Restaurant $restaurant): void

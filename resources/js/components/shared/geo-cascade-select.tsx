@@ -18,6 +18,7 @@ type Props = {
     onChange: (next: GeoSelection) => void;
     errors?: Partial<Record<'department_id' | 'province_id' | 'district_id', string>>;
     disabled?: boolean;
+    required?: boolean;
     className?: string;
 };
 
@@ -35,6 +36,7 @@ export function GeoCascadeSelect({
     onChange,
     errors,
     disabled = false,
+    required = false,
     className,
 }: Props) {
     const [departmentId, setDepartmentId] = useState<number | ''>(value.department_id ?? '');
@@ -88,7 +90,7 @@ export function GeoCascadeSelect({
 
     return (
         <div className={cn('grid gap-4 sm:grid-cols-3', className)}>
-            <FormField label="Departamento" htmlFor="geo-department" error={errors?.department_id}>
+            <FormField label="Departamento" htmlFor="geo-department" error={errors?.department_id} required={required}>
                 <select
                     id="geo-department"
                     className={selectClass(!!errors?.department_id)}
@@ -105,7 +107,7 @@ export function GeoCascadeSelect({
                 </select>
             </FormField>
 
-            <FormField label="Provincia" htmlFor="geo-province" error={errors?.province_id}>
+            <FormField label="Provincia" htmlFor="geo-province" error={errors?.province_id} required={required}>
                 <select
                     id="geo-province"
                     className={selectClass(!!errors?.province_id)}
@@ -124,7 +126,7 @@ export function GeoCascadeSelect({
                 </select>
             </FormField>
 
-            <FormField label="Distrito" htmlFor="geo-district" error={errors?.district_id}>
+            <FormField label="Distrito" htmlFor="geo-district" error={errors?.district_id} required={required}>
                 <select
                     id="geo-district"
                     className={selectClass(!!errors?.district_id)}

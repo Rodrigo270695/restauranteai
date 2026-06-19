@@ -44,7 +44,28 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function basicGeoDistrict(): \App\Models\District
 {
-    // ..
+    $dept = \App\Models\Department::firstOrCreate(['code' => '14'], ['name' => 'Lambayeque']);
+    $prov = \App\Models\Province::firstOrCreate(
+        ['code' => '1401'],
+        ['name' => 'Chiclayo', 'department_id' => $dept->id],
+    );
+
+    return \App\Models\District::firstOrCreate(
+        ['code' => '140101'],
+        ['name' => 'Chiclayo', 'province_id' => $prov->id],
+    );
+}
+
+function restaurantUpdatePayload(\App\Models\Restaurant $restaurant, array $overrides = []): array
+{
+    return array_merge([
+        'name' => $restaurant->name,
+        'price_range' => $restaurant->price_range ?? 'moderado',
+        'address' => $restaurant->address ?? 'Av. Test 100',
+        'latitude' => $restaurant->latitude ?? -6.77137,
+        'longitude' => $restaurant->longitude ?? -79.84088,
+        'district_id' => $restaurant->district_id,
+    ], $overrides);
 }

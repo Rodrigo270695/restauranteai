@@ -65,15 +65,13 @@ test('owner can save map coordinates on restaurant profile', function () {
     $restaurant = locationRestaurant($owner);
 
     $this->actingAs($owner)
-        ->put(route('app.restaurants.update'), [
-            'name' => $restaurant->name,
-            'price_range' => 'moderado',
+        ->put(route('app.restaurants.update'), restaurantUpdatePayload($restaurant, [
             'address' => 'Av. Balta 100',
             'latitude' => -6.77137,
             'longitude' => -79.84088,
             'cuisine_type_ids' => [$restaurant->cuisine_type_id],
             'primary_cuisine_type_id' => $restaurant->cuisine_type_id,
-        ])
+        ]))
         ->assertRedirect();
 
     $restaurant->refresh();
@@ -156,4 +154,38 @@ test('geocode avoids duplicating region when address already includes city', fun
         ])
         ->assertOk()
         ->assertJson(['lat' => -6.7711046, 'lng' => -79.840328]);
+});
+
+test('owner cannot save restaurant without complete location', function () {
+    $owner = locationOwner();
+    $restaurant = locationRestaurant($owner);
+
+    $this->actingAs($owner)
+        ->from(route('app.restaurants'))
+        ->put(route('app.restaurants.update'), [
+            'name' => $restaurant->name,
+            'price_range' => 'moderado',
+        ])
+        ->assertRedirect(route('app.restaurants'))
+        ->assertSessionHasErrors(['district_id', 'address', 'latitude', 'longitude']);
+
+    $restaurant->refresh();
+    expect($restaurant->latitude)->toBeNull();
+});
+
+test('completing location during onboarding unlocks the panel', function () {
+    $owner = locationOwner();
+    $owner->restaurantProfile->update(['post_approval_completed_at' => null]);
+    $restaurant = locationRestaurant($owner);
+
+    $this->actingAs($owner)
+        ->put(route('app.restaurants.update'), restaurantUpdatePayload($restaurant, [
+            'address' => 'Av. Balta 100',
+            'latitude' => -6.77137,
+            'longitude' => -79.84088,
+        ]))
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    expect($owner->restaurantProfile->fresh()->post_approval_completed_at)->not->toBeNull();
 });
