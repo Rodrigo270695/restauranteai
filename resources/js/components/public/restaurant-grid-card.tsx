@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ChevronRight, MapPin, Navigation, Star } from 'lucide-react';
+import { ChevronRight, MapPin, MapPinned, Navigation, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { show as exploreRestaurantShow } from '@/routes/explore/restaurants';
 import type { RestaurantCardData } from '@/components/explore/restaurant-card';
@@ -94,6 +94,13 @@ export function RestaurantGridCard({ restaurant }: { restaurant: RestaurantCardD
                         </span>
                     )}
                 </div>
+
+                {restaurant.environments && restaurant.environments.length > 0 && (
+                    <p className="mt-1.5 flex min-w-0 items-start gap-1.5 text-xs text-gray-500">
+                        <MapPinned className="mt-0.5 size-3.5 shrink-0 text-brand-orange/80" />
+                        <span className="line-clamp-2">{restaurant.environments.join(' · ')}</span>
+                    </p>
+                )}
 
                 <div className="mt-3 flex items-center justify-between border-t border-gray-50 pt-3">
                     <div className="text-xs text-gray-500">

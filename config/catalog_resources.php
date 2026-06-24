@@ -14,8 +14,8 @@ return [
     'cuisine_types' => [
         'model' => CuisineType::class,
         'page' => 'app/admin/cuisine-types',
-        'label' => 'tipo de cocina',
-        'title' => 'Tipos de cocina',
+        'label' => 'especialidad gastronómica',
+        'title' => 'Especialidad gastronómica',
         'search' => ['name', 'slug'],
         'fields' => [
             ['key' => 'name', 'label' => 'Nombre', 'type' => 'text', 'required' => true],

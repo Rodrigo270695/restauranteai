@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Clock, Heart, MapPin, Minus, Plus, Star } from 'lucide-react';
+import { Clock, Heart, MapPin, MapPinned, Minus, Plus, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CuisineBadges, type CuisineBadge } from '@/components/explore/cuisine-badges';
 import type { RestaurantHoursData } from '@/components/explore/restaurant-hours-status';
@@ -16,6 +16,7 @@ export type RestaurantListItemData = {
     total_reviews: number;
     cover_url?: string | null;
     district?: string | null;
+    environments?: string[];
     distance_km?: number | null;
     cuisines: CuisineBadge[];
     hours?: RestaurantHoursData | null;
@@ -117,6 +118,12 @@ export function RestaurantListItem({
                             </span>
                         )}
                     </div>
+                    {restaurant.environments && restaurant.environments.length > 0 && (
+                        <p className="mt-1 flex min-w-0 items-start gap-1 text-[11px] text-gray-500">
+                            <MapPinned className="mt-0.5 size-3 shrink-0 text-brand-orange/70" />
+                            <span className="line-clamp-2">{restaurant.environments.join(' · ')}</span>
+                        </p>
+                    )}
                 </div>
             </Link>
 

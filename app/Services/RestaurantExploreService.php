@@ -30,6 +30,7 @@ class RestaurantExploreService
                 'cuisineTypes:id,name',
                 'cuisineType:id,name',
                 'district:id,name',
+                'restaurantEnvironments:id,name',
                 'images' => fn ($q) => $q->where('is_cover', true)->limit(1),
                 'schedules',
             ]);
@@ -252,6 +253,10 @@ class RestaurantExploreService
             'total_reviews' => (int) $restaurant->total_reviews,
             'cover_url' => PublicStorage::url($cover?->path ?? $restaurant->cover_image),
             'district' => $restaurant->district?->name,
+            'environments' => $restaurant->restaurantEnvironments
+                ->pluck('name')
+                ->values()
+                ->all(),
             'latitude' => $restaurant->latitude !== null ? (float) $restaurant->latitude : null,
             'longitude' => $restaurant->longitude !== null ? (float) $restaurant->longitude : null,
             'distance_km' => $distanceKm,

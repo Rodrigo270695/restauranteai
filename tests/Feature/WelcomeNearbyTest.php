@@ -5,6 +5,7 @@ use App\Models\Department;
 use App\Models\District;
 use App\Models\Province;
 use App\Models\Restaurant;
+use App\Models\RestaurantEnvironment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -134,4 +135,19 @@ test('nearby page ignores coordinates without location filter', function () {
             ->where('filters.location_active', false)
             ->missing('filters.lat')
             ->where('restaurants.data.0.name', 'Cerca'));
+});
+
+test('welcome restaurant cards include restaurant environments', function () {
+    $env = RestaurantEnvironment::firstOrCreate(
+        ['slug' => 'vista_al_mar'],
+        ['name' => 'Vista al mar', 'is_active' => true],
+    );
+    $restaurant = welcomeRestaurant(['name' => 'Con Entorno', 'slug' => 'rest-entorno']);
+    $restaurant->restaurantEnvironments()->sync([$env->id]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('restaurants.data', 1)
+            ->where('restaurants.data.0.environments', ['Vista al mar']));
 });

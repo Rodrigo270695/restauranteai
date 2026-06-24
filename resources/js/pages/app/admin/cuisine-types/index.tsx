@@ -9,4 +9,4 @@ function Page(props: Props) {
 }
 
 export default Page;
-Page.layout = { breadcrumbs: appBreadcrumbs('Tipos de cocina', APP_HREF.adminCuisineTypes) };
+Page.layout = { breadcrumbs: appBreadcrumbs('Especialidad gastronómica', APP_HREF.adminCuisineTypes) };
