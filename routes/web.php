@@ -39,6 +39,7 @@ use App\Http\Controllers\OwnerPendingController;
 use App\Http\Controllers\PublicRestaurantController;
 use App\Http\Controllers\RucValidationController;
 use App\Http\Controllers\TamSurveyController;
+use App\Http\Controllers\TopRestaurantInteractionsController;
 use App\Http\Controllers\TouristProfileController;
 use App\Http\Controllers\TouristRouteController;
 use App\Http\Controllers\WelcomeController;
@@ -47,6 +48,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', WelcomeController::class)->name('home');
 Route::middleware('auth')->get('/inicio', AuthenticatedHomeController::class)->name('authenticated.home');
 Route::get('/restaurantes-cercanos', NearbyRestaurantsController::class)->name('restaurants.nearby');
+Route::get('/ranking-interacciones', TopRestaurantInteractionsController::class)->name('restaurants.interactions.top');
 Route::redirect('/restaurantes', '/restaurantes-cercanos');
 Route::get('/restaurantes/{restaurant:slug}', [PublicRestaurantController::class, 'show'])->name('restaurants.public.show');
 

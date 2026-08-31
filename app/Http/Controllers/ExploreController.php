@@ -139,6 +139,8 @@ class ExploreController extends Controller
             $this->preferences->syncFromTouristProfile($user, $profile);
         }
 
+        $this->recommendations->bustCacheForUser($user);
+
         return back()->with('success', '¡Perfil actualizado correctamente!');
     }
 

@@ -220,7 +220,7 @@ export default function AppAdminRoles({ roles, allPermissions, filters, stats }:
 
             <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
-                    title="Roles"
+                    title="roles"
                     description="Gestión de roles y permisos del sistema."
                     stats={statBadges}
                     actions={
@@ -249,7 +249,7 @@ export default function AppAdminRoles({ roles, allPermissions, filters, stats }:
                     rowKey="id"
                     sortKey={sortKey}
                     sortDir={sortDir}
-                    onSort={handleSort} 
+                    onSort={handleSort}
                     emptyMessage="No se encontraron roles"
                     emptyDescription="Prueba con otra búsqueda o crea un nuevo rol."
                     rowActions={(row) => (

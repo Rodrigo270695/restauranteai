@@ -30,7 +30,7 @@ class RestaurantController extends Controller
             ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%"))
             ->latest()
             ->paginate($perPage)
-            ->withQueryString();
+            ->withQueryString(); 
 
         $statsBase = Restaurant::query()->whereHas('owner', $ownerScope);
 
