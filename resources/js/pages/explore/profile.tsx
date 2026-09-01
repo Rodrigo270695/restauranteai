@@ -1,24 +1,25 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
-    Building2,
-    Languages,
+    ArrowRight,
+    Check,
+    ChevronDown,
+    Lock,
     MapPin,
-    Save,
+    Settings2,
     Sparkles,
     Star,
     UtensilsCrossed,
-    Wifi,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { cn } from '@/lib/utils';
-import { type Budget, normalizeBudgets, toggleBudgetSelection } from '@/lib/tourist-budget';
 import TouristExploreLayout from '@/layouts/tourist-explore-layout';
+import { type Budget, normalizeBudgets, toggleBudgetSelection } from '@/lib/tourist-budget';
+import { cn } from '@/lib/utils';
 import { index as exploreIndex } from '@/routes/explore';
 import { update as updateProfile } from '@/routes/explore/profile';
 
@@ -71,16 +72,60 @@ interface Props {
     };
 }
 
-const BTN_STYLE: React.CSSProperties = {
-    background: 'linear-gradient(90deg, #ffb833 0%, #ffa300 50%, #e59200 100%)',
-    boxShadow: '0 4px 18px rgba(200,0,10,0.25)',
+type Accent = 'violet' | 'green' | 'orange' | 'sky' | 'pink' | 'indigo';
+
+const ACCENT: Record<
+    Accent,
+    { icon: string; num: string; pill: string; hint: string; box: string }
+> = {
+    violet: {
+        icon: 'bg-violet-100 text-violet-700',
+        num: 'bg-violet-600 text-white',
+        pill: 'border-violet-500 bg-violet-50 text-violet-700',
+        hint: 'text-violet-600',
+        box: 'border-violet-500 bg-violet-50',
+    },
+    green: {
+        icon: 'bg-emerald-100 text-emerald-700',
+        num: 'bg-emerald-600 text-white',
+        pill: 'border-emerald-500 bg-emerald-50 text-emerald-700',
+        hint: 'text-emerald-600',
+        box: 'border-emerald-500 bg-emerald-50',
+    },
+    orange: {
+        icon: 'bg-orange-100 text-brand-orange',
+        num: 'bg-brand-orange text-white',
+        pill: 'border-brand-orange bg-orange-50 text-brand-orange',
+        hint: 'text-brand-orange',
+        box: 'border-brand-orange bg-orange-50',
+    },
+    sky: {
+        icon: 'bg-sky-100 text-sky-700',
+        num: 'bg-sky-600 text-white',
+        pill: 'border-sky-500 bg-sky-50 text-sky-700',
+        hint: 'text-sky-600',
+        box: 'border-sky-500 bg-sky-50',
+    },
+    pink: {
+        icon: 'bg-pink-100 text-pink-700',
+        num: 'bg-pink-600 text-white',
+        pill: 'border-pink-500 bg-pink-50 text-pink-700',
+        hint: 'text-pink-600',
+        box: 'border-pink-500 bg-pink-50',
+    },
+    indigo: {
+        icon: 'bg-indigo-100 text-indigo-700',
+        num: 'bg-indigo-700 text-white',
+        pill: 'border-indigo-500 bg-indigo-50 text-indigo-800',
+        hint: 'text-indigo-700',
+        box: 'border-indigo-500 bg-indigo-50',
+    },
 };
 
-const SELECT_CLS = cn(
-    'h-11 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-800',
-    'transition-all focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/20',
-);
-
+const SAVE_BTN: React.CSSProperties = {
+    background: 'linear-gradient(90deg, #002366 0%, #FF8C00 100%)',
+    boxShadow: '0 8px 22px rgba(0, 35, 102, 0.28)',
+};
 
 function catalogLabel(slug: string, fallback: string, prefix: string, t: (k: string) => string): string {
     const key = `${prefix}${slug}`;
@@ -88,26 +133,74 @@ function catalogLabel(slug: string, fallback: string, prefix: string, t: (k: str
     return translated === key ? fallback : translated;
 }
 
-function ChipToggle({
+function PreferenceCard({
+    accent,
+    number,
+    icon,
+    title,
+    subtitle,
+    hint,
+    children,
+}: {
+    accent: Accent;
+    number: number;
+    icon: ReactNode;
+    title: string;
+    subtitle: string;
+    hint: string;
+    children: ReactNode;
+}) {
+    const theme = ACCENT[accent];
+
+    return (
+        <article className="flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="mb-3 flex items-start gap-2.5">
+                <span className={cn('flex size-9 shrink-0 items-center justify-center rounded-full', theme.icon)}>
+                    {icon}
+                </span>
+                <span className={cn('flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold', theme.num)}>
+                    {number}
+                </span>
+                <div className="min-w-0">
+                    <h2 className="text-sm font-bold text-brand-blue">{title}</h2>
+                    <p className="text-xs text-gray-400">{subtitle}</p>
+                </div>
+            </div>
+            <div className="min-h-0 flex-1">{children}</div>
+            <p className={cn('mt-3 flex items-center gap-1.5 text-[11px] font-medium', theme.hint)}>
+                <span className={cn('size-1.5 rounded-full', theme.num)} />
+                {hint}
+            </p>
+        </article>
+    );
+}
+
+function Pill({
     active,
+    accent,
     onClick,
+    starred,
     children,
 }: {
     active: boolean;
+    accent: Accent;
     onClick: () => void;
+    starred?: boolean;
     children: React.ReactNode;
 }) {
+    const theme = ACCENT[accent];
+
     return (
         <button
             type="button"
             onClick={onClick}
             className={cn(
-                'cursor-pointer rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all duration-150',
-                active
-                    ? 'border-brand-orange bg-orange-50 text-brand-orange shadow-sm'
-                    : 'border-gray-200 bg-white text-gray-600 hover:border-orange-200 hover:bg-orange-50/40',
+                'inline-flex cursor-pointer items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+                active ? theme.pill : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
             )}
         >
+            {active && <Check className="size-3.5" strokeWidth={3} />}
+            {starred && <Star className="size-3 fill-current" />}
             {children}
         </button>
     );
@@ -125,53 +218,50 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
     const [ambianceId, setAmbianceId] = useState<number | ''>(mlPreference?.ambiance_id ?? '');
     const [maxDistance, setMaxDistance] = useState(mlPreference?.max_distance_km?.toString() ?? '');
     const [partyTypeIds, setPartyTypeIds] = useState<number[]>(mlPreference?.party_type_ids ?? []);
-    const [dietaryOptionIds, setDietaryOptionIds] = useState<number[]>(
-        mlPreference?.dietary_option_ids ?? [],
-    );
-    const [environmentIds, setEnvironmentIds] = useState<number[]>(
-        mlPreference?.restaurant_environment_ids ?? [],
-    );
+    const [dietaryOptionIds, setDietaryOptionIds] = useState<number[]>(mlPreference?.dietary_option_ids ?? []);
+    const [environmentIds, setEnvironmentIds] = useState<number[]>(mlPreference?.restaurant_environment_ids ?? []);
     const [momentIds, setMomentIds] = useState<number[]>(mlPreference?.recommended_moment_ids ?? []);
     const [serviceIds, setServiceIds] = useState<number[]>(mlPreference?.service_ids ?? []);
     const [languageIds, setLanguageIds] = useState<number[]>(mlPreference?.language_ids ?? []);
     const [minRating, setMinRating] = useState<number>(mlPreference?.min_rating ?? 0);
     const [saving, setSaving] = useState(false);
+    const [showMore, setShowMore] = useState(false);
 
     const toggleCuisine = (slug: string) =>
-        setCuisines(prev => (prev.includes(slug) ? prev.filter(x => x !== slug) : [...prev, slug]));
+        setCuisines((prev) => (prev.includes(slug) ? prev.filter((x) => x !== slug) : [...prev, slug]));
 
     const toggleId = (ids: number[], id: number, setter: (v: number[]) => void) =>
-        setter(ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id]);
+        setter(ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]);
 
-    const ningunaDietaryId = catalogs.dietaryOptions.find(d => d.slug === 'ninguna')?.id;
+    const ningunaDietaryId = catalogs.dietaryOptions.find((d) => d.slug === 'ninguna')?.id;
 
     const toggleDietaryOption = (id: number, slug: string) => {
         if (slug === 'ninguna') {
             setDietaryOptionIds([id]);
             return;
         }
-        setDietaryOptionIds(prev => {
-            const base = ningunaDietaryId ? prev.filter(x => x !== ningunaDietaryId) : prev;
-            return base.includes(id) ? base.filter(x => x !== id) : [...base, id];
+        setDietaryOptionIds((prev) => {
+            const base = ningunaDietaryId ? prev.filter((x) => x !== ningunaDietaryId) : prev;
+            return base.includes(id) ? base.filter((x) => x !== id) : [...base, id];
         });
     };
 
-    const partyTypeOptions = catalogs.partyTypes.map(p => ({
+    const partyTypeOptions = catalogs.partyTypes.map((p) => ({
         id: p.id,
         name: catalogLabel(p.slug, p.name, 'explore.party_', t),
     }));
 
-    const dietaryOptions = catalogs.dietaryOptions.map(d => ({
+    const dietaryOptions = catalogs.dietaryOptions.map((d) => ({
         id: d.id,
         name: catalogLabel(d.slug, d.name, 'explore.dietary_', t),
     }));
 
-    const environmentOptions = catalogs.restaurantEnvironments.map(e => ({
+    const environmentOptions = catalogs.restaurantEnvironments.map((e) => ({
         id: e.id,
         name: catalogLabel(e.slug, e.name, 'explore.environment_', t),
     }));
 
-    const momentOptions = catalogs.recommendedMoments.map(m => ({
+    const momentOptions = catalogs.recommendedMoments.map((m) => ({
         id: m.id,
         name: catalogLabel(m.slug, m.name, 'explore.moment_', t),
     }));
@@ -205,388 +295,388 @@ function ExploreProfile({ profile, mlPreference, catalogs }: Props) {
         );
     };
 
+    const initials = user.name
+        .split(' ')
+        .slice(0, 2)
+        .map((w) => w[0])
+        .join('')
+        .toUpperCase();
+
     return (
         <>
             <Head title={t('explore.profile_title')} />
 
-            <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
-                <div className="mb-8">
-                    <button
-                        type="button"
-                        onClick={() => router.visit(exploreIndex.url())}
-                        className="mb-4 flex cursor-pointer items-center gap-1.5 text-sm font-medium text-gray-500 transition-colors hover:text-gray-800"
-                    >
-                        <ArrowLeft className="h-4 w-4" />
-                        {t('explore.back_portal')}
-                    </button>
+            <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+                <button
+                    type="button"
+                    onClick={() => router.visit(exploreIndex.url())}
+                    className="mb-5 flex cursor-pointer items-center gap-1.5 text-sm font-medium text-gray-500 transition-colors hover:text-brand-blue"
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                    {t('explore.back_portal')}
+                </button>
 
-                    <div className="flex items-center gap-4">
-                        <div
-                            className="flex h-14 w-14 items-center justify-center rounded-2xl"
-                            style={BTN_STYLE}
-                        >
-                            <UtensilsCrossed className="h-7 w-7 text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900">
-                                {t('explore.profile_title')}
-                            </h1>
-                            <p className="text-sm text-gray-500">{t('explore.profile_subtitle')}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mb-6 flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                    <div
-                        className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold text-white"
-                        style={BTN_STYLE}
-                    >
-                        {user.name
-                            .split(' ')
-                            .slice(0, 2)
-                            .map(w => w[0])
-                            .join('')
-                            .toUpperCase()}
-                    </div>
+                <div className="mb-8 grid gap-4 lg:grid-cols-[1fr_minmax(16rem,20rem)] lg:items-start">
                     <div>
-                        <p className="font-semibold text-gray-900">{user.name}</p>
-                        <p className="text-sm text-gray-400">{user.email}</p>
+                        <div className="mb-3 flex items-center gap-3">
+                            <span className="flex size-10 items-center justify-center rounded-xl bg-orange-50 text-brand-orange">
+                                <Sparkles className="size-5" />
+                            </span>
+                            <h1 className="text-3xl font-bold tracking-tight text-brand-blue sm:text-4xl">
+                                {t('explore.personalize_lead')}{' '}
+                                <span className="text-brand-orange">{t('explore.personalize_rest')}</span>
+                            </h1>
+                        </div>
+                        <p className="max-w-xl text-sm text-gray-500 sm:text-base">{t('explore.personalize_desc')}</p>
+                        <div className="mt-4 flex items-center gap-3">
+                            <span className="flex size-10 items-center justify-center rounded-full bg-brand-orange text-sm font-bold text-white">
+                                {initials}
+                            </span>
+                            <div>
+                                <p className="text-sm font-semibold text-brand-blue">{user.name}</p>
+                                <p className="text-xs text-gray-400">{user.email}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-start gap-2.5 rounded-2xl border border-violet-100 bg-violet-50/80 px-4 py-3.5">
+                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-violet-600 text-xs font-bold text-white">
+                            i
+                        </span>
+                        <p className="text-sm leading-relaxed text-violet-900/80">{t('explore.personalize_info')}</p>
                     </div>
                 </div>
 
-                <div className="space-y-5">
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                        <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-gray-900">
-                            <MapPin className="h-4 w-4 text-brand-orange" />
-                            {t('explore.district_label')}
-                        </h2>
-                        <p className="mb-4 text-xs text-gray-500">{t('explore.district_hint')}</p>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    <PreferenceCard
+                        accent="violet"
+                        number={1}
+                        icon={<UtensilsCrossed className="size-4" />}
+                        title={t('explore.cuisines_label')}
+                        subtitle={t('explore.cuisines_hint')}
+                        hint={t('explore.card_cuisine_hint')}
+                    >
+                        <div className="flex flex-wrap gap-2">
+                            {catalogs.cuisineTypes.map((c) => (
+                                <Pill
+                                    key={c.slug}
+                                    accent="violet"
+                                    active={cuisines.includes(c.slug)}
+                                    starred={cuisines[0] === c.slug}
+                                    onClick={() => toggleCuisine(c.slug)}
+                                >
+                                    {c.name}
+                                </Pill>
+                            ))}
+                        </div>
+                    </PreferenceCard>
+
+                    <PreferenceCard
+                        accent="green"
+                        number={2}
+                        icon={<span className="text-sm font-bold">S/</span>}
+                        title={t('explore.budget_label')}
+                        subtitle={t('explore.card_select_one_or_more')}
+                        hint={t('explore.card_select_one_or_more')}
+                    >
+                        <div className="grid gap-2">
+                            {catalogs.budgetOptions.map((b) => {
+                                const labels = budgetLabels[b.key];
+                                const active = budgets.includes(b.key);
+                                return (
+                                    <button
+                                        key={b.key}
+                                        type="button"
+                                        onClick={() => setBudgets((prev) => toggleBudgetSelection(prev, b.key))}
+                                        className={cn(
+                                            'relative cursor-pointer rounded-xl border-2 px-3 py-3 text-left transition-all',
+                                            active ? ACCENT.green.box : 'border-gray-100 bg-gray-50 hover:border-emerald-200',
+                                        )}
+                                    >
+                                        {active && (
+                                            <Check className="absolute top-2.5 right-2.5 size-4 text-emerald-600" strokeWidth={3} />
+                                        )}
+                                        <p className={cn('text-sm font-semibold', active ? 'text-emerald-800' : 'text-gray-700')}>
+                                            {labels.label}
+                                        </p>
+                                        <p className="text-xs text-gray-400">{labels.desc}</p>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </PreferenceCard>
+
+                    <PreferenceCard
+                        accent="orange"
+                        number={3}
+                        icon={<Sparkles className="size-4" />}
+                        title={t('explore.ml_ambiance')}
+                        subtitle={t('explore.card_select_one')}
+                        hint={t('explore.card_select_one')}
+                    >
+                        <div className="flex flex-wrap gap-2">
+                            {catalogs.ambiances.map((a) => (
+                                <Pill
+                                    key={a.id}
+                                    accent="orange"
+                                    active={ambianceId === a.id}
+                                    onClick={() => setAmbianceId(ambianceId === a.id ? '' : a.id)}
+                                >
+                                    {a.name}
+                                </Pill>
+                            ))}
+                        </div>
+                    </PreferenceCard>
+
+                    <PreferenceCard
+                        accent="sky"
+                        number={4}
+                        icon={<MapPin className="size-4" />}
+                        title={t('explore.ml_restaurant_environment')}
+                        subtitle={t('explore.ml_multi_hint')}
+                        hint={t('explore.card_select_one_or_more')}
+                    >
+                        <div className="flex flex-wrap gap-2">
+                            {environmentOptions.map((e) => (
+                                <Pill
+                                    key={e.id}
+                                    accent="sky"
+                                    active={environmentIds.includes(e.id)}
+                                    onClick={() => toggleId(environmentIds, e.id, setEnvironmentIds)}
+                                >
+                                    {e.name}
+                                </Pill>
+                            ))}
+                        </div>
+                    </PreferenceCard>
+
+                    <PreferenceCard
+                        accent="pink"
+                        number={5}
+                        icon={<Sparkles className="size-4" />}
+                        title={t('explore.ml_party_type')}
+                        subtitle={t('explore.ml_multi_hint')}
+                        hint={t('explore.card_select_one_or_more')}
+                    >
+                        <div className="flex flex-wrap gap-2">
+                            {partyTypeOptions.map((p) => (
+                                <Pill
+                                    key={p.id}
+                                    accent="pink"
+                                    active={partyTypeIds.includes(p.id)}
+                                    onClick={() => toggleId(partyTypeIds, p.id, setPartyTypeIds)}
+                                >
+                                    {p.name}
+                                </Pill>
+                            ))}
+                        </div>
+                    </PreferenceCard>
+
+                    <PreferenceCard
+                        accent="indigo"
+                        number={6}
+                        icon={<MapPin className="size-4" />}
+                        title={t('explore.district_label')}
+                        subtitle={t('explore.district_hint')}
+                        hint={t('explore.card_select_one')}
+                    >
                         <div className="relative">
-                            <MapPin className="pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2 text-brand-orange opacity-50" />
+                            <MapPin className="pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2 text-indigo-500" />
                             <select
                                 value={city}
-                                onChange={e => setCity(e.target.value)}
-                                className={cn(SELECT_CLS, 'pl-10')}
+                                onChange={(e) => setCity(e.target.value)}
+                                className="h-11 w-full appearance-none rounded-xl border border-gray-200 bg-white pr-4 pl-10 text-sm text-gray-800 transition-all focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                             >
                                 <option value="">{t('explore.district_placeholder')}</option>
-                                {catalogs.districts.map(d => (
+                                {catalogs.districts.map((d) => (
                                     <option key={d.id} value={d.name}>
                                         {d.name} — {d.province}
                                     </option>
                                 ))}
                             </select>
                         </div>
-                    </div>
+                    </PreferenceCard>
+                </div>
 
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                        <h2 className="mb-4 text-sm font-bold text-gray-900">{t('explore.budget_label')}</h2>
-                        <div className="grid grid-cols-3 gap-3">
-                            {catalogs.budgetOptions.map(b => {
-                                const labels = budgetLabels[b.key];
-                                return (
-                                    <button
-                                        key={b.key}
-                                        type="button"
-                                        onClick={() => setBudgets(prev => toggleBudgetSelection(prev, b.key))}
-                                        className={cn(
-                                            'cursor-pointer rounded-xl border-2 p-3 text-center transition-all duration-150',
-                                            budgets.includes(b.key)
-                                                ? 'border-brand-orange bg-orange-50 shadow-sm'
-                                                : 'border-gray-100 bg-gray-50 hover:border-orange-200 hover:bg-orange-50/40',
-                                        )}
-                                    >
-                                        <p
-                                            className={cn(
-                                                'text-sm font-semibold',
-                                                budgets.includes(b.key) ? 'text-brand-orange' : 'text-gray-700',
-                                            )}
-                                        >
-                                            {labels.label}
-                                        </p>
-                                        <p className="mt-0.5 text-xs text-gray-400">{labels.desc}</p>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
+                <div className="mt-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
+                    <button
+                        type="button"
+                        onClick={() => setShowMore((v) => !v)}
+                        className="flex w-full cursor-pointer items-center justify-between gap-3 px-5 py-4 text-left"
+                    >
+                        <span className="flex items-center gap-2.5 text-sm font-bold text-brand-blue">
+                            <Settings2 className="size-4 text-gray-400" />
+                            {t('explore.additional_prefs')}
+                        </span>
+                        <span className="flex items-center gap-1 text-sm font-medium text-brand-orange">
+                            {showMore ? t('explore.show_less') : t('explore.show_more')}
+                            <ChevronDown className={cn('size-4 transition-transform', showMore && 'rotate-180')} />
+                        </span>
+                    </button>
 
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                        <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-gray-900">
-                            <UtensilsCrossed className="h-4 w-4 text-brand-orange" />
-                            {t('explore.cuisines_label')}
-                        </h2>
-                        <p className="mb-4 text-xs text-gray-500">{t('explore.cuisines_hint')}</p>
-                        <div className="flex flex-wrap gap-2">
-                            {catalogs.cuisineTypes.map(c => (
-                                <ChipToggle
-                                    key={c.slug}
-                                    active={cuisines.includes(c.slug)}
-                                    onClick={() => toggleCuisine(c.slug)}
-                                >
-                                    {cuisines.includes(c.slug) ? '✓ ' : ''}
-                                    {c.name}
-                                </ChipToggle>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                        <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-gray-900">
-                            <Wifi className="h-4 w-4 text-brand-orange" />
-                            {t('explore.services_label')}
-                        </h2>
-                        <p className="mb-4 text-xs text-gray-500">{t('explore.services_hint')}</p>
-                        <div className="flex flex-wrap gap-2">
-                            {catalogs.services.map(s => (
-                                <ChipToggle
-                                    key={s.id}
-                                    active={serviceIds.includes(s.id)}
-                                    onClick={() => toggleId(serviceIds, s.id, setServiceIds)}
-                                >
-                                    {serviceIds.includes(s.id) ? '✓ ' : ''}
-                                    {s.name}
-                                </ChipToggle>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                        <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-gray-900">
-                            <Languages className="h-4 w-4 text-brand-orange" />
-                            {t('explore.languages_label')}
-                        </h2>
-                        <p className="mb-4 text-xs text-gray-500">{t('explore.languages_hint')}</p>
-                        <div className="flex flex-wrap gap-2">
-                            {catalogs.languages.map(l => (
-                                <ChipToggle
-                                    key={l.id}
-                                    active={languageIds.includes(l.id)}
-                                    onClick={() => toggleId(languageIds, l.id, setLanguageIds)}
-                                >
-                                    {languageIds.includes(l.id) ? '✓ ' : ''}
-                                    {l.name}
-                                </ChipToggle>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-orange-100 bg-orange-50/30 p-6 shadow-sm">
-                        <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-gray-900">
-                            <Sparkles className="h-4 w-4 text-brand-orange" />
-                            {t('explore.ml_prefs_title')}
-                        </h2>
-                        <p className="mb-4 text-xs text-gray-500">{t('explore.ml_prefs_desc')}</p>
-                        <div className="space-y-4">
+                    {showMore && (
+                        <div className="space-y-6 border-t border-gray-100 px-5 py-5">
                             <div>
-                                <Label className="text-xs text-gray-600">{t('explore.ml_ambiance')}</Label>
-                                <select
-                                    value={ambianceId}
-                                    onChange={e =>
-                                        setAmbianceId(e.target.value ? Number(e.target.value) : '')
-                                    }
-                                    className={cn(SELECT_CLS, 'mt-1')}
-                                >
-                                    <option value="">{t('explore.ml_select_empty')}</option>
-                                    {catalogs.ambiances.map(a => (
-                                        <option key={a.id} value={a.id}>
-                                            {a.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <Label className="flex items-center gap-1 text-xs text-gray-600">
-                                    <Star className="h-3.5 w-3.5 text-amber-500" />
-                                    {t('explore.min_rating_label')}
-                                </Label>
-                                <p className="mb-2 text-xs text-gray-400">{t('explore.min_rating_hint')}</p>
+                                <Label className="text-sm font-semibold text-gray-800">{t('explore.services_label')}</Label>
+                                <p className="mb-2 text-xs text-gray-400">{t('explore.services_hint')}</p>
                                 <div className="flex flex-wrap gap-2">
-                                    {[0, 3, 3.5, 4, 4.5, 5].map(r => (
-                                        <button
-                                            key={r}
-                                            type="button"
-                                            onClick={() => setMinRating(r)}
-                                            className={cn(
-                                                'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium',
-                                                minRating === r
-                                                    ? 'border-brand-orange bg-brand-orange text-white'
-                                                    : 'border-gray-200 bg-white',
-                                            )}
+                                    {catalogs.services.map((s) => (
+                                        <Pill
+                                            key={s.id}
+                                            accent="orange"
+                                            active={serviceIds.includes(s.id)}
+                                            onClick={() => toggleId(serviceIds, s.id, setServiceIds)}
                                         >
-                                            {r === 0
-                                                ? t('explore.ml_select_empty')
-                                                : `${r}+`}
-                                        </button>
+                                            {s.name}
+                                        </Pill>
                                     ))}
                                 </div>
                             </div>
 
                             <div>
-                                <Label className="text-xs text-gray-600">
-                                    {t('explore.ml_max_distance')}
+                                <Label className="text-sm font-semibold text-gray-800">{t('explore.languages_label')}</Label>
+                                <p className="mb-2 text-xs text-gray-400">{t('explore.languages_hint')}</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {catalogs.languages.map((l) => (
+                                        <Pill
+                                            key={l.id}
+                                            accent="sky"
+                                            active={languageIds.includes(l.id)}
+                                            onClick={() => toggleId(languageIds, l.id, setLanguageIds)}
+                                        >
+                                            {l.name}
+                                        </Pill>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <Label className="text-sm font-semibold text-gray-800">{t('explore.ml_dietary')}</Label>
+                                <p className="mb-2 text-xs text-gray-400">{t('explore.ml_multi_hint')}</p>
+                                <div className="flex flex-wrap gap-2">
+                                    <Pill
+                                        accent="violet"
+                                        active={dietaryOptionIds.length === 0}
+                                        onClick={() => setDietaryOptionIds([])}
+                                    >
+                                        {t('explore.ml_select_empty')}
+                                    </Pill>
+                                    {dietaryOptions.map((d) => {
+                                        const slug = catalogs.dietaryOptions.find((x) => x.id === d.id)?.slug ?? '';
+                                        return (
+                                            <Pill
+                                                key={d.id}
+                                                accent="violet"
+                                                active={dietaryOptionIds.includes(d.id)}
+                                                onClick={() => toggleDietaryOption(d.id, slug)}
+                                            >
+                                                {d.name}
+                                            </Pill>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div>
+                                <Label className="text-sm font-semibold text-gray-800">{t('explore.ml_recommended_moment')}</Label>
+                                <p className="mb-2 text-xs text-gray-400">{t('explore.ml_multi_hint')}</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {momentOptions.map((m) => (
+                                        <Pill
+                                            key={m.id}
+                                            accent="pink"
+                                            active={momentIds.includes(m.id)}
+                                            onClick={() => toggleId(momentIds, m.id, setMomentIds)}
+                                        >
+                                            {m.name}
+                                        </Pill>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <Label className="flex items-center gap-1 text-sm font-semibold text-gray-800">
+                                    <Star className="size-3.5 text-amber-500" />
+                                    {t('explore.min_rating_label')}
                                 </Label>
+                                <p className="mb-2 text-xs text-gray-400">{t('explore.min_rating_hint')}</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {[0, 3, 3.5, 4, 4.5, 5].map((r) => (
+                                        <Pill
+                                            key={r}
+                                            accent="orange"
+                                            active={minRating === r}
+                                            onClick={() => setMinRating(r)}
+                                        >
+                                            {r === 0 ? t('explore.ml_select_empty') : `${r}+`}
+                                        </Pill>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <Label className="text-sm font-semibold text-gray-800">{t('explore.ml_max_distance')}</Label>
                                 <Input
                                     type="number"
                                     min={0.5}
                                     max={200}
                                     step={0.5}
                                     value={maxDistance}
-                                    onChange={e => setMaxDistance(e.target.value)}
+                                    onChange={(e) => setMaxDistance(e.target.value)}
                                     placeholder="10"
-                                    className="mt-1 h-11"
+                                    className="mt-1 h-11 max-w-xs"
                                 />
                             </div>
 
                             <div>
-                                <Label className="text-xs text-gray-600">
-                                    {t('explore.ml_party_type')}
-                                </Label>
-                                <p className="mb-2 text-xs text-gray-400">{t('explore.ml_multi_hint')}</p>
-                                <div className="flex flex-wrap gap-2">
-                                    <ChipToggle
-                                        active={partyTypeIds.length === 0}
-                                        onClick={() => setPartyTypeIds([])}
-                                    >
-                                        {t('explore.ml_select_empty')}
-                                    </ChipToggle>
-                                    {partyTypeOptions.map(p => {
-                                        const active = partyTypeIds.includes(p.id);
-                                        return (
-                                            <ChipToggle
-                                                key={p.id}
-                                                active={active}
-                                                onClick={() => toggleId(partyTypeIds, p.id, setPartyTypeIds)}
-                                            >
-                                                {active ? '✓ ' : ''}
-                                                {p.name}
-                                            </ChipToggle>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                            <div>
-                                <Label className="text-xs text-gray-600">
-                                    {t('explore.ml_dietary')}
-                                </Label>
-                                <p className="mb-2 text-xs text-gray-400">{t('explore.ml_multi_hint')}</p>
-                                <div className="flex flex-wrap gap-2">
-                                    <ChipToggle
-                                        active={dietaryOptionIds.length === 0}
-                                        onClick={() => setDietaryOptionIds([])}
-                                    >
-                                        {t('explore.ml_select_empty')}
-                                    </ChipToggle>
-                                    {dietaryOptions.map(d => {
-                                        const slug =
-                                            catalogs.dietaryOptions.find(x => x.id === d.id)?.slug ?? '';
-                                        const active = dietaryOptionIds.includes(d.id);
-                                        return (
-                                            <ChipToggle
-                                                key={d.id}
-                                                active={active}
-                                                onClick={() => toggleDietaryOption(d.id, slug)}
-                                            >
-                                                {active ? '✓ ' : ''}
-                                                {d.name}
-                                            </ChipToggle>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                            <div>
-                                <Label className="text-xs text-gray-600">
-                                    {t('explore.ml_restaurant_environment')}
-                                </Label>
-                                <p className="mb-2 text-xs text-gray-400">{t('explore.ml_multi_hint')}</p>
-                                <div className="flex flex-wrap gap-2">
-                                    <ChipToggle
-                                        active={environmentIds.length === 0}
-                                        onClick={() => setEnvironmentIds([])}
-                                    >
-                                        {t('explore.ml_select_empty')}
-                                    </ChipToggle>
-                                    {environmentOptions.map(e => {
-                                        const active = environmentIds.includes(e.id);
-                                        return (
-                                            <ChipToggle
-                                                key={e.id}
-                                                active={active}
-                                                onClick={() => toggleId(environmentIds, e.id, setEnvironmentIds)}
-                                            >
-                                                {active ? '✓ ' : ''}
-                                                {e.name}
-                                            </ChipToggle>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                            <div>
-                                <Label className="text-xs text-gray-600">
-                                    {t('explore.ml_recommended_moment')}
-                                </Label>
-                                <p className="mb-2 text-xs text-gray-400">{t('explore.ml_multi_hint')}</p>
-                                <div className="flex flex-wrap gap-2">
-                                    <ChipToggle
-                                        active={momentIds.length === 0}
-                                        onClick={() => setMomentIds([])}
-                                    >
-                                        {t('explore.ml_select_empty')}
-                                    </ChipToggle>
-                                    {momentOptions.map(m => {
-                                        const active = momentIds.includes(m.id);
-                                        return (
-                                            <ChipToggle
-                                                key={m.id}
-                                                active={active}
-                                                onClick={() => toggleId(momentIds, m.id, setMomentIds)}
-                                            >
-                                                {active ? '✓ ' : ''}
-                                                {m.name}
-                                            </ChipToggle>
-                                        );
-                                    })}
-                                </div>
+                                <Label className="text-sm font-semibold text-gray-800">{t('explore.bio_label')}</Label>
+                                <textarea
+                                    value={bio}
+                                    onChange={(e) => setBio(e.target.value)}
+                                    rows={3}
+                                    maxLength={500}
+                                    placeholder={t('explore.bio_placeholder')}
+                                    className="mt-1 w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/20"
+                                />
+                                <p className="mt-1 text-right text-xs text-gray-300">{bio.length}/500</p>
                             </div>
                         </div>
-                    </div>
+                    )}
+                </div>
 
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                        <h2 className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-900">
-                            <Building2 className="h-4 w-4 text-brand-orange" />
-                            {t('explore.bio_label')}
-                        </h2>
-                        <textarea
-                            value={bio}
-                            onChange={e => setBio(e.target.value)}
-                            rows={3}
-                            maxLength={500}
-                            placeholder={t('explore.bio_placeholder')}
-                            className={cn(
-                                'w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400',
-                                'transition-all focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/20',
-                            )}
-                        />
-                        <p className="mt-1 text-right text-xs text-gray-300">{bio.length}/500</p>
-                    </div>
-
-                    <Button
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <button
                         type="button"
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border-0 text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98]"
-                        style={BTN_STYLE}
+                        onClick={() => router.visit(exploreIndex.url())}
+                        className="cursor-pointer rounded-xl border-2 border-brand-blue px-5 py-2.5 text-sm font-semibold text-brand-blue transition hover:bg-brand-blue/5"
                     >
-                        {saving ? (
-                            <>
-                                <Spinner /> {t('explore.saving')}
-                            </>
-                        ) : (
-                            <>
-                                <Save className="h-4 w-4" /> {t('explore.save_btn')}
-                            </>
-                        )}
-                    </Button>
+                        {t('explore.back_portal')}
+                    </button>
+
+                    <div className="flex flex-col items-stretch gap-2 sm:items-end">
+                        <Button
+                            type="button"
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="h-12 cursor-pointer rounded-xl border-0 px-6 text-sm font-semibold text-white hover:brightness-110"
+                            style={SAVE_BTN}
+                        >
+                            {saving ? (
+                                <>
+                                    <Spinner /> {t('explore.saving')}
+                                </>
+                            ) : (
+                                <>
+                                    {t('explore.save_continue')}
+                                    <ArrowRight className="size-4" />
+                                </>
+                            )}
+                        </Button>
+                        <p className="flex items-center gap-1.5 text-[11px] text-gray-400">
+                            <Lock className="size-3" />
+                            {t('explore.prefs_secure')}
+                        </p>
+                    </div>
                 </div>
             </div>
         </>

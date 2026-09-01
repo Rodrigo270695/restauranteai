@@ -22,13 +22,13 @@ export function Navbar() {
     return (
         <header
             className={cn(
-                'fixed top-0 left-0 right-0 z-40 transition-all duration-300',
+                'fixed top-0 left-0 right-0 z-[100] transition-all duration-300',
                 useDarkNav
                     ? 'border-b border-white/10 bg-brand-blue shadow-[0_8px_30px_rgba(5,42,88,0.35)]'
                     : 'border-b border-gray-100/80 bg-white/90 shadow-[0_4px_24px_rgba(0,0,0,0.07)] backdrop-blur-xl',
             )}
         >
-            <div className="relative mx-auto flex h-[4.625rem] max-w-7xl items-center justify-between gap-3 overflow-visible px-4 sm:px-6 lg:px-8">
+            <div className="relative mx-auto flex h-[4.625rem] max-w-7xl items-center justify-between gap-3 overflow-visible px-4 sm:px-6 lg:px-8 xl:px-10">
                 <NavLogo variant={useDarkNav ? 'dark' : 'light'} />
 
                 <NavLinks variant={useDarkNav ? 'dark' : 'light'} />

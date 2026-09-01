@@ -26,7 +26,7 @@ export function NavLinks({ variant = 'light' }: NavLinksProps) {
                 if (item.soon) {
                     return (
                         <span
-                            key={item.labelKey}
+                            key={item.key}
                             className="flex cursor-not-allowed flex-col items-center gap-1 px-3 py-1 text-gray-400"
                         >
                             <Icon className="size-5 opacity-40" />
@@ -37,10 +37,10 @@ export function NavLinks({ variant = 'light' }: NavLinksProps) {
 
                 return (
                     <Link
-                        key={item.labelKey}
+                        key={item.key}
                         href={item.href}
                         className={cn(
-                            'group relative flex min-w-[4.5rem] flex-col items-center gap-1 rounded-lg px-2.5 py-1.5 transition-colors',
+                            'group relative flex min-w-[3.6rem] flex-col items-center gap-1 rounded-lg px-1.5 py-1.5 transition-colors lg:min-w-[4.5rem] lg:px-2.5',
                             isActive
                                 ? isDark
                                     ? 'text-brand-orange'

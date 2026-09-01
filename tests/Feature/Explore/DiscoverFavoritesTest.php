@@ -87,3 +87,25 @@ test('guest public nav does not include active favorites link', function () {
             ->has('auth.roles')
             ->where('auth.user', null));
 });
+
+test('tourist favorites page lists saved restaurants', function () {
+    Http::fake();
+
+    $user = favoritesTourist();
+    $fav = favoritesRestaurant('fav-page-'.uniqid());
+
+    UserInteraction::create([
+        'user_id' => $user->id,
+        'restaurant_id' => $fav->id,
+        'interaction_type' => 'save',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('explore.favorites'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('explore/favorites/index')
+            ->has('restaurants', 1)
+            ->where('restaurants.0.slug', $fav->slug)
+            ->where('tab', 'restaurants'));
+});

@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\LoadsTouristProfileCatalogs;
 use App\Http\Requests\TouristProfileSetupRequest;
-use App\Support\BudgetPreference;
 use App\Services\UserPreferenceService;
+use App\Support\BudgetPreference;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
@@ -64,7 +64,7 @@ class TouristProfileController extends Controller
                 $profile->update(['completed_at' => now()]);
             }
 
-            return Redirect::route('explore.discover');
+            return Redirect::route('profile.preparing');
         }
 
         $data = $request->validated();
@@ -79,6 +79,22 @@ class TouristProfileController extends Controller
 
         $this->preferences->syncFromTouristProfile($user, $profile);
 
-        return Redirect::route('explore.discover');
+        return Redirect::route('profile.preparing');
+    }
+
+    /** Paso 3: pantalla de carga de recomendaciones; el front redirige a /. */
+    public function preparing(Request $request): mixed
+    {
+        $user = $request->user();
+
+        if (! $user->hasRole('tourist')) {
+            return Redirect::route('dashboard');
+        }
+
+        if (! $user->touristProfile?->isCompleted()) {
+            return Redirect::route('profile.setup');
+        }
+
+        return Inertia::render('tourist/recommendations-loading');
     }
 }

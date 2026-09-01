@@ -27,6 +27,8 @@ use App\Http\Controllers\AuthenticatedHomeController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExploreController;
+use App\Http\Controllers\ExploreSearchController;
+use App\Http\Controllers\ExploreFavoritesController;
 use App\Http\Controllers\ExploreDiscoverController;
 use App\Http\Controllers\ExploreRecommendationController;
 use App\Http\Controllers\ExploreReservationController;
@@ -228,6 +230,9 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
 Route::middleware(['auth', 'verified'])->prefix('explore')->name('explore.')->group(function () {
     Route::get('/', [ExploreController::class, 'index'])->name('index');
     Route::get('/discover', ExploreDiscoverController::class)->name('discover');
+    Route::get('/search', ExploreSearchController::class)->name('search');
+    Route::get('/favorites', [ExploreFavoritesController::class, 'index'])->name('favorites');
+    Route::post('/favorites/routes/{route:slug}', [ExploreFavoritesController::class, 'toggleRoute'])->name('favorites.routes.toggle');
     Route::post('/recommend', ExploreRecommendationController::class)->name('recommend');
     Route::post('/routes/recommend', ExploreRouteRecommendationController::class)->name('routes.recommend');
     Route::get('/restaurants/{restaurant:slug}', [ExploreRestaurantController::class, 'show'])->name('restaurants.show');
@@ -252,6 +257,7 @@ Route::middleware(['auth', 'verified'])->prefix('explore')->name('explore.')->gr
         Route::get('/', [TouristRouteController::class, 'index'])->name('index');
         Route::post('/publish', [TouristRouteController::class, 'publish'])->name('publish');
         Route::post('/{route:slug}/complete', [TouristRouteController::class, 'complete'])->name('complete');
+        Route::put('/stops/order', [TouristRouteController::class, 'reorderStops'])->name('stops.reorder');
         Route::post('/stops/{restaurant}', [TouristRouteController::class, 'addStop'])->name('stops.add');
         Route::delete('/stops/{restaurant}', [TouristRouteController::class, 'removeStop'])->name('stops.remove');
         Route::get('/{route:slug}', [TouristRouteController::class, 'show'])->name('show');
@@ -263,6 +269,7 @@ Route::middleware(['auth', 'verified'])->prefix('explore')->name('explore.')->gr
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('profile/setup', [TouristProfileController::class, 'show'])->name('profile.setup');
     Route::post('profile/setup', [TouristProfileController::class, 'store'])->name('profile.setup.store');
+    Route::get('profile/preparing', [TouristProfileController::class, 'preparing'])->name('profile.preparing');
     Route::get('owner/pending', [OwnerPendingController::class, 'show'])->name('owner.pending');
     Route::redirect('owner/profile/setup', '/settings/profile')->name('owner.profile.setup');
 });

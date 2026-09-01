@@ -27,6 +27,6 @@ class ExploreRouteRecommendationController extends Controller
             return response()->json($result);
         }
 
-        return Redirect::route('explore.discover', ['view' => 'map']);
+        return Redirect::route('explore.routes.index');
     }
 }

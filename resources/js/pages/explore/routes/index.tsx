@@ -1,21 +1,24 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     Calendar,
     CheckCircle2,
     ChevronRight,
     Footprints,
+    Heart,
     History,
     MapPin,
     Plus,
     Route,
     Trash2,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AiRouteGenerateButton } from '@/components/explore/ai-route-generate-button';
 import { ExplorePageHeader } from '@/components/explore/explore-page-header';
+import { RouteDraftStudio } from '@/components/explore/route-draft-studio';
+import type { RouteDraftStop } from '@/components/explore/route-draft-stop-list';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { exploreDiscoverUrl } from '@/lib/explore-discover-url';
+import { exploreDiscoverUrl, exploreSearchUrl } from '@/lib/explore-discover-url';
 import { formatPeruDateOnly, peruLocale } from '@/lib/peru-datetime';
 import { cn } from '@/lib/utils';
 import TouristExploreLayout from '@/layouts/tourist-explore-layout';
@@ -38,9 +41,14 @@ type RouteItem = {
 type Props = {
     activeRoutes: RouteItem[];
     historyRoutes: RouteItem[];
+    favoritedRouteIds?: number[];
     draftRoute: {
         stops_count: number;
-        stops: Array<{ restaurant: { name: string } }>;
+        generated_by_ai?: boolean;
+        total_distance_km?: number | null;
+        estimated_minutes?: number | null;
+        path_coordinates?: [number, number][];
+        stops: RouteDraftStop[];
     };
 };
 
@@ -81,12 +89,14 @@ function RouteListCard({
     locale,
     t,
     compact = false,
+    isFavorited = false,
 }: {
     route: RouteItem;
     variant: 'active' | 'history';
     locale: string;
     t: (key: string, opts?: Record<string, unknown>) => string;
     compact?: boolean;
+    isFavorited?: boolean;
 }) {
     const progress =
         route.stops_count > 0 ? Math.min(100, (route.visited_count / route.stops_count) * 100) : 0;
@@ -132,6 +142,15 @@ function RouteListCard({
                             >
                                 {route.name}
                             </h2>
+                            <div className="flex shrink-0 items-center">
+                            <button
+                                type="button"
+                                className="cursor-pointer rounded-lg p-1.5 text-gray-400 transition hover:bg-orange-50 hover:text-brand-orange"
+                                aria-label={isFavorited ? t('explore.unfavorite') : t('explore.favorite')}
+                                onClick={() => router.post(`/explore/favorites/routes/${route.slug}`)}
+                            >
+                                <Heart className={cn('size-4', isFavorited && 'fill-red-500 text-red-500')} />
+                            </button>
                             <button
                                 type="button"
                                 className="shrink-0 cursor-pointer rounded-lg p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
@@ -144,6 +163,7 @@ function RouteListCard({
                             >
                                 <Trash2 className="size-4" />
                             </button>
+                            </div>
                         </div>
                         <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
                             <Calendar className="size-3 shrink-0 text-brand-orange" />
@@ -228,63 +248,98 @@ function RouteListCard({
     );
 }
 
-function RoutesIndex({ activeRoutes, historyRoutes, draftRoute }: Props) {
+function RoutesIndex({ activeRoutes, historyRoutes, draftRoute, favoritedRouteIds = [] }: Props) {
     const { t, i18n } = useTranslation();
-    const [tab, setTab] = useState<'active' | 'history'>('active');
+    const { url } = usePage();
+    const tab: 'active' | 'history' = url.includes('tab=history') ? 'history' : 'active';
     const [routeName, setRouteName] = useState('Mi ruta en Chiclayo');
     const [routeDate, setRouteDate] = useState(new Date().toISOString().slice(0, 10));
+    const [stops, setStops] = useState<RouteDraftStop[]>(draftRoute.stops);
+    const [removingSlug, setRemovingSlug] = useState<string | null>(null);
+
+    useEffect(() => {
+        setStops(draftRoute.stops);
+    }, [draftRoute.stops]);
+
+    const setTab = (next: 'active' | 'history') => {
+        router.get(
+            '/explore/routes',
+            next === 'history' ? { tab: 'history' } : {},
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    };
 
     const list = tab === 'active' ? activeRoutes : historyRoutes;
     const totalActive = activeRoutes.length;
     const totalHistory = historyRoutes.length;
+    const isHistory = tab === 'history';
 
     return (
         <>
-            <Head title={t('explore.nav_routes')} />
-            <div className="min-h-screen bg-gradient-to-b from-orange-50/50 via-gray-50 to-gray-100 pb-28">
-                <div className="space-y-5 p-4">
+            <Head title={isHistory ? t('explore.routes_history') : t('explore.nav_routes')} />
+            <div className="bg-[#f4f6fb] pb-28">
+                <div className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
                     <ExplorePageHeader
-                        title={t('explore.nav_routes')}
-                        subtitle={t('explore.routes_subtitle')}
-                        backHref={exploreDiscoverUrl()}
+                        title={isHistory ? t('explore.routes_history') : t('explore.nav_routes')}
+                        subtitle={
+                            isHistory
+                                ? t('explore.routes_history_subtitle')
+                                : t('explore.routes_subtitle')
+                        }
+                        backHref={isHistory ? '/explore/routes' : exploreSearchUrl()}
                     />
 
-                    {draftRoute.stops_count > 0 && (
-                        <div className="overflow-hidden rounded-2xl border-2 border-dashed border-orange-300 bg-gradient-to-br from-orange-50 via-white to-orange-50/30 shadow-sm">
-                            <div className="border-b border-orange-100/80 bg-white/60 px-4 py-3">
-                                <p className="text-sm font-bold text-gray-900">
-                                    {t('explore.route_draft', { count: draftRoute.stops_count })}
-                                </p>
-                                <p className="mt-1 line-clamp-2 text-xs text-gray-600">
-                                    {draftRoute.stops.map(s => s.restaurant.name).join(' → ')}
-                                </p>
-                            </div>
-                            <form
-                                className="space-y-2 p-4"
-                                onSubmit={e => {
-                                    e.preventDefault();
+                    {!isHistory && (
+                        <>
+                    <AiRouteGenerateButton />
+
+                    {stops.length > 0 && (
+                        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-[0_12px_40px_rgba(0,35,102,0.08)] sm:p-6">
+                            <RouteDraftStudio
+                                stops={stops}
+                                generatedByAi={Boolean(draftRoute.generated_by_ai)}
+                                totalKm={draftRoute.total_distance_km}
+                                totalMin={draftRoute.estimated_minutes}
+                                path={draftRoute.path_coordinates ?? []}
+                                routeName={routeName}
+                                setRouteName={setRouteName}
+                                routeDate={routeDate}
+                                setRouteDate={setRouteDate}
+                                removingSlug={removingSlug}
+                                onPublish={() => {
                                     router.post(publishRoute.url(), { name: routeName, route_date: routeDate });
                                 }}
-                            >
-                                <Input
-                                    value={routeName}
-                                    onChange={e => setRouteName(e.target.value)}
-                                    className="rounded-xl border-orange-100 bg-white"
-                                    placeholder={t('explore.route_name_placeholder')}
-                                />
-                                <Input
-                                    type="date"
-                                    value={routeDate}
-                                    onChange={e => setRouteDate(e.target.value)}
-                                    className="rounded-xl border-orange-100 bg-white"
-                                />
-                                <Button
-                                    type="submit"
-                                    className="h-11 w-full cursor-pointer rounded-xl bg-brand-orange text-white shadow-md hover:bg-brand-orange-dark"
-                                >
-                                    {t('explore.publish_route')}
-                                </Button>
-                            </form>
+                                onMove={(slug, direction) => {
+                                    const from = stops.findIndex(s => s.restaurant.slug === slug);
+                                    const to = from + direction;
+                                    if (from < 0 || to < 0 || to >= stops.length) {
+                                        return;
+                                    }
+                                    const next = [...stops];
+                                    const [item] = next.splice(from, 1);
+                                    next.splice(to, 0, item);
+                                    const ordered = next.map((s, index) => ({ ...s, position: index + 1 }));
+                                    setStops(ordered);
+                                    router.put(
+                                        '/explore/routes/stops/order',
+                                        { slugs: ordered.map(s => s.restaurant.slug) },
+                                        { preserveScroll: true, only: ['draftRoute'] },
+                                    );
+                                }}
+                                onRemove={(slug) => {
+                                    setRemovingSlug(slug);
+                                    setStops(
+                                        stops
+                                            .filter(s => s.restaurant.slug !== slug)
+                                            .map((s, index) => ({ ...s, position: index + 1 })),
+                                    );
+                                    router.delete(`/explore/routes/stops/${slug}`, {
+                                        preserveScroll: true,
+                                        only: ['draftRoute'],
+                                        onFinish: () => setRemovingSlug(null),
+                                    });
+                                }}
+                            />
                         </div>
                     )}
 
@@ -297,7 +352,10 @@ function RoutesIndex({ activeRoutes, historyRoutes, draftRoute }: Props) {
                             {t('explore.create_route_cta')}
                         </Link>
                     </Button>
+                        </>
+                    )}
 
+                    {!isHistory && (
                     <div className="flex rounded-2xl bg-white p-1 shadow-sm ring-1 ring-orange-100">
                         <button
                             type="button"
@@ -326,6 +384,7 @@ function RoutesIndex({ activeRoutes, historyRoutes, draftRoute }: Props) {
                             {t('explore.routes_history')} ({totalHistory})
                         </button>
                     </div>
+                    )}
 
                     {list.length === 0 ? (
                         <div className="col-span-2 rounded-2xl bg-white px-6 py-10 text-center shadow-sm ring-1 ring-gray-100">
@@ -358,6 +417,7 @@ function RoutesIndex({ activeRoutes, historyRoutes, draftRoute }: Props) {
                                     locale={i18n.language}
                                     t={t}
                                     compact
+                                    isFavorited={favoritedRouteIds.includes(r.id)}
                                 />
                             ))}
                         </div>

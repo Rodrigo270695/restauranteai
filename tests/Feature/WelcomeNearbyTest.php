@@ -7,6 +7,7 @@ use App\Models\Province;
 use App\Models\Restaurant;
 use App\Models\RestaurantEnvironment;
 use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -150,4 +151,20 @@ test('welcome restaurant cards include restaurant environments', function () {
         ->assertInertia(fn ($page) => $page
             ->has('restaurants.data', 1)
             ->where('restaurants.data.0.environments', ['Vista al mar']));
+});
+
+test('authenticated tourist sees personalized home instead of public listing', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $user = User::factory()->create(['email_verified_at' => now(), 'name' => 'Claudia']);
+    $user->assignRole('tourist');
+
+    $this->actingAs($user)
+        ->get(route('home'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('welcome')
+            ->where('isTouristHome', true)
+            ->has('recommendations')
+            ->has('cuisineTypes')
+            ->missing('restaurants'));
 });

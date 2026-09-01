@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Str;
@@ -82,5 +83,10 @@ class TouristRoute extends Model
     public function reservations(): HasMany
     {
         return $this->hasMany(RestaurantReservation::class, 'tourist_route_id');
+    }
+
+    public function favoritedBy(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'tourist_route_favorites')->withTimestamps();
     }
 }

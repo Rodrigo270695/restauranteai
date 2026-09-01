@@ -2,6 +2,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { Search, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { RestaurantCardData } from '@/components/explore/restaurant-card';
+import { TouristHome } from '@/components/home/tourist-home';
 import { WelcomeHeroCarousel } from '@/components/public/welcome-hero-carousel';
 import { WelcomeHeroAiBadge, WelcomeHeroMiskiFloat } from '@/components/public/welcome-hero-extras';
 import { WelcomeHeroSearch } from '@/components/public/welcome-hero-search';
@@ -9,6 +10,7 @@ import { WelcomeRestaurantsBrowse } from '@/components/public/welcome-restaurant
 import type { PaginationMeta } from '@/components/shared/pagination-links';
 import { useLanguageSync } from '@/hooks/use-language-sync';
 import { cn } from '@/lib/utils';
+import { type Budget } from '@/lib/tourist-budget';
 import { login, register } from '@/routes';
 
 const HERO_CTA_STYLE = {
@@ -18,8 +20,25 @@ const HERO_CTA_STYLE = {
 
 type PriceRangeOption = { value: string; label: string; name: string; hint?: string | null };
 
+type TouristHomeProfile = {
+    city: string | null;
+    preferred_cuisines: string[];
+    budget_preference: Budget[] | null;
+    completed: boolean;
+};
+
 type Props = {
     canRegister?: boolean;
+    isTouristHome?: boolean;
+    profile?: TouristHomeProfile | null;
+    mlPreference?: {
+        ambiance: string | null;
+        party_types: string[];
+        restaurant_environments: string[];
+        price_range: string | null;
+    } | null;
+    recommendations?: (RestaurantCardData & { rank: number; recommendation_score: number })[];
+    recommendationMeta?: { request_id: number | null; ml_available: boolean };
     restaurants?: PaginationMeta & { data: (RestaurantCardData & { is_featured?: boolean })[] };
     cuisineTypes?: { id: number; name: string; slug?: string }[];
     districts?: { id: number; name: string }[];
@@ -40,6 +59,11 @@ type Props = {
 
 export default function Welcome({
     canRegister = true,
+    isTouristHome = false,
+    profile = null,
+    mlPreference = null,
+    recommendations = [],
+    recommendationMeta,
     restaurants = { data: [], current_page: 1, last_page: 1, from: null, to: null, total: 0, per_page: 12, path: '/' },
     cuisineTypes = [],
     districts = [],
@@ -53,6 +77,26 @@ export default function Welcome({
     const roles = auth?.roles ?? [];
     const isTourist = Boolean(auth?.user && roles.includes('tourist'));
     const isOwner = Boolean(auth?.user && roles.includes('restaurant_owner'));
+
+    if (isTouristHome || isTourist) {
+        return (
+            <>
+                <Head title={t('nav.home')} />
+                <TouristHome
+                    userName={auth?.user?.name ?? ''}
+                    profile={profile}
+                    mlPreference={mlPreference}
+                    recommendations={recommendations}
+                    recommendationMeta={recommendationMeta}
+                    cuisineTypes={cuisineTypes.map((c) => ({
+                        id: c.id,
+                        name: c.name,
+                        slug: c.slug ?? '',
+                    }))}
+                />
+            </>
+        );
+    }
 
     const recommendHref = isTourist ? '/explore' : canRegister ? register() : login();
 

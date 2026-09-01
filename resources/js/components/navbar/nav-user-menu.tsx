@@ -84,7 +84,7 @@ export function NavUserMenu({ user, variant = 'light' }: NavUserMenuProps) {
                 </button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="z-[110] w-56">
                 <div className="px-3 py-2">
                     <p className="text-sm font-semibold text-gray-900">{user.name}</p>
                     <p className="truncate text-xs text-gray-500">{user.email}</p>

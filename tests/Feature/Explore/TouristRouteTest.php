@@ -131,3 +131,75 @@ test('tourist can build and publish a route', function () {
 
     Carbon::setTestNow();
 });
+
+test('tourist can reorder draft route stops', function () {
+    Carbon::setTestNow(Carbon::parse('2026-05-18 14:00:00', RestaurantHoursPresenter::TZ));
+
+    $user = tourist();
+    $r1 = verifiedRestaurant(['slug' => 'primero-orden']);
+    $r2 = verifiedRestaurant(['name' => 'Segundo', 'slug' => 'segundo-orden']);
+
+    foreach ([$r1, $r2] as $restaurant) {
+        foreach (range(0, 6) as $day) {
+            RestaurantSchedule::create([
+                'restaurant_id' => $restaurant->id,
+                'day_of_week' => $day,
+                'opens_at' => '11:00',
+                'closes_at' => '22:00',
+                'is_closed' => false,
+            ]);
+        }
+    }
+
+    $this->actingAs($user)->post(route('explore.routes.stops.add', $r1->slug))->assertRedirect();
+    $this->actingAs($user)->post(route('explore.routes.stops.add', $r2->slug))->assertRedirect();
+
+    $this->actingAs($user)
+        ->put(route('explore.routes.stops.reorder'), ['slugs' => [$r2->slug, $r1->slug]])
+        ->assertRedirect();
+
+    $draft = TouristRoute::where('user_id', $user->id)->where('status', 'draft')->first();
+    $ordered = $draft->stops()->orderBy('position')->with('restaurant')->get();
+
+    expect($ordered[0]->restaurant->slug)->toBe($r2->slug);
+    expect($ordered[1]->restaurant->slug)->toBe($r1->slug);
+
+    Carbon::setTestNow();
+});
+
+test('tourist can favorite a published route and see it in favorites', function () {
+    Carbon::setTestNow(Carbon::parse('2026-05-18 14:00:00', RestaurantHoursPresenter::TZ));
+
+    $user = tourist();
+    $restaurant = verifiedRestaurant(['slug' => 'fav-route-local']);
+    foreach (range(0, 6) as $day) {
+        RestaurantSchedule::create([
+            'restaurant_id' => $restaurant->id,
+            'day_of_week' => $day,
+            'opens_at' => '11:00',
+            'closes_at' => '22:00',
+            'is_closed' => false,
+        ]);
+    }
+
+    $this->actingAs($user)->post(route('explore.routes.stops.add', $restaurant->slug))->assertRedirect();
+    $this->actingAs($user)->post(route('explore.routes.publish'), ['name' => 'Ruta favorita'])->assertRedirect();
+
+    $route = TouristRoute::where('user_id', $user->id)->where('status', 'active')->first();
+    expect($route)->not->toBeNull();
+
+    $this->actingAs($user)
+        ->post(route('explore.favorites.routes.toggle', $route->slug))
+        ->assertRedirect();
+
+    $this->actingAs($user)
+        ->get(route('explore.favorites', ['tab' => 'routes']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('explore/favorites/index')
+            ->has('routes', 1)
+            ->where('routes.0.slug', $route->slug)
+            ->where('tab', 'routes'));
+
+    Carbon::setTestNow();
+});

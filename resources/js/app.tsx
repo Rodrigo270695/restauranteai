@@ -5,6 +5,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
+import BareLayout from '@/layouts/bare-layout';
 import PublicLayout from '@/layouts/public-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import TouristLayout from '@/layouts/tourist-layout';
@@ -53,6 +54,8 @@ createInertiaApp({
             case name === 'welcome':
             case name.startsWith('public/'):
                 return PublicLayout;
+            case name === 'tourist/recommendations-loading':
+                return BareLayout;
             case name.startsWith('auth/'):
             case name.startsWith('tourist/'):
                 return AuthLayout;
@@ -79,7 +82,7 @@ createInertiaApp({
         );
     },
     progress: {
-        color: '#ffa300',
+        color: '#FF8C00',
     },
 });
 

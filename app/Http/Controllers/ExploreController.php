@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\FormatsTouristExplorePayload;
 use App\Http\Controllers\Concerns\LoadsTouristProfileCatalogs;
 use App\Http\Requests\Explore\UserPreferenceRequest;
 use App\Models\Ambiance;
@@ -9,24 +10,26 @@ use App\Models\DietaryOption;
 use App\Models\PartyType;
 use App\Models\RecommendedMoment;
 use App\Models\RestaurantEnvironment;
-use App\Models\TouristProfile;
 use App\Models\UserPreference;
-use App\Support\BudgetPreference;
 use App\Services\RecommendationService;
 use App\Services\RestaurantExploreService;
+use App\Services\UserInteractionService;
 use App\Services\UserPreferenceService;
+use App\Support\BudgetPreference;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 
 class ExploreController extends Controller
 {
+    use FormatsTouristExplorePayload;
     use LoadsTouristProfileCatalogs;
 
     public function __construct(
         private UserPreferenceService $preferences,
         private RestaurantExploreService $explore,
         private RecommendationService $recommendations,
+        private UserInteractionService $interactions,
     ) {}
 
     /** Portal principal del turista */
@@ -47,12 +50,18 @@ class ExploreController extends Controller
         ], fn ($v) => $v !== null);
 
         $recommendationPayload = $this->recommendations->forUser($user, $context);
+        $favoritedSet = array_flip($this->interactions->favoritedRestaurantIds($user));
+        $recommendations = array_map(function (array $item) use ($favoritedSet) {
+            $item['is_favorited'] = isset($favoritedSet[$item['id'] ?? 0]);
+
+            return $item;
+        }, $recommendationPayload['items']);
 
         return Inertia::render('explore/index', [
             'profile' => $this->formatTouristProfile($profile),
             'mlPreference' => $this->formatMlPreference($activePreference),
             'tamCompleted' => $user->tamSurvey()->exists(),
-            'recommendations' => $recommendationPayload['items'],
+            'recommendations' => $recommendations,
             'recommendationMeta' => $recommendationPayload['meta'],
             'cuisineTypes' => $this->activeCuisineTypes(),
         ]);
@@ -145,52 +154,6 @@ class ExploreController extends Controller
     }
 
     /** @return array<string, mixed>|null */
-    private function formatTouristProfile(?TouristProfile $profile, bool $includeNulls = false): ?array
-    {
-        if (! $profile && ! $includeNulls) {
-            return null;
-        }
-
-        if (! $profile) {
-            return [
-                'city' => null,
-                'bio' => null,
-                'preferred_cuisines' => [],
-                'budget_preference' => null,
-                'completed' => false,
-            ];
-        }
-
-        return [
-            'city' => $profile->city,
-            'bio' => $profile->bio,
-            'preferred_cuisines' => $this->normalizePreferredCuisineSlugs($profile->preferred_cuisines ?? []),
-            'budget_preference' => BudgetPreference::normalize($profile->budget_preference),
-            'completed' => $profile->isCompleted(),
-        ];
-    }
-
-    /** @return array<string, mixed>|null */
-    private function formatMlPreference(?UserPreference $pref): ?array
-    {
-        if (! $pref) {
-            return null;
-        }
-
-        return [
-            'cuisine' => $pref->cuisineType?->name,
-            'ambiance' => $pref->ambiance?->name,
-            'price_range' => $pref->price_range,
-            'party_types' => $this->partyTypeNames($pref->party_type_ids ?? []),
-            'dietary_options' => $this->dietaryOptionNames($pref->dietary_option_ids ?? []),
-            'restaurant_environments' => $this->restaurantEnvironmentNames($pref->restaurant_environment_ids ?? []),
-            'recommended_moments' => $this->recommendedMomentNames($pref->recommended_moment_ids ?? []),
-            'max_distance_km' => $pref->max_distance_km !== null ? (float) $pref->max_distance_km : null,
-            'min_rating' => $pref->min_rating !== null ? (float) $pref->min_rating : null,
-        ];
-    }
-
-    /** @return array<string, mixed>|null */
     private function formatMlPreferenceForForm(?UserPreference $pref): ?array
     {
         if (! $pref) {
@@ -271,74 +234,6 @@ class ExploreController extends Controller
             ->where('is_active', true)
             ->whereIn('id', $ids)
             ->pluck('id')
-            ->all();
-    }
-
-    /**
-     * @param  list<int>  $ids
-     * @return list<string>
-     */
-    private function partyTypeNames(array $ids): array
-    {
-        if ($ids === []) {
-            return [];
-        }
-
-        return PartyType::query()
-            ->whereIn('id', $ids)
-            ->orderBy('name')
-            ->pluck('name')
-            ->all();
-    }
-
-    /**
-     * @param  list<int>  $ids
-     * @return list<string>
-     */
-    private function dietaryOptionNames(array $ids): array
-    {
-        if ($ids === []) {
-            return [];
-        }
-
-        return DietaryOption::query()
-            ->whereIn('id', $ids)
-            ->orderBy('name')
-            ->pluck('name')
-            ->all();
-    }
-
-    /**
-     * @param  list<int>  $ids
-     * @return list<string>
-     */
-    private function restaurantEnvironmentNames(array $ids): array
-    {
-        if ($ids === []) {
-            return [];
-        }
-
-        return RestaurantEnvironment::query()
-            ->whereIn('id', $ids)
-            ->orderBy('name')
-            ->pluck('name')
-            ->all();
-    }
-
-    /**
-     * @param  list<int>  $ids
-     * @return list<string>
-     */
-    private function recommendedMomentNames(array $ids): array
-    {
-        if ($ids === []) {
-            return [];
-        }
-
-        return RecommendedMoment::query()
-            ->whereIn('id', $ids)
-            ->orderBy('name')
-            ->pluck('name')
             ->all();
     }
 }

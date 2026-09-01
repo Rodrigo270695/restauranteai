@@ -21,6 +21,8 @@ export type RestaurantCardData = {
     district?: string | null;
     environments?: string[];
     distance_km?: number | null;
+    latitude?: number | null;
+    longitude?: number | null;
     cuisines: CuisineBadge[];
     recommendation_score?: number;
     hours?: RestaurantHoursData | null;

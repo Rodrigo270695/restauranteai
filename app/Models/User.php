@@ -10,6 +10,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['name', 'email', 'password'])]
@@ -61,6 +62,12 @@ class User extends Authenticatable implements \Illuminate\Contracts\Auth\MustVer
     public function touristRoutes(): HasMany
     {
         return $this->hasMany(TouristRoute::class);
+    }
+
+    public function favoriteRoutes(): BelongsToMany
+    {
+        return $this->belongsToMany(TouristRoute::class, 'tourist_route_favorites')
+            ->withTimestamps();
     }
 
     public function restaurants(): HasMany

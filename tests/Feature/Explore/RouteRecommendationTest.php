@@ -62,7 +62,7 @@ function routeRestaurant(string $slug, float $lat, float $lng): Restaurant
     ]);
 }
 
-test('tourist can generate ai route draft and land on discover map', function () {
+test('tourist can generate ai route draft and land on gastronomic routes', function () {
     $user = routeTourist();
     $r1 = routeRestaurant('ruta-a', -6.770, -79.840);
     $r2 = routeRestaurant('ruta-b', -6.775, -79.845);
@@ -97,7 +97,7 @@ test('tourist can generate ai route draft and land on discover map', function ()
 
     $this->actingAs($user)
         ->post(route('explore.routes.recommend'), ['lat' => -6.772, 'lng' => -79.842])
-        ->assertRedirect(route('explore.discover', ['view' => 'map']));
+        ->assertRedirect(route('explore.routes.index'));
 
     $draft = $user->touristRoutes()->where('status', 'draft')->first();
     expect($draft)->not->toBeNull()

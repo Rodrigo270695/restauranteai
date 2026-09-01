@@ -1,4 +1,5 @@
 import { Clock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 export type RestaurantHoursData = {
@@ -18,25 +19,32 @@ type Props = {
 };
 
 export function RestaurantHoursStatus({ hours, variant = 'inline', className }: Props) {
+    const { t } = useTranslation();
+
     if (!hours?.label || hours.label === 'Horario no disponible') {
         return null;
     }
 
     const isUrgent = hours.is_open && hours.closes_soon;
     const isOpen = hours.is_open && !hours.closes_soon;
+    const badgeLabel = isUrgent
+        ? t('explore.closing_soon_badge')
+        : isOpen
+          ? t('explore.open_badge')
+          : t('explore.closed_badge');
 
     if (variant === 'badge') {
         return (
             <span
                 className={cn(
-                    'absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-bold text-white shadow-sm',
+                    'absolute left-2 top-2 rounded-md px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm',
                     isUrgent && 'bg-red-600',
-                    isOpen && 'bg-green-600',
-                    !hours.is_open && 'bg-gray-600',
+                    isOpen && 'bg-emerald-600',
+                    !hours.is_open && 'bg-gray-700',
                     className,
                 )}
             >
-                {hours.label}
+                {badgeLabel}
             </span>
         );
     }
@@ -51,8 +59,8 @@ export function RestaurantHoursStatus({ hours, variant = 'inline', className }: 
                 className,
             )}
         >
-            <Clock className={cn('size-4 shrink-0', isUrgent && 'text-red-600', isOpen && 'text-emerald-600')} />
-            {hours.label}
+            <Clock className={cn('size-3.5 shrink-0', isUrgent && 'text-red-600', isOpen && 'text-emerald-600')} />
+            <span className="line-clamp-1">{hours.label}</span>
         </p>
     );
 }

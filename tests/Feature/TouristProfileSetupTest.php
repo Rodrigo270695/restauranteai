@@ -44,7 +44,7 @@ test('tourist can skip profile setup and reach explore', function () {
 
     $this->actingAs($user)
         ->post(route('profile.setup.store'), ['skip' => true])
-        ->assertRedirect(route('explore.discover'));
+        ->assertRedirect(route('profile.preparing'));
 
     $profile = $user->fresh()->touristProfile;
     expect($profile)->not->toBeNull();
@@ -61,7 +61,7 @@ test('tourist can save setup with real cuisine slugs and district', function () 
             'budget_preference' => 'medium',
             'preferred_cuisines' => ['criolla', 'ceviche'],
         ])
-        ->assertRedirect(route('explore.discover'));
+        ->assertRedirect(route('profile.preparing'));
 
     $profile = TouristProfile::where('user_id', $user->id)->first();
     expect($profile->city)->toBe('Chiclayo');
@@ -81,7 +81,7 @@ test('tourist can save setup with mixed budget preferences', function () {
             'budget_preference' => ['medium', 'high'],
             'preferred_cuisines' => ['criolla'],
         ])
-        ->assertRedirect(route('explore.discover'));
+        ->assertRedirect(route('profile.preparing'));
 
     $profile = TouristProfile::where('user_id', $user->id)->first();
     expect($profile->budget_preference)->toBe(['medium', 'high']);
@@ -98,6 +98,19 @@ test('completed tourist is redirected away from setup', function () {
     $this->actingAs($user)
         ->get(route('profile.setup'))
         ->assertRedirect(route('explore.discover'));
+});
+
+test('completed tourist sees the preparing recommendations screen', function () {
+    $user = setupTourist();
+    TouristProfile::create([
+        'user_id' => $user->id,
+        'completed_at' => now(),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('profile.preparing'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('tourist/recommendations-loading'));
 });
 
 test('invalid cuisine slug is rejected on setup save', function () {

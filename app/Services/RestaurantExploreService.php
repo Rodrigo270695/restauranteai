@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Models\Ambiance;
 use App\Models\CuisineType;
 use App\Models\District;
+use App\Models\PartyType;
 use App\Models\Restaurant;
+use App\Models\RestaurantEnvironment;
 use App\Support\PriceRange;
 use App\Support\PublicStorage;
 use App\Support\RestaurantHoursPresenter;
@@ -29,8 +31,10 @@ class RestaurantExploreService
             ->with([
                 'cuisineTypes:id,name',
                 'cuisineType:id,name',
+                'ambiance:id,name',
                 'district:id,name',
                 'restaurantEnvironments:id,name',
+                'partyTypes:id,name',
                 'images' => fn ($q) => $q->where('is_cover', true)->limit(1),
                 'schedules',
             ]);
@@ -43,23 +47,59 @@ class RestaurantExploreService
             });
         }
 
-        if ($cuisine = $request->integer('cuisine_type_id')) {
-            $query->where(function (Builder $q) use ($cuisine) {
-                $q->where('cuisine_type_id', $cuisine)
-                    ->orWhereHas('cuisineTypes', fn (Builder $cq) => $cq->where('cuisine_types.id', $cuisine));
+        $cuisineIds = $this->intList($request, 'cuisine_type_ids');
+        if ($cuisineIds === [] && $request->integer('cuisine_type_id')) {
+            $cuisineIds = [$request->integer('cuisine_type_id')];
+        }
+        if ($cuisineIds !== []) {
+            $query->where(function (Builder $q) use ($cuisineIds) {
+                $q->whereIn('cuisine_type_id', $cuisineIds)
+                    ->orWhereHas('cuisineTypes', fn (Builder $cq) => $cq->whereIn('cuisine_types.id', $cuisineIds));
             });
         }
 
-        if ($price = $request->string('price_range')->value()) {
-            $query->where('price_range', $price);
+        $priceRanges = $this->stringList($request, 'price_ranges');
+        if ($priceRanges === [] && $request->string('price_range')->value()) {
+            $priceRanges = [$request->string('price_range')->value()];
+        }
+        $priceRanges = array_values(array_filter(
+            $priceRanges,
+            fn (string $v) => in_array($v, [...PriceRange::VALUES, 'premium'], true),
+        ));
+        if ($priceRanges !== []) {
+            $expanded = $priceRanges;
+            if (in_array(PriceRange::CARO, $expanded, true)) {
+                $expanded[] = 'premium';
+            }
+            $query->whereIn('price_range', array_unique($expanded));
         }
 
         if ($district = $request->integer('district_id')) {
             $query->where('district_id', $district);
         }
 
-        if ($ambiance = $request->integer('ambiance_id')) {
-            $query->where('ambiance_id', $ambiance);
+        $ambianceIds = $this->intList($request, 'ambiance_ids');
+        if ($ambianceIds === [] && $request->integer('ambiance_id')) {
+            $ambianceIds = [$request->integer('ambiance_id')];
+        }
+        if ($ambianceIds !== []) {
+            $query->whereIn('ambiance_id', $ambianceIds);
+        }
+
+        $environmentIds = $this->intList($request, 'restaurant_environment_ids');
+        if ($environmentIds !== []) {
+            $query->whereHas(
+                'restaurantEnvironments',
+                fn (Builder $q) => $q->whereIn('restaurant_environments.id', $environmentIds),
+            );
+        }
+
+        $partyTypeIds = $this->intList($request, 'party_type_ids');
+        if ($partyTypeIds !== []) {
+            $query->whereHas(
+                'partyTypes',
+                fn (Builder $q) => $q->whereIn('party_types.id', $partyTypeIds),
+            );
         }
 
         if ($request->has('min_rating')) {
@@ -88,6 +128,25 @@ class RestaurantExploreService
         }
 
         return $query->orderByDesc('is_featured')->orderByDesc('avg_rating');
+    }
+
+    /**
+     * Ordena en SQL por distancia (evita hidratar cientos de modelos).
+     *
+     * @param  Builder<Restaurant>  $query
+     * @return Builder<Restaurant>
+     */
+    public function applyDistanceOrder(Builder $query, float $lat, float $lng): Builder
+    {
+        $haversine = '(6371 * acos(least(1.0, greatest(-1.0, cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))))';
+
+        return $query
+            ->reorder()
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->select('restaurants.*')
+            ->selectRaw("{$haversine} as distance_km", [$lat, $lng, $lat])
+            ->orderBy('distance_km');
     }
 
     public function parseUserCoordinates(Request $request): array
@@ -257,6 +316,10 @@ class RestaurantExploreService
                 ->pluck('name')
                 ->values()
                 ->all(),
+            'ambiance' => $restaurant->ambiance?->name,
+            'party_types' => $restaurant->relationLoaded('partyTypes')
+                ? $restaurant->partyTypes->pluck('name')->values()->all()
+                : [],
             'latitude' => $restaurant->latitude !== null ? (float) $restaurant->latitude : null,
             'longitude' => $restaurant->longitude !== null ? (float) $restaurant->longitude : null,
             'distance_km' => $distanceKm,
@@ -391,6 +454,24 @@ class RestaurantExploreService
             ->get(['id', 'name']);
     }
 
+    public function activeRestaurantEnvironments(): Collection
+    {
+        return RestaurantEnvironment::query()
+            ->where('is_active', true)
+            ->whereHas('restaurants', fn (Builder $r) => $this->publicRestaurantScope($r))
+            ->orderBy('name')
+            ->get(['id', 'name']);
+    }
+
+    public function activePartyTypes(): Collection
+    {
+        return PartyType::query()
+            ->where('is_active', true)
+            ->whereHas('restaurants', fn (Builder $r) => $this->publicRestaurantScope($r))
+            ->orderBy('name')
+            ->get(['id', 'name']);
+    }
+
     /** Distritos Lambayeque con al menos un restaurante público. */
     public function districtsWithRestaurants(): Collection
     {
@@ -441,6 +522,67 @@ class RestaurantExploreService
             })
             ->values()
             ->all();
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function intList(Request $request, string $key): array
+    {
+        $value = $request->input($key, []);
+
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        if (is_string($value) || is_numeric($value)) {
+            $value = preg_split('/[,\s]+/', (string) $value) ?: [];
+        }
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_unique(array_filter(
+            array_map(static fn ($item) => (int) $item, $value),
+            static fn (int $id) => $id > 0,
+        )));
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function stringList(Request $request, string $key): array
+    {
+        $value = $request->input($key, []);
+
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        if (is_string($value)) {
+            $value = preg_split('/[,\s]+/', $value) ?: [];
+        }
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_unique(array_filter(
+            array_map(static fn ($item) => trim((string) $item), $value),
+            static fn (string $item) => $item !== '',
+        )));
+    }
+
+    /**
+     * @param  Collection<int, Restaurant>  $restaurants
+     * @return Collection<int, Restaurant>
+     */
+    public function filterOpenNow(Collection $restaurants): Collection
+    {
+        return $restaurants
+            ->filter(fn (Restaurant $r) => $this->hours->isOpen($r))
+            ->values();
     }
 
     private function priceRangeLabel(?string $priceRange): ?string

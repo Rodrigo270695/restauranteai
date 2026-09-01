@@ -43,11 +43,13 @@ class TouristRouteController extends Controller
             ->map(fn (TouristRoute $r) => $this->routeListItem($r));
 
         $draft = $service->formatRoute($service->draftFor($request->user()), $request->user());
+        $favoritedIds = array_fill_keys($service->favoritedRouteIds($request->user()), true);
 
         return Inertia::render('explore/routes/index', [
             'activeRoutes' => $activeRoutes,
             'historyRoutes' => $historyRoutes,
             'draftRoute' => $draft,
+            'favoritedRouteIds' => array_keys($favoritedIds),
         ]);
     }
 
@@ -83,6 +85,20 @@ class TouristRouteController extends Controller
         $service->removeStop($request->user(), $restaurant);
 
         return back()->with('success', 'Lugar quitado de tu ruta.');
+    }
+
+    public function reorderStops(Request $request, TouristRouteService $service): RedirectResponse
+    {
+        $this->ensureTourist($request);
+
+        $data = $request->validate([
+            'slugs' => ['required', 'array', 'min:1', 'max:8'],
+            'slugs.*' => ['required', 'string', 'max:180'],
+        ]);
+
+        $service->reorderDraftStops($request->user(), $data['slugs']);
+
+        return back();
     }
 
     public function publish(Request $request, TouristRouteService $service): RedirectResponse

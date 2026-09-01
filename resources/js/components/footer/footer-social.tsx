@@ -29,7 +29,7 @@ export function FooterSocial() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={name}
-                    className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition-all hover:bg-white/25 hover:scale-110"
+                    className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition-all hover:scale-110 hover:bg-brand-orange hover:text-white"
                 >
                     {icon}
                 </a>

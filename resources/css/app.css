@@ -8,21 +8,21 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-    /* DiscoverLambo — azul institucional + naranja acento */
-    --color-brand-blue:        #073577;
-    --color-brand-blue-light:  #0d4a9e;
-    --color-brand-blue-dark:   #052a58;
-    --color-brand-orange:      #ffa300;
-    --color-brand-orange-light: #ffb833;
-    --color-brand-orange-dark: #e59200;
-    --color-brand-red:         #ffa300;
-    --color-brand-red-light:   #ffb833;
-    --color-brand-dark:        #052a58;
-    --color-brand-brown:       #073577;
-    --color-brand-dark-orange: #e59200;
+    /* MiskiGO — azul de fondo + naranja acento */
+    --color-brand-blue:        #002366;
+    --color-brand-blue-light:  #0a3d8f;
+    --color-brand-blue-dark:   #001a4d;
+    --color-brand-orange:      #FF8C00;
+    --color-brand-orange-light: #ff9f2b;
+    --color-brand-orange-dark: #e67e00;
+    --color-brand-red:         #FF8C00;
+    --color-brand-red-light:   #ff9f2b;
+    --color-brand-dark:        #001a4d;
+    --color-brand-brown:       #002366;
+    --color-brand-dark-orange: #e67e00;
     --color-brand-yellow:      #ffb347;
     --color-brand-gold:        #ffc966;
-    --color-brand-nav-active:  #ffa300;
+    --color-brand-nav-active:  #FF8C00;
 
     --font-sans:
         'Poppins', ui-sans-serif, system-ui, sans-serif,
@@ -89,19 +89,19 @@
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: #073577;
+    --primary: #002366;
     --primary-foreground: #ffffff;
     --secondary: oklch(0.97 0 0);
-    --secondary-foreground: #073577;
+    --secondary-foreground: #002366;
     --muted: oklch(0.97 0 0);
     --muted-foreground: oklch(0.556 0 0);
     --accent: #fff4eb;
-    --accent-foreground: #073577;
+    --accent-foreground: #002366;
     --destructive: oklch(0.577 0.245 27.325);
     --destructive-foreground: oklch(0.577 0.245 27.325);
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
-    --ring: #ffa300;
+    --ring: #FF8C00;
     --chart-1: oklch(0.646 0.222 41.116);
     --chart-2: oklch(0.6 0.118 184.704);
     --chart-3: oklch(0.398 0.07 227.392);
@@ -109,13 +109,13 @@
     --chart-5: oklch(0.769 0.188 70.08);
     --radius: 0.625rem;
     --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: #073577;
-    --sidebar-primary: #073577;
+    --sidebar-foreground: #002366;
+    --sidebar-primary: #002366;
     --sidebar-primary-foreground: #ffffff;
     --sidebar-accent: #fff4eb;
-    --sidebar-accent-foreground: #073577;
+    --sidebar-accent-foreground: #002366;
     --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: #ffa300;
+    --sidebar-ring: #FF8C00;
 }
 
 .dark {
@@ -125,7 +125,7 @@
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.145 0 0);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: #ffa300;
+    --primary: #FF8C00;
     --primary-foreground: #ffffff;
     --secondary: oklch(0.269 0 0);
     --secondary-foreground: oklch(0.985 0 0);
@@ -145,7 +145,7 @@
     --chart-5: oklch(0.645 0.246 16.439);
     --sidebar: oklch(0.205 0 0);
     --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: #ffa300;
+    --sidebar-primary: #FF8C00;
     --sidebar-primary-foreground: #ffffff;
     --sidebar-accent: oklch(0.269 0 0);
     --sidebar-accent-foreground: oklch(0.985 0 0);
@@ -187,8 +187,8 @@
  */
 @layer components {
     .btn-brand-cta {
-        background: linear-gradient(90deg, #ffb833 0%, #ffa300 45%, #e59200 100%);
-        box-shadow: 0 4px 18px rgba(255, 163, 0, 0.32);
+        background: linear-gradient(90deg, #ff9f2b 0%, #FF8C00 45%, #e67e00 100%);
+        box-shadow: 0 4px 18px rgba(255, 140, 0, 0.32);
         color: #fff;
         border-style: none;
         transition:
@@ -208,8 +208,8 @@
     .btn-brand-cta:focus-visible {
         outline: none;
         box-shadow:
-            0 4px 18px rgba(255, 163, 0, 0.32),
-            0 0 0 3px rgba(7, 53, 119, 0.25);
+            0 4px 18px rgba(255, 140, 0, 0.32),
+            0 0 0 3px rgba(0, 35, 102, 0.25);
     }
 
     /* Leaflet: mantener mapa bajo navbar y barras fijas del portal turista */
@@ -230,7 +230,7 @@
 
     .scrollbar-thin {
         scrollbar-width: thin;
-        scrollbar-color: rgba(255, 163, 0, 0.35) transparent;
+        scrollbar-color: rgba(255, 140, 0, 0.35) transparent;
     }
 
     .scrollbar-thin::-webkit-scrollbar {
@@ -240,7 +240,7 @@
 
     .scrollbar-thin::-webkit-scrollbar-thumb {
         border-radius: 999px;
-        background: rgba(255, 163, 0, 0.35);
+        background: rgba(255, 140, 0, 0.35);
     }
 
     .scrollbar-thin::-webkit-scrollbar-track {

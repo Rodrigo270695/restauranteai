@@ -85,6 +85,34 @@ class UserInteractionService
         ));
     }
 
+    /**
+     * @return array<int, string> restaurant_id => ISO saved_at
+     */
+    public function favoritedRestaurantSavedAt(User $user): array
+    {
+        $seen = [];
+        $saved = [];
+
+        UserInteraction::query()
+            ->where('user_id', $user->id)
+            ->whereNotNull('restaurant_id')
+            ->whereIn('interaction_type', ['save', 'unsave'])
+            ->orderByDesc('id')
+            ->get(['restaurant_id', 'interaction_type', 'created_at'])
+            ->each(function (UserInteraction $row) use (&$seen, &$saved) {
+                $id = (int) $row->restaurant_id;
+                if (isset($seen[$id])) {
+                    return;
+                }
+                $seen[$id] = true;
+                if ($row->interaction_type === 'save') {
+                    $saved[$id] = $row->created_at?->toIso8601String() ?? now()->toIso8601String();
+                }
+            });
+
+        return $saved;
+    }
+
     public function markRecommendationEngagement(User $user, Restaurant $restaurant, ?int $requestId = null): void
     {
         $query = Recommendation::query()

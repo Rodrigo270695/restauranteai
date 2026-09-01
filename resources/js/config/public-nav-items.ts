@@ -1,40 +1,54 @@
 import type { LucideIcon } from 'lucide-react';
-import { Heart, Home, LayoutDashboard, Mail, MapPin, Sparkles, Store } from 'lucide-react';
+import { Heart, History, Home, LayoutDashboard, Mail, Map, Search, Sparkles, Store } from 'lucide-react';
 
 export interface PublicNavItem {
+    key: string;
     labelKey: string;
     href: string;
     exact: boolean;
     soon?: boolean;
     topBadge?: string;
     icon: LucideIcon;
+    /** Solo turista autenticado: favoritos, rutas, historial. */
+    authOnly?: boolean;
 }
 
-const BASE_NAV: PublicNavItem[] = [
-    { labelKey: 'nav.restaurants', href: '/restaurantes-cercanos', exact: false, icon: MapPin },
-    { labelKey: 'nav.contact', href: '/contacto', exact: true, icon: Mail },
-];
+const HOME: PublicNavItem = { key: 'home', labelKey: 'nav.home', href: '/', exact: true, icon: Home };
+
+const AI_RECS: PublicNavItem = {
+    key: 'ai',
+    labelKey: 'nav.ai',
+    href: '/explore',
+    exact: true,
+    icon: Sparkles,
+};
+
+const CONTACT: PublicNavItem = { key: 'contact', labelKey: 'nav.contact', href: '/contacto', exact: true, icon: Mail };
 
 export const PUBLIC_NAV: PublicNavItem[] = [
-    { labelKey: 'nav.home', href: '/', exact: true, icon: Home },
-    ...BASE_NAV,
+    HOME,
+    { key: 'explore', labelKey: 'nav.explore', href: '/restaurantes-cercanos', exact: false, icon: Search },
+    AI_RECS,
+    CONTACT,
 ];
 
 export const TOURIST_NAV: PublicNavItem[] = [
-    { labelKey: 'nav.home', href: '/', exact: true, icon: Home },
-    { labelKey: 'explore.nav_explore', href: '/explore', exact: true, topBadge: 'IA', icon: Sparkles },
-    { labelKey: 'nav.favorites', href: '/explore/discover?favorites_only=1', exact: false, icon: Heart },
-    ...BASE_NAV,
+    HOME,
+    { key: 'explore', labelKey: 'nav.explore', href: '/explore/search', exact: false, icon: Search },
+    AI_RECS,
+    { key: 'routes', labelKey: 'nav.gastro_routes', href: '/explore/routes', exact: false, icon: Map, authOnly: true },
+    { key: 'favorites', labelKey: 'nav.favorites', href: '/explore/favorites', exact: false, icon: Heart, authOnly: true },
+    { key: 'history', labelKey: 'nav.history', href: '/explore/routes?tab=history', exact: false, icon: History, authOnly: true },
 ];
 
 export const OWNER_NAV: PublicNavItem[] = [
-    { labelKey: 'nav.home', href: '/', exact: true, icon: Home },
-    { labelKey: 'nav.my_panel', href: '/owner/pending', exact: false, icon: Store },
+    HOME,
+    { key: 'panel', labelKey: 'nav.my_panel', href: '/owner/pending', exact: false, icon: Store },
 ];
 
 export const ADMIN_NAV: PublicNavItem[] = [
-    { labelKey: 'nav.home', href: '/', exact: true, icon: Home },
-    { labelKey: 'nav.dashboard', href: '/dashboard', exact: false, icon: LayoutDashboard },
+    HOME,
+    { key: 'dashboard', labelKey: 'nav.dashboard', href: '/dashboard', exact: false, icon: LayoutDashboard },
 ];
 
 export function getPublicNavItems(roles: string[]): PublicNavItem[] {
@@ -56,13 +70,36 @@ export function isPublicNavItemActive(url: string, item: PublicNavItem): boolean
         return false;
     }
 
-    if (item.labelKey === 'nav.favorites') {
-        return url.includes('favorites_only=1');
+    const [path, query = ''] = url.split('?');
+    const hasHistory = query.includes('tab=history');
+
+    if (item.key === 'favorites') {
+        return path === '/explore/favorites' || path.startsWith('/explore/favorites');
+    }
+
+    if (item.key === 'history') {
+        return path === '/explore/routes' && hasHistory;
+    }
+
+    if (item.key === 'routes') {
+        return path.startsWith('/explore/routes') && !hasHistory;
+    }
+
+    if (item.key === 'ai') {
+        return path === '/explore';
+    }
+
+    if (item.key === 'explore') {
+        if (item.href.startsWith('/explore/search')) {
+            return path === '/explore/search' || path.startsWith('/explore/restaurants');
+        }
+
+        return path.startsWith(item.href.split('?')[0]);
     }
 
     if (item.exact) {
-        return url === item.href;
+        return path === item.href || url === item.href;
     }
 
-    return url.startsWith(item.href.split('?')[0]);
+    return path.startsWith(item.href.split('?')[0]);
 }

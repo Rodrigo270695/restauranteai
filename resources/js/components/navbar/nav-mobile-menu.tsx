@@ -55,7 +55,7 @@ export function NavMobileMenu({ user, variant = 'light' }: NavMobileMenuProps) {
                         if (item.soon) {
                             return (
                                 <span
-                                    key={item.labelKey}
+                                    key={item.key}
                                     className={cn(
                                         'flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium',
                                         isDark ? 'text-white/40' : 'text-gray-300',
@@ -74,7 +74,7 @@ export function NavMobileMenu({ user, variant = 'light' }: NavMobileMenuProps) {
 
                         return (
                             <Link
-                                key={item.labelKey}
+                                key={item.key}
                                 href={item.href}
                                 onClick={() => setOpen(false)}
                                 className={cn(

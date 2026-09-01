@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Calendar, CheckCircle2, Footprints, MapPin, Navigation, Route } from 'lucide-react';
+import { ArrowLeft, Calendar, CheckCircle2, Footprints, Heart, MapPin, Navigation, Route } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ConfirmModal } from '@/components/modals/confirm-modal';
@@ -20,6 +20,7 @@ type RouteData = {
     route_date: string | null;
     completed_at: string | null;
     is_completed: boolean;
+    is_favorited?: boolean;
     stops_count: number;
     total_distance_km: number | null;
     estimated_minutes: number | null;
@@ -95,6 +96,14 @@ function RouteShow({ route: routeData, mapCenter }: Props) {
                                 </p>
                             )}
                         </div>
+                        <button
+                            type="button"
+                            className="cursor-pointer rounded-xl p-2 text-gray-500 hover:bg-orange-50"
+                            onClick={() => router.post(`/explore/favorites/routes/${routeData.slug}`)}
+                            aria-label={routeData.is_favorited ? t('explore.unfavorite') : t('explore.favorite')}
+                        >
+                            <Heart className={cn('size-5', routeData.is_favorited && 'fill-red-500 text-red-500')} />
+                        </button>
                         {routeData.is_completed ? (
                             <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800">
                                 {t('explore.route_done')}
