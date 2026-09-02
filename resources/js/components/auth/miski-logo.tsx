@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 
-const LOGO_SRC = '/MISKILOGO-09-07.png';
+const LOGO_DARK = '/MISKILOGO-09-07.png';
+const LOGO_LIGHT = '/miskigo-logo-transparent.png';
 
 type Props = {
     className?: string;
@@ -11,7 +12,7 @@ type Props = {
 export function MiskiLogo({ className, onDark = false }: Props) {
     return (
         <img
-            src={LOGO_SRC}
+            src={onDark ? LOGO_DARK : LOGO_LIGHT}
             alt="MiskiGO"
             className={cn('h-auto w-auto object-contain', className)}
             style={onDark ? { mixBlendMode: 'screen' } : undefined}

@@ -7,7 +7,7 @@ import { MiskiLogo } from '@/components/auth/miski-logo';
 import { useLanguageSync } from '@/hooks/use-language-sync';
 import { cn } from '@/lib/utils';
 
-const HERO = '/auth-hero-miski.png';
+const HERO = '/auth-hero-miski-cutout.png';
 
 const CARD_IMAGES = [
     'https://images.unsplash.com/photo-1594040221058-7a070085357c?auto=format&fit=crop&w=400&q=70',
@@ -77,9 +77,7 @@ export default function RecommendationsLoading() {
                         <AuthRegisterStepper current={3} />
                     </div>
 
-                    <div className="mb-5 rounded-2xl bg-brand-blue px-5 py-3 shadow-[0_8px_24px_rgba(0,35,102,0.22)]">
-                        <MiskiLogo onDark className="mx-auto h-24 w-auto sm:h-28" />
-                    </div>
+                    <MiskiLogo className="mx-auto mb-5 h-24 w-auto sm:h-28" />
 
                     <h1 className="max-w-2xl text-center text-2xl font-bold tracking-tight text-brand-blue sm:text-3xl">
                         {t('setup.loading_title')}
@@ -150,7 +148,6 @@ export default function RecommendationsLoading() {
                                 src={HERO}
                                 alt=""
                                 className="relative z-10 h-80 w-auto max-w-full object-contain object-bottom sm:h-88"
-                                style={{ mixBlendMode: 'screen' }}
                             />
 
                             <div className="absolute top-8 right-4 z-20 flex flex-col gap-4 sm:right-6">

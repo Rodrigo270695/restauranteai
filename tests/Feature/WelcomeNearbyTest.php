@@ -51,9 +51,9 @@ test('welcome page lists all restaurants with pagination', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('welcome')
-            ->has('restaurants.data', 2)
-            ->where('restaurants.total', 2)
-            ->where('filters.sort', 'featured'));
+            ->where('isTouristHome', true)
+            ->has('recommendations', 2)
+            ->missing('restaurants'));
 });
 
 test('welcome ignores nearby sort and geolocation query params', function () {
@@ -66,15 +66,15 @@ test('welcome ignores nearby sort and geolocation query params', function () {
     ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->where('filters.sort', 'featured')
-            ->missing('filters.lat'));
+            ->where('isTouristHome', true)
+            ->missing('filters'));
 });
 
-test('welcome filters restaurants by minimum rating', function () {
+test('nearby page filters restaurants by minimum rating', function () {
     welcomeRestaurant(['name' => 'Bajo', 'slug' => 'rest-bajo', 'avg_rating' => 3.2]);
     welcomeRestaurant(['name' => 'Alto', 'slug' => 'rest-alto', 'avg_rating' => 4.6]);
 
-    $this->get(route('home', ['min_rating' => 4]))
+    $this->get(route('restaurants.nearby', ['min_rating' => 4]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('filters.min_rating', 4)
@@ -149,11 +149,11 @@ test('welcome restaurant cards include restaurant environments', function () {
     $this->get(route('home'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('restaurants.data', 1)
-            ->where('restaurants.data.0.environments', ['Vista al mar']));
+            ->has('recommendations', 1)
+            ->where('recommendations.0.environments', ['Vista al mar']));
 });
 
-test('authenticated tourist sees personalized home instead of public listing', function () {
+test('authenticated tourist sees the tourist home payload', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     $user = User::factory()->create(['email_verified_at' => now(), 'name' => 'Claudia']);
     $user->assignRole('tourist');

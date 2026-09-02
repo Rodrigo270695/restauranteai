@@ -90,6 +90,6 @@ test('welcome card includes hours payload', function () {
     $this->get(route('home'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('restaurants.data.0.hours')
-            ->where('restaurants.data.0.hours.is_open', true));
+            ->has('recommendations.0.hours')
+            ->where('recommendations.0.hours.is_open', true));
 });

@@ -20,7 +20,7 @@ class AuthenticatedHomeController extends Controller
         if ($user->hasRole('tourist')) {
             $done = $user->touristProfile?->isCompleted();
 
-            return redirect()->route($done ? 'explore.index' : 'profile.setup');
+            return redirect()->route($done ? 'home' : 'profile.setup');
         }
 
         if ($user->hasRole('restaurant_owner')) {

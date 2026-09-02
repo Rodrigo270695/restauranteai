@@ -48,13 +48,21 @@ use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', WelcomeController::class)->name('home');
+Route::get('/recomendaciones-ia', function () {
+    $user = request()->user();
+    if ($user?->hasRole('tourist')) {
+        return redirect()->route('explore.index');
+    }
+
+    return \Inertia\Inertia::render('public/ai-recommendations');
+})->name('ai-recommendations');
 Route::middleware('auth')->get('/inicio', AuthenticatedHomeController::class)->name('authenticated.home');
 Route::get('/restaurantes-cercanos', NearbyRestaurantsController::class)->name('restaurants.nearby');
 Route::get('/ranking-interacciones', TopRestaurantInteractionsController::class)->name('restaurants.interactions.top');
 Route::redirect('/restaurantes', '/restaurantes-cercanos');
 Route::get('/restaurantes/{restaurant:slug}', [PublicRestaurantController::class, 'show'])->name('restaurants.public.show');
 
-Route::get('/contacto', [ContactController::class, 'show'])->name('contact.show');
+Route::redirect('/contacto', '/')->name('contact.show');
 Route::post('/contacto', [ContactController::class, 'store'])
     ->middleware('throttle:5,1')
     ->name('contact.store');
@@ -226,11 +234,12 @@ Route::middleware(['auth', 'verified', 'restaurant.owner.approved', 'restaurant.
     });
 });
 
+Route::get('/explore/search', ExploreSearchController::class)->name('explore.search');
+
 // ── Portal Turista ────────────────────────────────────────────────────────────
 Route::middleware(['auth', 'verified'])->prefix('explore')->name('explore.')->group(function () {
     Route::get('/', [ExploreController::class, 'index'])->name('index');
     Route::get('/discover', ExploreDiscoverController::class)->name('discover');
-    Route::get('/search', ExploreSearchController::class)->name('search');
     Route::get('/favorites', [ExploreFavoritesController::class, 'index'])->name('favorites');
     Route::post('/favorites/routes/{route:slug}', [ExploreFavoritesController::class, 'toggleRoute'])->name('favorites.routes.toggle');
     Route::post('/recommend', ExploreRecommendationController::class)->name('recommend');

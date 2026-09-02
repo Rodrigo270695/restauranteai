@@ -187,10 +187,7 @@ export default function OwnerPending({ user, restaurant }: Props) {
                     </div>
 
                     <p className="mt-6 text-center text-xs text-gray-400">
-                        {t('owner_pending.contact_note')}{' '}
-                        <Link href="/contacto" className="font-semibold text-brand-red hover:underline">
-                            {t('owner_pending.contact_form')}
-                        </Link>
+                        {t('owner_pending.contact_note')}
                     </p>
                 </div>
             </div>

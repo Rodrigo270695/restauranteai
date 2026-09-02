@@ -22,7 +22,8 @@ export default function TouristExploreLayout({ children, wide = false }: Props) 
     useLanguageSync();
     useFlashToast();
     const { t } = useTranslation();
-    const { url } = usePage();
+    const { url, auth } = usePage();
+    const user = (auth as { user?: unknown | null } | undefined)?.user ?? null;
 
     const isActive = (href: string, key?: string) => {
         const path = url.split('?')[0];
@@ -60,7 +61,7 @@ export default function TouristExploreLayout({ children, wide = false }: Props) 
 
             <nav className="fixed bottom-0 left-0 right-0 z-[100] border-t border-orange-100 bg-white/95 shadow-[0_-4px_24px_rgba(0,0,0,0.06)] backdrop-blur-md md:hidden">
                 <div className="mx-auto flex max-w-lg items-stretch justify-around px-2 py-2 safe-area-pb">
-                    {MOBILE_NAV.map(item => {
+                    {(user ? MOBILE_NAV : MOBILE_NAV.filter((item) => item.key === 'explore')).map(item => {
                         const Icon = item.icon;
                         const href = item.href();
                         const active = isActive(href, item.key);

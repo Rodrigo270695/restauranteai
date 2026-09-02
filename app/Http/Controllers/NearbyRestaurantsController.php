@@ -13,6 +13,10 @@ class NearbyRestaurantsController extends Controller
 
     public function __invoke(Request $request, RestaurantExploreService $explore): mixed
     {
+        if ($request->user()?->hasRole('tourist')) {
+            return redirect()->route('explore.search', $request->query());
+        }
+
         ['lat' => $userLat, 'lng' => $userLng] = $explore->parseUserCoordinates($request);
         $locationActive = $request->boolean('location_active')
             && $userLat !== null

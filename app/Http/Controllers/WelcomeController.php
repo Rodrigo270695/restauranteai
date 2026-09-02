@@ -26,24 +26,52 @@ class WelcomeController extends Controller
     ): mixed {
         $user = $request->user();
 
-        if ($user?->hasRole('tourist')) {
-            $user->loadMissing('touristProfile');
+        if ($user?->hasRole('tourist') || ! $user) {
+            $homePayload = [
+                'canRegister' => Features::enabled(Features::registration()) && ! $user,
+                'isTouristHome' => true,
+                'cuisineTypes' => $explore->activeCuisines(),
+            ];
 
-            $context = array_filter([
-                'latitude' => $request->has('lat') ? $request->float('lat') : null,
-                'longitude' => $request->has('lng') ? $request->float('lng') : null,
-            ], fn ($v) => $v !== null);
+            if ($user?->hasRole('tourist')) {
+                $user->loadMissing('touristProfile');
 
-            $recommendationPayload = $recommendations->forUser($user, $context);
+                $context = array_filter([
+                    'latitude' => $request->has('lat') ? $request->float('lat') : null,
+                    'longitude' => $request->has('lng') ? $request->float('lng') : null,
+                ], fn ($v) => $v !== null);
+
+                $recommendationPayload = $recommendations->forUser($user, $context);
+
+                return Inertia::render('welcome', [
+                    ...$homePayload,
+                    'canRegister' => false,
+                    'profile' => $this->formatTouristProfile($user->touristProfile),
+                    'mlPreference' => $this->formatMlPreference($preferences->activeFor($user)),
+                    'recommendations' => $recommendationPayload['items'],
+                    'recommendationMeta' => $recommendationPayload['meta'],
+                ]);
+            }
+
+            $featured = $explore->publicQuery(Request::create('/', 'GET', ['sort' => 'featured']))
+                ->limit(8)
+                ->get()
+                ->values()
+                ->map(fn ($restaurant, int $index) => array_merge(
+                    $explore->formatCard($restaurant),
+                    [
+                        'rank' => $index + 1,
+                        'recommendation_score' => 0,
+                    ],
+                ))
+                ->all();
 
             return Inertia::render('welcome', [
-                'canRegister' => false,
-                'isTouristHome' => true,
-                'profile' => $this->formatTouristProfile($user->touristProfile),
-                'mlPreference' => $this->formatMlPreference($preferences->activeFor($user)),
-                'recommendations' => $recommendationPayload['items'],
-                'recommendationMeta' => $recommendationPayload['meta'],
-                'cuisineTypes' => $this->activeCuisineTypes(),
+                ...$homePayload,
+                'profile' => null,
+                'mlPreference' => null,
+                'recommendations' => $featured,
+                'recommendationMeta' => ['request_id' => null, 'ml_available' => false],
             ]);
         }
 

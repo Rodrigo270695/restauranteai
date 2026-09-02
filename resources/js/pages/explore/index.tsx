@@ -10,10 +10,11 @@ import {
     ThumbsDown,
     ThumbsUp,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { AiRecommendationCard, type AiRecRestaurant } from '@/components/explore/ai-recommendation-card';
+import { AiRecommendationsPreparing } from '@/components/explore/ai-recommendations-preparing';
 import { useUserGeolocation } from '@/hooks/use-user-geolocation';
 import { cn } from '@/lib/utils';
 import TouristExploreLayout from '@/layouts/tourist-explore-layout';
@@ -53,6 +54,8 @@ function ExploreIndex({ tamCompleted, recommendations = [], recommendationMeta }
     const [favoriteSlug, setFavoriteSlug] = useState<string | null>(null);
     const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
     const [items, setItems] = useState(recommendations);
+    const [preparing, setPreparing] = useState(true);
+    const finishPrep = useCallback(() => setPreparing(false), []);
 
     useEffect(() => {
         setItems(recommendations);
@@ -120,6 +123,9 @@ function ExploreIndex({ tamCompleted, recommendations = [], recommendationMeta }
     return (
         <>
             <Head title={t('nav.ai')} />
+            {preparing ? (
+                <AiRecommendationsPreparing onDone={finishPrep} />
+            ) : (
             <div className="bg-[#f4f6fb] pb-28">
                 <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
                     <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_12px_40px_rgba(0,35,102,0.08)] sm:p-7">
@@ -298,6 +304,7 @@ function ExploreIndex({ tamCompleted, recommendations = [], recommendationMeta }
                     </div>
                 </div>
             </div>
+            )}
         </>
     );
 }

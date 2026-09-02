@@ -9,8 +9,7 @@ uses(RefreshDatabase::class);
 
 test('contact page is accessible', function () {
     $this->get(route('contact.show'))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('public/contact'));
+        ->assertRedirect('/');
 });
 
 test('visitor can submit a restaurant integration inquiry', function () {

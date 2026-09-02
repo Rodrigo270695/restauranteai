@@ -40,7 +40,7 @@ type Props = {
     recommendations?: (RestaurantCardData & { rank: number; recommendation_score: number })[];
     recommendationMeta?: { request_id: number | null; ml_available: boolean };
     restaurants?: PaginationMeta & { data: (RestaurantCardData & { is_featured?: boolean })[] };
-    cuisineTypes?: { id: number; name: string; slug?: string }[];
+    cuisineTypes?: { id: number; name: string; slug: string }[];
     districts?: { id: number; name: string }[];
     ambiances?: { id: number; name: string }[];
     priceRanges?: PriceRangeOption[];
@@ -76,29 +76,34 @@ export default function Welcome({
     const { auth } = usePage().props as { auth?: { user?: { name: string } | null; roles?: string[] } };
     const roles = auth?.roles ?? [];
     const isTourist = Boolean(auth?.user && roles.includes('tourist'));
-    const isOwner = Boolean(auth?.user && roles.includes('restaurant_owner'));
+    const isStaff = Boolean(
+        auth?.user && (roles.includes('restaurant_owner') || roles.includes('super_admin')),
+    );
 
-    if (isTouristHome || isTourist) {
+    if (!isStaff && (isTouristHome || isTourist || !auth?.user)) {
         return (
             <>
-                <Head title={t('nav.home')} />
+                <Head
+                    title={
+                        auth?.user
+                            ? t('home.hello', { name: auth.user.name.split(' ')[0] })
+                            : t('home.hello_guest')
+                    }
+                />
                 <TouristHome
                     userName={auth?.user?.name ?? ''}
-                    profile={profile}
-                    mlPreference={mlPreference}
+                    profile={profile ?? null}
+                    mlPreference={mlPreference ?? null}
                     recommendations={recommendations}
                     recommendationMeta={recommendationMeta}
-                    cuisineTypes={cuisineTypes.map((c) => ({
-                        id: c.id,
-                        name: c.name,
-                        slug: c.slug ?? '',
-                    }))}
+                    cuisineTypes={cuisineTypes}
                 />
             </>
         );
     }
-
-    const recommendHref = isTourist ? '/explore' : canRegister ? register() : login();
+    const isOwner = Boolean(auth?.user && roles.includes('restaurant_owner'));
+    const recommendHref = isTourist ? '/explore' : '/recomendaciones-ia';
+    const exploreHref = '/explore/search';
 
     return (
         <>
@@ -133,7 +138,7 @@ export default function Welcome({
                                     {t('welcome.cta_recommend')}
                                 </Link>
                                 <Link
-                                    href="/restaurantes-cercanos"
+                                    href={exploreHref}
                                     className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-6 py-3.5 text-sm font-semibold text-brand-blue shadow-sm transition hover:bg-gray-50 sm:w-auto sm:text-base"
                                 >
                                     <Search className="size-4" />
@@ -171,6 +176,53 @@ export default function Welcome({
             </section>
 
             <WelcomeHeroSearch cuisineTypes={cuisineTypes} />
+
+            {!auth?.user && (
+                <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
+                    <div className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-orange-100 bg-orange-50/80 px-5 py-5 sm:flex-row sm:items-center">
+                        <div>
+                            <p className="flex items-center gap-2 text-base font-bold text-brand-blue">
+                                <Sparkles className="size-4 text-brand-orange" />
+                                {t('welcome.ai_gate_title')}
+                            </p>
+                            <p className="mt-1 text-sm text-gray-600">{t('welcome.ai_gate_desc')}</p>
+                        </div>
+                        <div className="flex shrink-0 flex-wrap gap-2">
+                            <Link
+                                href={login()}
+                                className="inline-flex h-11 items-center rounded-xl bg-brand-orange px-4 text-sm font-semibold text-white hover:brightness-105"
+                            >
+                                {t('welcome.login')}
+                            </Link>
+                            {canRegister && (
+                                <Link
+                                    href={register()}
+                                    className="inline-flex h-11 items-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-brand-blue hover:bg-gray-50"
+                                >
+                                    {t('welcome.register')}
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+                </section>
+            )}
+
+            {isTourist && (
+                <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
+                    <div className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-brand-blue/10 bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center">
+                        <div>
+                            <p className="text-base font-bold text-brand-blue">{t('explore.recommendations_title')}</p>
+                            <p className="mt-1 text-sm text-gray-500">{t('explore.recommendations_desc')}</p>
+                        </div>
+                        <Link
+                            href="/explore"
+                            className="inline-flex h-11 items-center rounded-xl bg-brand-orange px-4 text-sm font-semibold text-white hover:brightness-105"
+                        >
+                            {t('welcome.cta_go_explore')}
+                        </Link>
+                    </div>
+                </section>
+            )}
 
             <WelcomeRestaurantsBrowse
                 mode="catalog"

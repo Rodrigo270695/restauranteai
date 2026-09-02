@@ -6,7 +6,6 @@ use App\Services\RestaurantExploreService;
 use App\Services\UserInteractionService;
 use App\Support\PriceRange;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 
 class ExploreSearchController extends Controller
@@ -18,15 +17,13 @@ class ExploreSearchController extends Controller
         RestaurantExploreService $explore,
         UserInteractionService $interactions,
     ): mixed {
-        if (! $request->user()?->hasRole('tourist')) {
-            return Redirect::route('dashboard');
-        }
-
         $user = $request->user();
         ['lat' => $userLat, 'lng' => $userLng] = $explore->parseUserCoordinates($request);
         $locationActive = $userLat !== null && $userLng !== null;
 
-        $favoritedIds = $interactions->favoritedRestaurantIds($user);
+        $favoritedIds = $user?->hasRole('tourist')
+            ? $interactions->favoritedRestaurantIds($user)
+            : [];
         $query = $explore->publicQuery($request);
 
         $sort = $request->string('sort')->value() ?: 'relevant';

@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { BadgeCheck, Heart, MapPin, Minus, Plus, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { CuisineBadge } from '@/components/explore/cuisine-badges';
@@ -77,6 +77,10 @@ export function RestaurantListItem({
     detailed = false,
 }: Props) {
     const { t } = useTranslation();
+    const { auth } = usePage().props as { auth?: { user?: unknown | null } };
+    const detailHref = auth?.user
+        ? restaurantShow.url(restaurant.slug)
+        : `/restaurantes/${restaurant.slug}`;
     const inRoute = routePosition != null && routePosition > 0;
     const canAddToRoute =
         !restaurant.hours
@@ -87,7 +91,7 @@ export function RestaurantListItem({
     if (detailed) {
         return (
             <article className="group overflow-hidden rounded-2xl border border-gray-100 bg-white p-3 shadow-sm transition hover:border-sky-100 hover:shadow-md">
-                <Link href={restaurantShow.url(restaurant.slug)} className="flex cursor-pointer gap-4">
+                <Link href={detailHref} className="flex cursor-pointer gap-4">
                     <div className="relative h-[8.5rem] w-[9.5rem] shrink-0 overflow-hidden rounded-2xl bg-gray-100 sm:h-36 sm:w-40">
                         {restaurant.cover_url ? (
                             <img src={restaurant.cover_url} alt="" className="size-full object-cover transition duration-300 group-hover:scale-105" />
@@ -225,7 +229,7 @@ export function RestaurantListItem({
                 inRoute ? 'border-orange-200' : 'border-gray-100 hover:border-sky-200 hover:shadow-md',
             )}
         >
-            <Link href={restaurantShow.url(restaurant.slug)} className="flex min-w-0 flex-1 cursor-pointer gap-2.5">
+            <Link href={detailHref} className="flex min-w-0 flex-1 cursor-pointer gap-2.5">
                 <div className="relative h-[6.25rem] w-[6.5rem] shrink-0 overflow-hidden rounded-lg bg-gray-100">
                     {restaurant.cover_url ? (
                         <img src={restaurant.cover_url} alt="" className="size-full object-cover transition group-hover:scale-105" />

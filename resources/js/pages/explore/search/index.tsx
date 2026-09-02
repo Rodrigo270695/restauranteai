@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ import { RestaurantListItem, type RestaurantListItemData } from '@/components/ex
 import { exploreSearchUrl } from '@/lib/explore-discover-url';
 import { cn } from '@/lib/utils';
 import TouristExploreLayout from '@/layouts/tourist-explore-layout';
+import { login } from '@/routes';
 
 type CatalogItem = { id: number; name: string };
 
@@ -49,6 +50,8 @@ const FILTER_ONLY = ['restaurants', 'filters', 'pagination'] as const;
 
 function SearchPage({ restaurants, catalogs, filters, pagination }: Props) {
     const { t } = useTranslation();
+    const { auth } = usePage().props as { auth?: { user?: unknown | null } };
+    const canFavorite = Boolean(auth?.user);
     const syncedGeoRef = useRef(false);
     const catalog = catalogs ?? {
         cuisineTypes: [],
@@ -173,6 +176,12 @@ function SearchPage({ restaurants, catalogs, filters, pagination }: Props) {
         list.includes(id) ? list.filter((item) => item !== id) : [...list, id];
 
     const toggleFavorite = (slug: string, currentlyFavorited: boolean) => {
+        if (!canFavorite) {
+            router.visit(login());
+
+            return;
+        }
+
         setFavoriteSlug(slug);
         router.post(
             `/explore/restaurants/${slug}/interactions`,

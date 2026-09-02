@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Heart, History, Home, LayoutDashboard, Mail, Map, Search, Sparkles, Store } from 'lucide-react';
+import { Heart, History, Home, LayoutDashboard, Map, Search, Sparkles, Store } from 'lucide-react';
 
 export interface PublicNavItem {
     key: string;
@@ -15,6 +15,14 @@ export interface PublicNavItem {
 
 const HOME: PublicNavItem = { key: 'home', labelKey: 'nav.home', href: '/', exact: true, icon: Home };
 
+const AI_RECS_PUBLIC: PublicNavItem = {
+    key: 'ai',
+    labelKey: 'nav.ai',
+    href: '/recomendaciones-ia',
+    exact: true,
+    icon: Sparkles,
+};
+
 const AI_RECS: PublicNavItem = {
     key: 'ai',
     labelKey: 'nav.ai',
@@ -23,13 +31,10 @@ const AI_RECS: PublicNavItem = {
     icon: Sparkles,
 };
 
-const CONTACT: PublicNavItem = { key: 'contact', labelKey: 'nav.contact', href: '/contacto', exact: true, icon: Mail };
-
 export const PUBLIC_NAV: PublicNavItem[] = [
     HOME,
-    { key: 'explore', labelKey: 'nav.explore', href: '/restaurantes-cercanos', exact: false, icon: Search },
-    AI_RECS,
-    CONTACT,
+    { key: 'explore', labelKey: 'nav.explore', href: '/explore/search', exact: false, icon: Search },
+    AI_RECS_PUBLIC,
 ];
 
 export const TOURIST_NAV: PublicNavItem[] = [
@@ -86,7 +91,7 @@ export function isPublicNavItemActive(url: string, item: PublicNavItem): boolean
     }
 
     if (item.key === 'ai') {
-        return path === '/explore';
+        return path === '/explore' || path === '/recomendaciones-ia';
     }
 
     if (item.key === 'explore') {

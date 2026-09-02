@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
     ArrowRight,
@@ -26,6 +26,7 @@ import { formatDistanceKm, kmBetween } from '@/lib/geo-distance';
 import { formatAvgPriceSoles, priceRangeLabel } from '@/lib/restaurant-price';
 import { type Budget, normalizeBudgets } from '@/lib/tourist-budget';
 import { cn } from '@/lib/utils';
+import { login } from '@/routes';
 import { profile as exploreProfile } from '@/routes/explore';
 import { show as restaurantShow } from '@/routes/explore/restaurants';
 
@@ -48,7 +49,7 @@ type Rec = RestaurantCardData & { rank: number; recommendation_score: number };
 type CuisineType = { id: number; name: string; slug: string };
 
 type Props = {
-    userName: string;
+    userName?: string;
     profile: Profile | null;
     mlPreference: MlPreference;
     recommendations: Rec[];
@@ -85,7 +86,7 @@ function PrefColumn({
 }
 
 export function TouristHome({
-    userName,
+    userName = '',
     profile,
     mlPreference,
     recommendations,
@@ -93,7 +94,11 @@ export function TouristHome({
     cuisineTypes,
 }: Props) {
     const { t } = useTranslation();
-    const firstName = userName.split(' ')[0];
+    const { auth } = usePage().props as { auth?: { user?: { name: string } | null } };
+    const isGuest = !auth?.user;
+    const firstName = (userName || auth?.user?.name || '').split(' ')[0];
+    const recsHref = isGuest ? '/recomendaciones-ia' : '/explore';
+    const prefsHref = isGuest ? login() : exploreProfile.url();
     const scroller = useRef<HTMLDivElement>(null);
     const { coords } = useUserGeolocation();
 
@@ -137,9 +142,11 @@ export function TouristHome({
 
                     <div className="relative mx-auto max-w-7xl px-4 pb-28 pt-10 sm:px-6 sm:pb-32 sm:pt-12 lg:px-8 lg:pb-36 lg:pt-14">
                         <h1 className="text-3xl font-bold tracking-tight text-brand-blue sm:text-4xl lg:text-5xl">
-                            {t('home.hello', { name: firstName })} 👋
+                            {isGuest ? t('home.hello_guest') : t('home.hello', { name: firstName })} 👋
                         </h1>
-                        <p className="mt-2 max-w-lg text-base text-gray-500 sm:text-lg">{t('home.hello_sub')}</p>
+                        <p className="mt-2 max-w-lg text-base text-gray-500 sm:text-lg">
+                            {isGuest ? t('home.hello_sub_guest') : t('home.hello_sub')}
+                        </p>
                     </div>
                 </div>
 
@@ -148,11 +155,11 @@ export function TouristHome({
                         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                             <h2 className="text-lg font-bold text-brand-blue">{t('home.your_prefs')}</h2>
                             <Link
-                                href={exploreProfile.url()}
+                                href={prefsHref}
                                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-orange hover:underline"
                             >
                                 <Pencil className="size-3.5" />
-                                {t('home.edit_prefs')}
+                                {isGuest ? t('home.login_to_personalize') : t('home.edit_prefs')}
                             </Link>
                         </div>
                         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
@@ -202,7 +209,7 @@ export function TouristHome({
                             <p className="mt-1 text-sm text-gray-500">{t('home.recs_sub')}</p>
                         </div>
                         <Link
-                            href="/explore"
+                            href={recsHref}
                             className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-orange hover:underline"
                         >
                             {t('home.see_all_recs')}
@@ -214,7 +221,7 @@ export function TouristHome({
                         <div className="rounded-2xl border border-dashed border-orange-200 bg-white px-6 py-10 text-center">
                             <p className="text-sm text-gray-600">{t('explore.no_recommendations')}</p>
                             <Link
-                                href={exploreProfile.url()}
+                                href={prefsHref}
                                 className="mt-3 inline-flex text-sm font-semibold text-brand-orange hover:underline"
                             >
                                 {t('explore.complete_profile_btn')}
@@ -227,14 +234,16 @@ export function TouristHome({
                                 className="flex gap-4 overflow-x-auto pb-2 scroll-smooth [scrollbar-width:none] lg:px-12 [&::-webkit-scrollbar]:hidden"
                             >
                                 {featured.map((r, i) => {
-                                    const href = recommendationMeta?.request_id
-                                        ? restaurantShow.url(r.slug, {
-                                              query: {
-                                                  from_recommendation: '1',
-                                                  request_id: recommendationMeta.request_id,
-                                              },
-                                          })
-                                        : restaurantShow.url(r.slug, { query: { from_recommendation: '1' } });
+                                    const href = isGuest
+                                        ? `/restaurantes/${r.slug}`
+                                        : recommendationMeta?.request_id
+                                          ? restaurantShow.url(r.slug, {
+                                                query: {
+                                                    from_recommendation: '1',
+                                                    request_id: recommendationMeta.request_id,
+                                                },
+                                            })
+                                          : restaurantShow.url(r.slug, { query: { from_recommendation: '1' } });
                                     const avgPrice = formatAvgPriceSoles(r.avg_price_per_person);
                                     const familyEnv = r.environments?.find((e) => /famil/i.test(e));
                                     const familyHint = familyEnv ? t('home.ideal_families') : r.environments?.[0];
@@ -400,7 +409,7 @@ export function TouristHome({
                         </span>
                         <p className="max-w-3xl text-sm leading-relaxed text-white/90">{t('home.ai_learn')}</p>
                     </div>
-                    <Link href="/explore" className="shrink-0 text-sm font-semibold text-brand-orange hover:underline">
+                    <Link href={recsHref} className="shrink-0 text-sm font-semibold text-brand-orange hover:underline">
                         {t('home.ai_how')} →
                     </Link>
                 </div>
