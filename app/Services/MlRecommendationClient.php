@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\RecsDebugLog;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -29,17 +30,26 @@ class MlRecommendationClient
                 ->post($url, $payload);
 
             if (! $response->successful()) {
-                Log::warning('ML recommend failed', [
+                RecsDebugLog::warning('http_failed', [
                     'status' => $response->status(),
-                    'body' => $response->body(),
+                    'body' => mb_substr($response->body(), 0, 2000),
+                    'url' => $url,
                 ]);
 
                 return null;
             }
 
+            RecsDebugLog::info('http_ok', [
+                'url' => $url,
+                'status' => $response->status(),
+            ]);
+
             return $response->json();
         } catch (ConnectionException $e) {
-            Log::warning('ML service unreachable', ['message' => $e->getMessage()]);
+            RecsDebugLog::warning('http_unreachable', [
+                'url' => $url,
+                'message' => $e->getMessage(),
+            ]);
 
             return null;
         }
@@ -54,9 +64,19 @@ class MlRecommendationClient
         try {
             $url = rtrim((string) config('recommendations.ml_service_url'), '/').'/api/v1/health';
             $response = Http::timeout(3)->get($url);
+            $ok = $response->successful() && ($response->json('status') === 'ok');
 
-            return $response->successful() && ($response->json('status') === 'ok');
-        } catch (ConnectionException) {
+            RecsDebugLog::info('health', [
+                'url' => $url,
+                'status' => $response->status(),
+                'body' => $response->json(),
+                'ok' => $ok,
+            ]);
+
+            return $ok;
+        } catch (ConnectionException $e) {
+            RecsDebugLog::warning('health_unreachable', ['message' => $e->getMessage()]);
+
             return false;
         }
     }

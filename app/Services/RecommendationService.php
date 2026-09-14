@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\CuisineType;
 use App\Models\Recommendation;
 use App\Models\RecommendationRequest;
 use App\Models\Restaurant;
 use App\Models\User;
 use App\Models\UserPreference;
+use App\Support\RecsDebugLog;
 use App\Support\RestaurantHoursPresenter;
 use Illuminate\Support\Facades\Cache;
 
@@ -24,12 +26,26 @@ class RecommendationService
      */
     public function forUser(User $user, array $contextOverrides = [], int $topN = 0, bool $fresh = false): array
     {
-        if (! $this->mlClient->isEnabled() || ! $this->mlClient->isHealthy()) {
+        $enabled = $this->mlClient->isEnabled();
+        $healthy = $enabled && $this->mlClient->isHealthy();
+
+        if (! $enabled || ! $healthy) {
+            RecsDebugLog::warning('ml_unavailable', [
+                'user_id' => $user->id,
+                'ml_enabled' => $enabled,
+                'ml_healthy' => $healthy,
+                'ml_url' => config('recommendations.ml_service_url'),
+                'diagnosis' => ! $enabled
+                    ? 'ML_SERVICE_ENABLED está apagado en .env'
+                    : 'El servicio ML no responde /health (uvicorn caído, URL o API key distinta)',
+            ]);
+
             return $this->unavailableResponse();
         }
 
         $topN = $topN > 0 ? $topN : (int) config('recommendations.default_top_n');
         $pref = $user->userPreferences()->latest('updated_at')->first();
+        $user->loadMissing('touristProfile');
         $context = FallbackRecommendationEngine::contextFromUser($user, $pref, $contextOverrides);
 
         $version = (int) Cache::get($this->cacheVersionKey($user->id), 0);
@@ -45,7 +61,14 @@ class RecommendationService
         }
 
         $cached = Cache::get($cacheKey);
-        if (is_array($cached)) {
+        if (is_array($cached) && ! $fresh) {
+            RecsDebugLog::info('cache_hit', [
+                'user_id' => $user->id,
+                'cache_key' => $cacheKey,
+                'item_names' => collect($cached['items'] ?? [])->pluck('name')->all(),
+                'diagnosis' => 'Se reutilizó el resultado en caché (hasta 10 min). Pulsa actualizar recs o espera el TTL.',
+            ]);
+
             return $cached;
         }
 
@@ -72,9 +95,41 @@ class RecommendationService
             'exclude_restaurant_ids' => [],
         ];
 
+        $cuisineId = $context['cuisine_type_id'] ?? null;
+        $cuisine = $cuisineId
+            ? CuisineType::query()->find($cuisineId, ['id', 'name', 'slug'])
+            : null;
+        $matchingCuisineCount = $cuisineId
+            ? Restaurant::query()
+                ->where('is_active', true)
+                ->where('is_verified', true)
+                ->where(function ($q) use ($cuisineId) {
+                    $q->where('cuisine_type_id', $cuisineId)
+                        ->orWhereHas('cuisineTypes', fn ($cq) => $cq->where('cuisine_types.id', $cuisineId));
+                })
+                ->count()
+            : null;
+
+        RecsDebugLog::info('request', [
+            'user_id' => $user->id,
+            'profile_cuisines' => $user->touristProfile?->preferred_cuisines,
+            'pref_id' => $pref?->id,
+            'pref_cuisine_type_id' => $pref?->cuisine_type_id,
+            'pref_cuisine_name' => $cuisine?->name,
+            'pref_cuisine_slug' => $cuisine?->slug,
+            'pref_price_range' => $pref?->price_range,
+            'restaurants_matching_cuisine' => $matchingCuisineCount,
+            'payload' => $payload,
+        ]);
+
         $mlResponse = $this->mlClient->recommend($payload);
 
         if ($mlResponse === null) {
+            RecsDebugLog::warning('ml_recommend_null', [
+                'user_id' => $user->id,
+                'diagnosis' => 'POST /api/v1/recommend falló o no devolvió JSON. Revisa URL, API key y logs del servicio Python.',
+            ]);
+
             return $this->unavailableResponse();
         }
 
@@ -86,7 +141,22 @@ class RecommendationService
             'score' => (float) $row['score'],
         ]);
 
+        RecsDebugLog::info('ml_response', [
+            'user_id' => $user->id,
+            'algorithm' => $algorithm,
+            'cold_start' => $coldStart,
+            'raw_keys' => array_keys($mlResponse),
+            'returned_count' => $scored->count(),
+            'returned_ids' => $scored->pluck('restaurant_id')->all(),
+            'meta_extra' => collect($mlResponse)->except(['recommendations'])->all(),
+        ]);
+
         if ($scored->isEmpty()) {
+            RecsDebugLog::warning('ml_empty', [
+                'user_id' => $user->id,
+                'diagnosis' => 'El ML respondió OK pero sin restaurantes.',
+            ]);
+
             return [
                 'items' => [],
                 'meta' => [
@@ -119,10 +189,26 @@ class RecommendationService
 
         $items = [];
         $rank = 0;
+        $skipped = [];
+        $mlPreview = [];
 
         foreach ($scored as $row) {
             $restaurant = $restaurants->get($row['restaurant_id']);
+            $mlPreview[] = [
+                'id' => $row['restaurant_id'],
+                'name' => $restaurant?->name,
+                'primary_cuisine' => $restaurant?->cuisineType?->name,
+                'cuisines' => $restaurant?->cuisineTypes->pluck('name')->all() ?? [],
+                'score' => $row['score'],
+                'open' => $restaurant ? $this->hours->isOpen($restaurant) : false,
+            ];
+
             if (! $restaurant || ! $this->hours->isOpen($restaurant)) {
+                $skipped[] = [
+                    'id' => $row['restaurant_id'],
+                    'name' => $restaurant?->name,
+                    'reason' => $restaurant ? 'closed_now' : 'not_in_db',
+                ];
                 continue;
             }
 
@@ -147,6 +233,37 @@ class RecommendationService
             }
         }
 
+        $finalCuisines = collect($items)
+            ->map(fn (array $item) => collect($item['cuisines'] ?? [])->pluck('name')->all())
+            ->flatten()
+            ->unique()
+            ->values()
+            ->all();
+
+        RecsDebugLog::info('result', [
+            'user_id' => $user->id,
+            'algorithm' => $algorithm,
+            'cold_start' => $coldStart,
+            'requested_cuisine' => $cuisine?->slug,
+            'restaurants_matching_cuisine' => $matchingCuisineCount,
+            'ml_preview' => $mlPreview,
+            'skipped' => $skipped,
+            'final_names' => collect($items)->pluck('name')->all(),
+            'final_cuisines' => $finalCuisines,
+            'diagnosis' => $this->diagnoseMismatch(
+                $cuisine?->slug,
+                $cuisine?->name,
+                $matchingCuisineCount,
+                $coldStart,
+                $algorithm,
+                $mlPreview,
+                $finalCuisines,
+                $skipped,
+                $user->touristProfile?->preferred_cuisines,
+                $pref?->cuisine_type_id,
+            ),
+        ]);
+
         return [
             'items' => $items,
             'meta' => [
@@ -156,6 +273,63 @@ class RecommendationService
                 'request_id' => $request->id,
             ],
         ];
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $mlPreview
+     * @param  list<string>  $finalCuisines
+     * @param  list<array<string, mixed>>  $skipped
+     * @param  list<string>|null  $profileCuisines
+     */
+    private function diagnoseMismatch(
+        ?string $requestedSlug,
+        ?string $requestedName,
+        ?int $matchingCuisineCount,
+        bool $coldStart,
+        string $algorithm,
+        array $mlPreview,
+        array $finalCuisines,
+        array $skipped,
+        mixed $profileCuisines,
+        mixed $prefCuisineId,
+    ): string {
+        if ($prefCuisineId === null && filled($profileCuisines)) {
+            return 'El perfil tiene cocinas ('.json_encode($profileCuisines).') pero user_preferences.cuisine_type_id es null: el ML no recibe la cocina elegida.';
+        }
+
+        if ($requestedSlug === null) {
+            return 'No hay cuisine_type_id en el contexto. El ML rankea por popularidad y por eso se ven siempre los mismos (marina/destacados).';
+        }
+
+        if ($matchingCuisineCount === 0) {
+            return "Se pidió {$requestedName} ({$requestedSlug}) pero en esta BD hay 0 restaurantes activos de esa cocina.";
+        }
+
+        $mlCuisines = collect($mlPreview)
+            ->flatMap(fn (array $row) => $row['cuisines'] ?? [])
+            ->merge(collect($mlPreview)->pluck('primary_cuisine'))
+            ->filter()
+            ->unique();
+
+        if ($coldStart) {
+            return "ML en cold_start (algorithm={$algorithm}). Suele ignorar o debilitar la cocina y devolver populares.";
+        }
+
+        $askedInMl = $mlCuisines->contains(fn ($name) => strcasecmp((string) $name, (string) $requestedName) === 0);
+        if (! $askedInMl) {
+            return "El ML devolvió {$mlCuisines->implode(', ')} y no {$requestedName}, pese a haber {$matchingCuisineCount} locales de esa cocina. El modelo no está usando cuisine_type_id.";
+        }
+
+        $closedOfAsked = collect($skipped)->where('reason', 'closed_now')->count();
+        if ($closedOfAsked > 0 && ! in_array($requestedName, $finalCuisines, true)) {
+            return "El ML sí trajo {$requestedName}, pero Laravel los filtró por horario cerrado y en pantalla quedaron otras cocinas: ".implode(', ', $finalCuisines);
+        }
+
+        if ($finalCuisines !== [] && ! in_array($requestedName, $finalCuisines, true)) {
+            return "La lista final no incluye {$requestedName}. Final: ".implode(', ', $finalCuisines);
+        }
+
+        return "OK: se pidió {$requestedName} y la lista es coherente ({$algorithm}).";
     }
 
     /**
