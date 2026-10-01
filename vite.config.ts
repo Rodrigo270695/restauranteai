@@ -24,4 +24,15 @@ export default defineConfig({
             formVariants: true,
         }),
     ],
+    build: {
+        rolldownOptions: {
+            output: {
+                codeSplitting: {
+                    groups: [
+                        { name: 'react-dom', test: /node_modules[\\/]react-dom[\\/]/ },
+                    ],
+                },
+            },
+        },
+    },
 });

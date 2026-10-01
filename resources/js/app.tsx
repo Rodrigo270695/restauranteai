@@ -1,6 +1,6 @@
+import { lazy, Suspense } from 'react';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
-import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
 import AppLayout from '@/layouts/app-layout';
@@ -10,6 +10,10 @@ import PublicLayout from '@/layouts/public-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import TouristLayout from '@/layouts/tourist-layout';
 import '@/i18n';
+
+const Toaster = lazy(() =>
+    import('@/components/ui/sonner').then((mod) => ({ default: mod.Toaster })),
+);
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -77,7 +81,9 @@ createInertiaApp({
         return (
             <TooltipProvider delayDuration={0}>
                 {app}
-                <Toaster />
+                <Suspense fallback={null}>
+                    <Toaster />
+                </Suspense>
             </TooltipProvider>
         );
     },
