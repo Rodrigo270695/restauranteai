@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Restaurant;
 use App\Models\RestaurantReservation;
+use App\Support\OwnerPanel;
 use App\Services\RestaurantScopeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -65,7 +66,7 @@ class RestaurantHubController extends Controller
         $scope->startActing($request, $restaurant);
 
         return redirect()
-            ->route('app.admin.restaurants.manage.reservations', $restaurant)
+            ->route('app.admin.restaurants.manage.reservations', OwnerPanel::adminRouteKey($restaurant))
             ->with('success', "Viendo el panel como: {$restaurant->name}");
     }
 

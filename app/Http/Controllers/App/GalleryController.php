@@ -12,6 +12,7 @@ use App\Support\OwnerPanel;
 use App\Support\PublicStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -49,7 +50,7 @@ class GalleryController extends Controller
             ...OwnerPanel::props($restaurant, $admin),
             'canManageGallery' => $scope->canManageGallery($request->user(), $restaurant),
             'galleryStoreUrl' => $admin
-                ? route('app.admin.restaurants.manage.gallery.store', $restaurant)
+                ? route('app.admin.restaurants.manage.gallery.store', OwnerPanel::adminRouteKey($restaurant))
                 : route('app.gallery.store'),
             'images' => $images->values(),
             'stats' => [
@@ -90,8 +91,12 @@ class GalleryController extends Controller
         ];
 
         if ($request->hasFile('image')) {
+            $stored = $this->storeGalleryFile($restaurant, $request->file('image'));
+            if ($stored === null) {
+                return back()->withErrors(['image' => 'No se pudo guardar la foto. Revisa permisos de storage.']);
+            }
             Storage::disk('public')->delete($image->path);
-            $updates['path'] = $request->file('image')->store("restaurants/{$restaurant->id}", 'public');
+            $updates['path'] = $stored;
         }
 
         $image->update($updates);
@@ -127,8 +132,12 @@ class GalleryController extends Controller
         ];
 
         if ($request->hasFile('image')) {
+            $stored = $this->storeGalleryFile($restaurant, $request->file('image'));
+            if ($stored === null) {
+                return back()->withErrors(['image' => 'No se pudo guardar la foto. Revisa permisos de storage.']);
+            }
             Storage::disk('public')->delete($image->path);
-            $updates['path'] = $request->file('image')->store("restaurants/{$restaurant->id}", 'public');
+            $updates['path'] = $stored;
         }
 
         $image->update($updates);
@@ -204,7 +213,10 @@ class GalleryController extends Controller
 
         $data = $request->validated();
 
-        $path = $request->file('image')->store("restaurants/{$restaurant->id}", 'public');
+        $path = $this->storeGalleryFile($restaurant, $request->file('image'));
+        if ($path === null) {
+            return back()->withErrors(['image' => 'No se pudo guardar la foto. Revisa permisos de storage.']);
+        }
 
         $isCover = (bool) ($data['is_cover'] ?? false) || ! $restaurant->images()->exists();
 
@@ -257,6 +269,15 @@ class GalleryController extends Controller
         $this->setAsCover($restaurant, $image);
 
         return back()->with('success', 'Portada actualizada.');
+    }
+
+    private function storeGalleryFile(Restaurant $restaurant, UploadedFile $file): ?string
+    {
+        $directory = "restaurants/{$restaurant->id}";
+        Storage::disk('public')->makeDirectory($directory);
+        $path = $file->store($directory, 'public');
+
+        return is_string($path) && $path !== '' ? $path : null;
     }
 
     private function setAsCover($restaurant, RestaurantImage $image): void

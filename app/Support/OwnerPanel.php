@@ -34,4 +34,14 @@ final class OwnerPanel
 
         return '/app'.$segment;
     }
+
+    /**
+     * Las rutas admin usan {restaurant:id}; el modelo resuelve por slug.
+     *
+     * @return array{restaurant: int}
+     */
+    public static function adminRouteKey(Restaurant $restaurant): array
+    {
+        return ['restaurant' => $restaurant->id];
+    }
 }

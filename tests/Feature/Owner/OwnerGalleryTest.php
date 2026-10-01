@@ -197,10 +197,10 @@ test('admin gallery page includes gallery store url for client actions', functio
     ]);
 
     $this->actingAs($admin)
-        ->get(route('app.admin.restaurants.manage.gallery', $restaurant))
+        ->get(route('app.admin.restaurants.manage.gallery', ['restaurant' => $restaurant->id]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->where('galleryStoreUrl', route('app.admin.restaurants.manage.gallery.store', $restaurant))
+            ->where('galleryStoreUrl', route('app.admin.restaurants.manage.gallery.store', ['restaurant' => $restaurant->id]))
             ->has('images', 1)
             ->missing('images.0.urls')
         );
